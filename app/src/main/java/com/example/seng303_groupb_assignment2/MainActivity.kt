@@ -19,6 +19,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.seng303_groupb_assignment2.screens.AddWorkout
+import com.example.seng303_groupb_assignment2.screens.RunWorkout
+import com.example.seng303_groupb_assignment2.screens.ViewLeaderboard
+import com.example.seng303_groupb_assignment2.screens.ViewProgress
 import com.example.seng303_groupb_assignment2.ui.theme.SENG303_GroupB_Assignment2Theme
 
 class MainActivity : ComponentActivity() {
@@ -27,11 +35,25 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             SENG303_GroupB_Assignment2Theme {
+                val navController = rememberNavController()
                 Scaffold(
-                    bottomBar = { CustomBottomAppBar() }
-                ) { paddingValues ->
-                    Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-                        // TODO
+                    bottomBar = { CustomBottomAppBar(navController) }
+                ) { padding ->
+                    Box(modifier = Modifier.padding(padding)) {
+                        NavHost(navController = navController, startDestination = "Run") {
+                            composable("Run") {
+                                RunWorkout(navController = navController)
+                            }
+                            composable("Add") {
+                                AddWorkout(navController = navController)
+                            }
+                            composable("Progress") {
+                                ViewProgress(navController = navController)
+                            }
+                            composable("Leaderboard") {
+                                ViewLeaderboard(navController = navController)
+                            }
+                        }
                     }
                 }
             }
@@ -39,35 +61,38 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+
 @Composable
-fun CustomBottomAppBar() {
+fun CustomBottomAppBar(
+    navController: NavController
+) {
     BottomAppBar {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            IconButton(onClick = { /* TODO */ }) {
+            IconButton(onClick = { navController.navigate("Run") }) {
                 Icon(
                     painter = painterResource(id = R.drawable.run),
-                    contentDescription = "Icon 1"
+                    contentDescription = "Run"
                 )
             }
-            IconButton(onClick = { /* TODO */ }) {
+            IconButton(onClick = { navController.navigate("Add") }) {
                 Icon(
                     painter = painterResource(id = R.drawable.add),
-                    contentDescription = "Icon 2"
+                    contentDescription = "Add"
                 )
             }
-            IconButton(onClick = { /* TODO */ }) {
+            IconButton(onClick = { navController.navigate("Progress") }) {
                 Icon(
                     painter = painterResource(id = R.drawable.progress),
-                    contentDescription = "Icon 3"
+                    contentDescription = "Progress"
                 )
             }
-            IconButton(onClick = { /* TODO */ }) {
+            IconButton(onClick = { navController.navigate("Leaderboard") }) {
                 Icon(
                     painter = painterResource(id = R.drawable.leaderboard),
-                    contentDescription = "Icon 4"
+                    contentDescription = "Leaderboard"
                 )
             }
         }
