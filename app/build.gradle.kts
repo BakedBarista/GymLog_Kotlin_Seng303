@@ -57,24 +57,22 @@ dependencies {
 
     // To use Kotlin Symbol Processing (KSP)
     ksp(libs.androidx.room.compiler)
-
     // optional - Kotlin Extensions and Coroutines support for Room
     implementation(libs.androidx.room.ktx)
-
     // optional - RxJava2 support for Room
     implementation(libs.androidx.room.rxjava2)
-
     // optional - RxJava3 support for Room
     implementation(libs.androidx.room.rxjava3)
-
     // optional - Guava support for Room, including Optional and ListenableFuture
     implementation(libs.androidx.room.guava)
-
     // optional - Test helpers
     testImplementation(libs.androidx.room.testing)
-
     // optional - Paging 3 Integration
     implementation(libs.androidx.room.paging)
+
+    // Koin for view models
+    implementation("io.insert-koin:koin-android:3.4.0")
+    implementation("io.insert-koin:koin-androidx-compose:3.4.0")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
