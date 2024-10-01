@@ -20,6 +20,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.seng303_groupb_assignment2.models.ManageWorkoutViewModel
 import com.example.seng303_groupb_assignment2.screens.AddWorkout
 import com.example.seng303_groupb_assignment2.screens.Home
 import com.example.seng303_groupb_assignment2.screens.RunWorkout
@@ -46,7 +47,10 @@ class MainActivity : ComponentActivity() {
                                 RunWorkout(navController = navController)
                             }
                             composable("Add") {
-                                AddWorkout(navController = navController)
+                                AddWorkout(
+                                    navController = navController,
+                                    viewModel = ManageWorkoutViewModel(),
+                                )
                             }
                             composable("Progress") {
                                 ViewProgress(navController = navController)
