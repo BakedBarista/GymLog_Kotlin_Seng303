@@ -25,7 +25,7 @@ class ExerciseViewModel(application: Application) : AndroidViewModel(application
                 time = time,
                 restTime = restTime
             )
-            exerciseDao.insertExercise(newExercise)
+            exerciseDao.upsertExercise(newExercise)
         }
     }
 }

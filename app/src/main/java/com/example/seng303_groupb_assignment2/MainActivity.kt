@@ -130,19 +130,6 @@ fun CustomBottomAppBar(
                     contentDescription = "Leaderboard"
                 )
             }
-            // These two are just temporary and are here to test the database. will remove these when I know the saving is working
-            IconButton(onClick = { navController.navigate("AddExercise") }) {
-                Icon(
-                    painter = painterResource(id = R.drawable.add),
-                    contentDescription = "Add Exercise"
-                )
-            }
-            IconButton(onClick = { navController.navigate("ExerciseList") }) {
-                Icon(
-                    painter = painterResource(id = R.drawable.add),
-                    contentDescription = "Exercise List"
-                )
-            }
         }
     }
 }
