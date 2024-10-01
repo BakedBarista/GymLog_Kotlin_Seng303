@@ -1,7 +1,6 @@
 package com.example.seng303_groupb_assignment2.entities
 
 import androidx.room.Entity
-import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 
 @Entity
