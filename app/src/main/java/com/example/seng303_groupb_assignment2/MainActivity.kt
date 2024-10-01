@@ -1,5 +1,6 @@
 package com.example.seng303_groupb_assignment2
 
+import android.app.Application
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -16,18 +17,28 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.seng303_groupb_assignment2.screens.AddExerciseScreen
 import com.example.seng303_groupb_assignment2.screens.AddWorkout
+import com.example.seng303_groupb_assignment2.screens.ExerciseListScreen
 import com.example.seng303_groupb_assignment2.screens.RunWorkout
 import com.example.seng303_groupb_assignment2.screens.ViewLeaderboard
 import com.example.seng303_groupb_assignment2.screens.ViewProgress
 import com.example.seng303_groupb_assignment2.ui.theme.SENG303_GroupB_Assignment2Theme
+import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,6 +46,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             SENG303_GroupB_Assignment2Theme {
+                val viewModel: ExerciseViewModel = viewModel(factory = ExerciseViewModelFactory(application))
+
                 val navController = rememberNavController()
                 Scaffold(
                     bottomBar = { CustomBottomAppBar(navController) }
@@ -52,6 +65,12 @@ class MainActivity : ComponentActivity() {
                             }
                             composable("Leaderboard") {
                                 ViewLeaderboard(navController = navController)
+                            }
+                            composable("AddExercise") {
+                                AddExerciseScreen(viewModel = viewModel)
+                            }
+                            composable("ExerciseList") {
+                                ExerciseListScreen(viewModel = viewModel)
                             }
                         }
                     }
@@ -95,6 +114,29 @@ fun CustomBottomAppBar(
                     contentDescription = "Leaderboard"
                 )
             }
+            // These two are just temporary and are here to test the database. will remove these when I know the saving is working
+            IconButton(onClick = { navController.navigate("AddExercise") }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.add),
+                    contentDescription = "Add Exercise"
+                )
+            }
+            IconButton(onClick = { navController.navigate("ExerciseList") }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.add),
+                    contentDescription = "Exercise List"
+                )
+            }
         }
+    }
+}
+
+class ExerciseViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(ExerciseViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return ExerciseViewModel(application) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
