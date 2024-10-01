@@ -40,7 +40,10 @@ class MainActivity : ComponentActivity() {
                     bottomBar = { CustomBottomAppBar(navController) }
                 ) { padding ->
                     Box(modifier = Modifier.padding(padding)) {
-                        NavHost(navController = navController, startDestination = "Run") {
+                        NavHost(navController = navController, startDestination = "Home") {
+                            composable("Home") {
+                                Home(navController = navController)
+                            }
                             composable("Run") {
                                 RunWorkout(navController = navController)
                             }
@@ -59,6 +62,13 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
+
+@Composable
+fun Home(
+    navController: NavController
+) {
+    Text(text = "home")
 }
 
 
@@ -81,6 +91,12 @@ fun CustomBottomAppBar(
                 Icon(
                     painter = painterResource(id = R.drawable.add),
                     contentDescription = "Add"
+                )
+            }
+            IconButton(onClick = { navController.navigate("Home") }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.home),
+                    contentDescription = "Home"
                 )
             }
             IconButton(onClick = { navController.navigate("Progress") }) {
