@@ -1,21 +1,20 @@
 package com.example.seng303_groupb_assignment2.daos
 
 import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Upsert
 import com.example.seng303_groupb_assignment2.entities.Workout
 import com.example.seng303_groupb_assignment2.entities.WorkoutExerciseCrossRef
 import com.example.seng303_groupb_assignment2.entities.WorkoutWithExercises
 
 @Dao
 interface WorkoutDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertWorkout(workout: Workout): Long
+    @Upsert
+    suspend fun upsertWorkout(workout: Workout): Long
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertWorkoutExerciseCrossRef(crossRef: WorkoutExerciseCrossRef)
+    @Upsert
+    suspend fun upsertWorkoutExerciseCrossRef(crossRef: WorkoutExerciseCrossRef)
 
     @Transaction
     @Query("SELECT * FROM Workout WHERE id = :workoutId")
