@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
@@ -46,6 +47,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.seng303_groupb_assignment2.R
+import com.example.seng303_groupb_assignment2.entities.Measurement
 import com.example.seng303_groupb_assignment2.viewmodels.ManageWorkoutViewModel
 
 @Composable
@@ -57,7 +59,11 @@ fun AddWorkout(
     // TODO - user rememberBy to handle orientation changes
 
     var modalOpen by rememberSaveable { mutableStateOf(false) }
-    AddExerciseModal(modalOpen, closeModal = { modalOpen = false })
+    AddExerciseModal(
+        modalOpen,
+        closeModal = { modalOpen = false },
+        { name, sets, m1, m2, restTime -> viewModel.addExercise(name, sets, m1, m2, restTime) }
+    )
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -83,16 +89,18 @@ fun AddWorkout(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddExerciseModal(
     modalOpen: Boolean,
-    closeModal: () -> Unit
+    closeModal: () -> Unit,
+    addExercise: (String, Int, Measurement, Measurement, Int) -> Unit
 ) {
     var exerciseName by rememberSaveable { mutableStateOf("") }
     var sets by rememberSaveable { mutableStateOf("") }
-    var measurement1 by rememberSaveable { mutableStateOf("") }
-    var measurement2 by rememberSaveable { mutableStateOf("") }
+    var measurementType1 by rememberSaveable { mutableStateOf("") }
+    var measurementValues1 by rememberSaveable { mutableStateOf(listOf<Float>()) }
+    var measurementType2 by rememberSaveable { mutableStateOf("") }
+    val measurementValues2 by rememberSaveable { mutableStateOf(listOf<Float>()) }
 
     if (modalOpen) {
         Dialog(onDismissRequest = { closeModal() }) {
@@ -118,31 +126,80 @@ private fun AddExerciseModal(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     TextField(
-                        value = sets.toString(),
-                        onValueChange = { sets = it },
+                        value = sets,
+                        onValueChange =
+                        {
+                            if (sets.isBlank() || sets.toIntOrNull() != null) {
+                                sets = it
+                            }
+
+                            if (sets.isNotBlank()) {
+                                for (i in 0 until sets.toInt()) {
+//                                    if (measurementValues1.size < sets) {
+//                                        measurementValues1.add("0")
+//                                    }
+                                }
+                            }
+                        },
                         label = { Text("Sets") },
                         modifier = Modifier.fillMaxWidth()
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    MeasurementSelectionDropdowns(
+                    MeasurementSelection(
                         options = listOf("Reps", "Time"),
-                        updateOption = { measurement1 = it }
+                        updateOption = { measurementType1 = it },
+                        sets = sets,
+                        values = measurementValues1,
+                        updateValue = { index, newValue ->
+                            if (index in measurementValues1.indices) {
+                                val updatedList = measurementValues1.toMutableList().apply {
+                                    this[index] = newValue.toFloat()
+                                }
+                                measurementValues1 = updatedList
+                            }
+                        }
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    MeasurementSelectionDropdowns(
+                    MeasurementSelection(
                         options = listOf("Weight", "Distance"),
-                        updateOption = { measurement2 = it }
+                        updateOption = { measurementType2 = it },
+                        sets = sets,
+                        values = measurementValues2,
+                        updateValue = { index, newValue ->
+                            if (index in measurementValues1.indices) {
+                                val updatedList = measurementValues1.toMutableList().apply {
+                                    this[index] = newValue.toFloat()
+                                }
+                                measurementValues1 = updatedList
+                            }
+                        }
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Button(onClick = {
                         closeModal()
-                        // TODO add exercise
+                        // TODO wait time and error checking
+
+                        val measurement1 = Measurement(
+                            type = measurementType1,
+                            values = measurementValues1
+                        )
+                        val measurement2 = Measurement(
+                            type = measurementType1,
+                            values = measurementValues2
+                        )
+                        addExercise(
+                            exerciseName,
+                            sets.toInt(),
+                            measurement1,
+                            measurement2,
+                            0
+                        )
                         // TODO reset values to defaults
                     }) {
                         Text("Add")
@@ -251,9 +308,12 @@ private fun CancelAndSaveRow (
 }
 
 @Composable
-fun MeasurementSelectionDropdowns(
+fun MeasurementSelection(
     options: List<String>,
-    updateOption: (String) -> Unit
+    updateOption: (String) -> Unit,
+    sets: String,
+    values: List<Float>,
+    updateValue: (Int, String) -> Unit
 ) {
     var open by rememberSaveable { mutableStateOf(false) }
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
@@ -292,6 +352,21 @@ fun MeasurementSelectionDropdowns(
                         open = false
                         updateOption(option)
                     }
+                )
+            }
+        }
+    }
+
+    LazyColumn(
+        modifier = Modifier.padding(16.dp)
+    ) {
+        if (sets.isNotBlank()) {
+            items(sets.toInt()) { index ->
+                TextField(
+                    value = values[index].toString(),
+                    onValueChange = { it: String -> updateValue(index, it) },
+                    label = { Text("Set $index") },
+                    modifier = Modifier.fillMaxWidth(0.8f)
                 )
             }
         }

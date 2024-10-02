@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.entities.Measurement
 
 class ManageWorkoutViewModel: ViewModel() {
@@ -18,12 +19,33 @@ class ManageWorkoutViewModel: ViewModel() {
     var sets by mutableIntStateOf(0)
         private set
 
-    var measurement1: Measurement by mutableStateOf(Measurement(type = "", value = listOf()))
+    var measurement1: Measurement by mutableStateOf(Measurement(type = "", values = listOf()))
         private set
 
-    var measurement2: Measurement by mutableStateOf(Measurement(type = "", value = listOf()))
+    var measurement2: Measurement by mutableStateOf(Measurement(type = "", values = listOf()))
         private set
 
     var restTime by mutableIntStateOf(0)
         private set
+
+    var exercises: MutableList<Exercise> = mutableListOf()
+        private set
+
+    fun addExercise(
+        name: String,
+        sets: Int,
+        measurement1: Measurement,
+        measurement2: Measurement,
+        restTime: Int
+    ) {
+        val exercise = Exercise(
+            name = name,
+            sets = sets,
+            measurement1 = measurement1,
+            measurement2 = measurement2,
+            restTime = restTime
+        )
+
+        exercises.add(exercise)
+    }
 }
