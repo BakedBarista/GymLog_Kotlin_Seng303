@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -100,9 +101,10 @@ private fun AddExerciseModal(
     var exerciseName by rememberSaveable { mutableStateOf("") }
     var sets by rememberSaveable { mutableStateOf("") }
     var measurementType1 by rememberSaveable { mutableStateOf("") }
-    var measurementValues1 by rememberSaveable { mutableStateOf(mutableListOf<String>()) }
+    var measurementValues1 by rememberSaveable { mutableStateOf(listOf<String>()) }
     var measurementType2 by rememberSaveable { mutableStateOf("") }
-    var measurementValues2 by rememberSaveable { mutableStateOf(mutableListOf<String>()) }
+    var measurementValues2 by rememberSaveable { mutableStateOf(listOf<String>()) }
+    var restTime by rememberSaveable { mutableStateOf("") }
 
     if (modalOpen) {
         Dialog(onDismissRequest = { closeModal() }) {
@@ -131,7 +133,7 @@ private fun AddExerciseModal(
                         value = sets,
                         onValueChange =
                         {
-                            if (sets.isBlank() || sets.toIntOrNull() != null) {
+                            if (it.isBlank() || it.toIntOrNull() != null) {
                                 sets = it
                             }
 
@@ -185,30 +187,71 @@ private fun AddExerciseModal(
                         }
                     )
 
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    TextField(
+                        value = restTime,
+                        onValueChange = { restTime = it },
+                        label = { Text("Rest time") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Button(onClick = {
-                        closeModal()
-                        // TODO wait time and error checking
+                    val buttonColors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth(0.9f)) {
+                        Button(
+                            modifier = Modifier.padding(paddingValues = PaddingValues(horizontal = 8.dp)),
+                            colors = buttonColors,
+                            shape = RectangleShape,
+                            onClick =
+                            {
+                                closeModal()
+                                exerciseName = ""
+                                sets = ""
+                                measurementType1 = ""
+                                measurementType2 = ""
+                                measurementValues1 = mutableListOf()
+                                measurementValues2 = mutableListOf()
+                                restTime = ""
+                            }) { Text("Cancel", style = MaterialTheme.typography.bodyLarge) }
+                        Button(
+                            colors = buttonColors,
+                            shape = RectangleShape,
+                            onClick =
+                            {
+                                closeModal()
+                                // TODO wait time and error checking
 
-                        val measurement1 = Measurement(
-                            type = measurementType1,
-                            values = measurementValues1.toList().map { it.toFloat() }
-                        )
-                        val measurement2 = Measurement(
-                            type = measurementType1,
-                            values = measurementValues2.toList().map { it.toFloat() }
-                        )
-                        addExercise(
-                            exerciseName,
-                            sets.toInt(),
-                            measurement1,
-                            measurement2,
-                            0
-                        )
-                        // TODO reset values to defaults
-                    }) {
-                        Text("Add")
+                                val measurement1 = Measurement(
+                                    type = measurementType1,
+                                    values = measurementValues1.toList().map { it.toFloat() }
+                                )
+                                val measurement2 = Measurement(
+                                    type = measurementType1,
+                                    values = measurementValues2.toList().map { it.toFloat() }
+                                )
+                                addExercise(
+                                    exerciseName,
+                                    sets.toInt(),
+                                    measurement1,
+                                    measurement2,
+                                    restTime.toInt()
+                                )
+
+                                exerciseName = ""
+                                sets = ""
+                                measurementType1 = ""
+                                measurementType2 = ""
+                                measurementValues1 = mutableListOf()
+                                measurementValues2 = mutableListOf()
+                                restTime = ""
+                            }) {
+                            Text("Add", style = MaterialTheme.typography.bodyLarge)
+                        }
                     }
                 }
             }
@@ -398,7 +441,7 @@ fun MeasurementSelection(
                     value = values[index],
                     onValueChange = { it: String -> updateValue(index, it) },
                     label = { Text("Set ${index + 1}") },
-                    modifier = Modifier.fillMaxWidth(0.8f)
+                    modifier = Modifier.fillMaxWidth(0.95f)
                 )
             }
         }
