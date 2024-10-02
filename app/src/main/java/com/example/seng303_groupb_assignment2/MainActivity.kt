@@ -27,10 +27,8 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.seng303_groupb_assignment2.screens.AddExerciseScreen
 import com.example.seng303_groupb_assignment2.screens.AddWorkout
 import com.example.seng303_groupb_assignment2.screens.Home
-import com.example.seng303_groupb_assignment2.screens.ExerciseListScreen
 import com.example.seng303_groupb_assignment2.screens.RunWorkout
 import com.example.seng303_groupb_assignment2.screens.ViewLeaderboard
 import com.example.seng303_groupb_assignment2.screens.ViewProgress
@@ -76,12 +74,6 @@ class MainActivity : ComponentActivity() {
                             composable("Leaderboard") {
                                 currentTitle = "Leaderboard"
                                 ViewLeaderboard(navController = navController)
-                            }
-                            composable("AddExercise") {
-                                AddExerciseScreen(viewModel = viewModel)
-                            }
-                            composable("ExerciseList") {
-                                ExerciseListScreen(viewModel = viewModel)
                             }
                         }
                     }
