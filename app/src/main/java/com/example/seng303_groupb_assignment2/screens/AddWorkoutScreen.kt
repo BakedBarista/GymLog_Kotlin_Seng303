@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.paddingFrom
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -61,7 +63,6 @@ fun AddWorkout(
     viewModel: ManageWorkoutViewModel,
 ) {
     // TODO - replace ui text with string resources
-
     var modalOpen by rememberSaveable { mutableStateOf(false) }
     AddExerciseModal(
         modalOpen = modalOpen,
@@ -97,7 +98,7 @@ private fun AddExerciseModal(
     exerciseModel: ExerciseModalViewModel = viewModel(),
     modalOpen: Boolean,
     closeModal: () -> Unit,
-    addExercise: (String, Int, Measurement, Measurement, Int) -> Unit
+    addExercise: (String, Int, Measurement, Measurement, Int?) -> Unit
 ) {
     if (modalOpen) {
         Dialog(onDismissRequest = { closeModal() }) {
@@ -117,20 +118,21 @@ private fun AddExerciseModal(
                         value = exerciseModel.exerciseName,
                         onValueChange = { exerciseModel.updateExerciseName(it) },
                         label = { Text("Exercise name") },
+                        isError = !exerciseModel.validExerciseName(),
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
 
                     TextField(
                         value = exerciseModel.sets,
-                        onValueChange =
-                        {
+                        onValueChange = {
                             if (it.isBlank() || it.toIntOrNull() != null) {
                                 exerciseModel.updateSets(it)
                             }
                         },
                         label = { Text("Sets") },
+                        isError = !exerciseModel.validSetValue(),
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -155,12 +157,12 @@ private fun AddExerciseModal(
                         options = listOf("Weight", "Distance"),
                         updateOption = { exerciseModel.updateMeasurementType2(it) },
                         sets = exerciseModel.sets,
-                        values = exerciseModel.measurementValues1,
+                        values = exerciseModel.measurementValues2,
                         updateValue = { index, newValue ->
                             val measurementValues2 = exerciseModel.measurementValues2.toMutableList().apply {
                                 this[index] = newValue
                             }
-                            exerciseModel.updateMeasurementValues1(measurementValues2)
+                            exerciseModel.updateMeasurementValues2(measurementValues2)
                         }
                     )
 
@@ -170,6 +172,7 @@ private fun AddExerciseModal(
                         value = exerciseModel.restTime,
                         onValueChange = { exerciseModel.updateRestTime(it) },
                         label = { Text("Rest time") },
+                        isError = !exerciseModel.validRestTime(),
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -184,11 +187,11 @@ private fun AddExerciseModal(
                             modifier = Modifier.padding(paddingValues = PaddingValues(horizontal = 8.dp)),
                             colors = buttonColors,
                             shape = RectangleShape,
-                            onClick =
-                            {
+                            onClick = {
                                 closeModal()
                                 exerciseModel.clearSavedInfo()
-                            }) { Text("Cancel", style = MaterialTheme.typography.bodyLarge) }
+                            }
+                        ) { Text("Cancel", style = MaterialTheme.typography.bodyLarge) }
                         Button(
                             colors = buttonColors,
                             shape = RectangleShape,
@@ -203,12 +206,18 @@ private fun AddExerciseModal(
                                         type = exerciseModel.measurementType1,
                                         values = exerciseModel.measurementValues2.toList().map { it.toFloat() }
                                     )
+
+                                    var restTime: Int? = null;
+                                    if (exerciseModel.restTime.isNotBlank()) {
+                                        restTime = exerciseModel.restTime.toInt()
+                                    }
+
                                     addExercise(
                                         exerciseModel.exerciseName,
                                         exerciseModel.sets.toInt(),
                                         measurement1,
                                         measurement2,
-                                        exerciseModel.restTime.toInt()
+                                        restTime
                                     )
 
                                     closeModal()
@@ -269,7 +278,6 @@ private fun AddExerciseRow (
 private fun DisplayExerciseList (
     exercises: List<Exercise>
 ) {
-    // TODO give this a fixed height
     LazyColumn(
         modifier = Modifier
             .fillMaxHeight(0.75f)
@@ -398,18 +406,19 @@ fun MeasurementSelection(
         }
     }
 
-    if (sets.isNotBlank() && values.size == sets.toInt()) {
+    if (sets.isNotBlank()) {
         LazyColumn(
             modifier = Modifier
                 .padding(8.dp)
-                .height(100.dp)
+                .heightIn(max = 100.dp)
         ) {
             items(sets.toInt()) { index ->
                 TextField(
                     value = values[index],
                     onValueChange = { it: String -> updateValue(index, it) },
-                    label = { Text("Set ${index + 1}") },
-                    modifier = Modifier.fillMaxWidth(0.95f)
+                    isError = values[index].toFloatOrNull() == null,
+                    label = { Text("Set ${index + 1} (${options[selectedIndex]})") },
+                    modifier = Modifier.fillMaxWidth(0.95f).padding(vertical = 3.dp)
                 )
             }
         }

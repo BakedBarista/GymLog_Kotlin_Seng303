@@ -10,5 +10,5 @@ data class Exercise(
     val sets: Int? = null,
     val measurement1: Measurement,
     val measurement2: Measurement,
-    val restTime: Int
+    val restTime: Int?
 )

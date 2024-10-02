@@ -24,7 +24,7 @@ class ManageWorkoutViewModel: ViewModel() {
         sets: Int,
         measurement1: Measurement,
         measurement2: Measurement,
-        restTime: Int
+        restTime: Int?
     ) {
         val exercise = Exercise(
             name = name,

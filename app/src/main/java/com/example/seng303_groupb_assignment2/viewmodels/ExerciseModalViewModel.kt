@@ -43,7 +43,7 @@ class ExerciseModalViewModel(
             val setsSize = sets.toInt()
             val measurementValues1 = measurementValues1.toMutableList().apply {
                 while (size != setsSize) {
-                    if (size < setsSize) add("0")
+                    if (size < setsSize) add("")
                     else removeLast()
                 }
             }
@@ -51,7 +51,7 @@ class ExerciseModalViewModel(
 
             val measurementValues2 = measurementValues2.toMutableList().apply {
                 while (size != setsSize) {
-                    if (size < setsSize) add("0")
+                    if (size < setsSize) add("")
                     else removeLast()
                 }
             }
@@ -104,5 +104,9 @@ class ExerciseModalViewModel(
 
     fun validRestTime(): Boolean {
         return restTime.isBlank() || restTime.toIntOrNull() != null
+    }
+
+    fun validExerciseName(): Boolean {
+        return exerciseName.isNotBlank()
     }
 }

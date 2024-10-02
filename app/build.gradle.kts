@@ -71,8 +71,9 @@ dependencies {
     implementation(libs.androidx.room.paging)
 
     // Koin for view models
-    implementation("io.insert-koin:koin-android:3.4.0")
-    implementation("io.insert-koin:koin-androidx-compose:3.4.0")
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
+
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
