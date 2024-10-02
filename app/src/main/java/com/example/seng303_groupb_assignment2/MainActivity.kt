@@ -30,6 +30,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.seng303_groupb_assignment2.screens.AddWorkout
 import com.example.seng303_groupb_assignment2.screens.Home
 import com.example.seng303_groupb_assignment2.screens.RunWorkout
+import com.example.seng303_groupb_assignment2.screens.SelectWorkout
 import com.example.seng303_groupb_assignment2.screens.ViewLeaderboard
 import com.example.seng303_groupb_assignment2.screens.ViewProgress
 import com.example.seng303_groupb_assignment2.ui.theme.SENG303_GroupB_Assignment2Theme
@@ -59,9 +60,9 @@ class MainActivity : ComponentActivity() {
                                 currentTitle = "Home"
                                 Home(navController = navController)
                             }
-                            composable("Run") {
-                                currentTitle = "Run Workout"
-                                RunWorkout(navController = navController)
+                            composable("SelectWorkout") {
+                                currentTitle = "Select Workout"
+                                SelectWorkout(navController = navController)
                             }
                             composable("Add") {
                                 currentTitle = "Workout Builder"
@@ -92,10 +93,10 @@ fun CustomBottomAppBar(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            IconButton(onClick = { navController.navigate("Run") }) {
+            IconButton(onClick = { navController.navigate("SelectWorkout") }) {
                 Icon(
                     painter = painterResource(id = R.drawable.run),
-                    contentDescription = "Run"
+                    contentDescription = "Select Workout"
                 )
             }
             IconButton(onClick = { navController.navigate("Add") }) {
