@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">SENG303_GroupB_Assignment2</string>
+    <string name="start_workout">Start Workout</string>
+    <string name="edit_workout">Edit Workout</string>
+    <string name="delete_workout">Delete Workout</string>
+    <string name="collapse">Collapse</string>
+    <string name="expand">Expand</string>
+    <string name="edit_workout_title">Edit Workout</string>
+    <string name="workout_name">Workout Name</string>
+    <string name="description">Description</string>
+    <string name="schedule">Schedule</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
 </resources>

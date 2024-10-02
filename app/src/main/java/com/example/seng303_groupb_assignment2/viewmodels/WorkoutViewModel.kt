@@ -10,6 +10,7 @@ import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.entities.Workout
 import com.example.seng303_groupb_assignment2.entities.WorkoutExerciseCrossRef
 import com.example.seng303_groupb_assignment2.entities.WorkoutWithExercises
+import com.example.seng303_groupb_assignment2.enums.Days
 import kotlinx.coroutines.launch
 
 class WorkoutViewModel(
@@ -83,13 +84,13 @@ class WorkoutViewModel(
         val workout = Workout(
             name = "Morning Routine",
             description = "A full-body workout to start the day",
-            schedule = "Mon, Wed, Fri"
+            schedule = listOf(Days.MONDAY, Days.WEDNESDAY, Days.FRIDAY)
         )
 
         val workoutTwo = Workout(
             name = "Weekend Run",
             description = "Quick weekend run",
-            schedule = "Sat"
+            schedule = listOf(Days.SATURDAY)
         )
 
         val workoutId = workoutDao.upsertWorkout(workout)

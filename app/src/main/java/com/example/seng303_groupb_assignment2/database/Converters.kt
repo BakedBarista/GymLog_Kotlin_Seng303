@@ -1,6 +1,7 @@
 package com.example.seng303_groupb_assignment2.database
 
 import androidx.room.TypeConverter
+import com.example.seng303_groupb_assignment2.enums.Days
 
 /**
  * This is used to convert to and from lists - looks like Rooms does not support list storage
@@ -27,5 +28,15 @@ class Converters {
     @TypeConverter
     fun toFloatList(value: String?): List<Float>? {
         return value?.split(",")?.map { it.toFloat() }
+    }
+
+    @TypeConverter
+    fun fromDayList(value: List<Days>?): String? {
+        return value?.joinToString(separator = ",") { it.name }
+    }
+
+    @TypeConverter
+    fun toDayList(value: String?): List<Days>? {
+        return value?.split(",")?.map { Days.valueOf(it) }
     }
 }
