@@ -71,7 +71,6 @@ fun SelectWorkout(
                     workoutViewModel.editWorkout(workout)
                 },
                 onDeleteWorkout = { workoutViewModel.deleteWorkout(workoutWithExercises.workout) },
-                onExpandWorkout = { /* Expand card to show details */ },
                 onEditExercise = { exercise ->
                     exerciseViewModel.editExercise(exercise)
                 },
@@ -87,7 +86,6 @@ fun WorkoutItem(
     onStartWorkout: () -> Unit,
     onEditWorkout: (Workout) -> Unit,
     onDeleteWorkout: () -> Unit,
-    onExpandWorkout: () -> Unit,
     onEditExercise: (Exercise) -> Unit,
     onDeleteExercise: (Exercise) -> Unit
 ) {
@@ -110,7 +108,7 @@ fun WorkoutItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .clickable { onStartWorkout() },
+            .clickable { expanded = !expanded },
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -129,10 +127,10 @@ fun WorkoutItem(
                     overflow = TextOverflow.Ellipsis
                 )
                 Row {
-                    IconButton(onClick = { expanded = !expanded }) {
+                    IconButton(onClick = onStartWorkout ) {
                         Icon(
-                            painter = painterResource(id = if (expanded) R.drawable.expand_less else R.drawable.expand_more),
-                            contentDescription = if (expanded) stringResource(R.string.collapse) else stringResource(R.string.expand)
+                            painter = painterResource(id = R.drawable.play_arrow),
+                            contentDescription = stringResource(R.string.start_workout)
                         )
                     }
                     IconButton(onClick = { showDropdownMenu = true }) {
