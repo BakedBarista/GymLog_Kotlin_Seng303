@@ -128,7 +128,7 @@ fun CustomBottomAppBar(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            AppBarIconButton(navController, "Run", R.drawable.run, "Run")
+            AppBarIconButton(navController, "SelectWorkout", R.drawable.run, "Select Workout")
             AppBarIconButton(navController, "Add", R.drawable.add, "Add")
             AppBarIconButton(navController, "Home", R.drawable.home, "Home")
             AppBarIconButton(navController, "Progress", R.drawable.progress, "Progress")
@@ -149,7 +149,7 @@ fun CustomSideBar(
             .fillMaxHeight()
             .padding(8.dp)
     ) {
-        AppBarIconButton(navController, "Run", R.drawable.run, "Run")
+        AppBarIconButton(navController, "SelectWorkout", R.drawable.run, "Select Workout")
         AppBarIconButton(navController, "Add", R.drawable.add, "Add")
         AppBarIconButton(navController, "Home", R.drawable.home, "Home")
         AppBarIconButton(navController, "Progress", R.drawable.progress, "Progress")
