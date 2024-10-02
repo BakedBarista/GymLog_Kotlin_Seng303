@@ -33,13 +33,17 @@ import com.example.seng303_groupb_assignment2.screens.RunWorkout
 import com.example.seng303_groupb_assignment2.screens.ViewLeaderboard
 import com.example.seng303_groupb_assignment2.screens.ViewProgress
 import com.example.seng303_groupb_assignment2.ui.theme.SENG303_GroupB_Assignment2Theme
+import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
+import org.koin.androidx.viewmodel.ext.android.viewModel as koinViewModel
 
 class MainActivity : ComponentActivity() {
+    private val viewModel: ExerciseViewModel by koinViewModel()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             SENG303_GroupB_Assignment2Theme {
+
                 val navController = rememberNavController()
 
                 // TODO - make this use string resources instead of hard coded string literals

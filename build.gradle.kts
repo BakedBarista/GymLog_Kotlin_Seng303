@@ -2,4 +2,6 @@
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.jetbrains.kotlin.android) apply false
+    // adding KSP plugin as a replacement for kapt
+    id("com.google.devtools.ksp") version "1.9.22-1.0.17" apply false
 }
