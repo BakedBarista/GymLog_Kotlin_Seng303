@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -59,9 +60,18 @@ class MainActivity : ComponentActivity() {
                                 currentTitle = "Home"
                                 Home(navController = navController)
                             }
-                            composable("Run") {
+                            composable("Run?workoutId={workoutId}") { backStackEntry ->
+                                val workoutId = backStackEntry.arguments?.getString("workoutId")?.toLong()
                                 currentTitle = "Run Workout"
-                                RunWorkout(navController = navController)
+                                workoutId?.let { id ->
+                                    viewModel.loadWorkoutWithExercises(id)
+
+                                    val workoutWithExercises by viewModel.workoutWithExercises.observeAsState()
+
+                                    workoutWithExercises?.let {
+                                        RunWorkout(navController = navController, workoutWithExercises = it)
+                                    }
+                                }
                             }
                             composable("Add") {
                                 currentTitle = "Workout Builder"
