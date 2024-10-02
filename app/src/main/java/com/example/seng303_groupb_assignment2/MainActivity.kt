@@ -27,7 +27,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.seng303_groupb_assignment2.models.ManageWorkoutViewModel
+import com.example.seng303_groupb_assignment2.viewmodels.ManageWorkoutViewModel
 import com.example.seng303_groupb_assignment2.screens.AddWorkout
 import com.example.seng303_groupb_assignment2.screens.Home
 import com.example.seng303_groupb_assignment2.screens.RunWorkout
@@ -44,7 +44,6 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             SENG303_GroupB_Assignment2Theme {
-
                 val navController = rememberNavController()
 
                 // TODO - make this use string resources instead of hard coded string literals
