@@ -8,9 +8,7 @@ data class Exercise(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
     val sets: Int? = null,
-    val reps: List<Int>? = null,
-    val weight: List<Float>? = null,
-    val distance: Float? = null,
-    val time: Float? = null,
+    val measurement1: Measurement,
+    val measurement2: Measurement,
     val restTime: Int
 )

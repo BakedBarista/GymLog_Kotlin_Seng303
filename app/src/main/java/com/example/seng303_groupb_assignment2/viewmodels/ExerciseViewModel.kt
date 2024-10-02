@@ -14,16 +14,14 @@ class ExerciseViewModel(application: Application) : AndroidViewModel(application
 
     val allExercises: LiveData<List<Exercise>> = exerciseDao.getAllExercises().asLiveData()
 
-    fun addExercise(name: String, sets: Int, reps: Int?, weight: Float?, distance: Float?, time: Float?, restTime: Int) {
+    fun addExercise(workoutViewModel: ManageWorkoutViewModel) {
         viewModelScope.launch {
             val newExercise = Exercise(
-                name = name,
-                sets = sets,
-                reps = reps?.let { listOf(it) },
-                weight = weight?.let { listOf(it) },
-                distance = distance,
-                time = time,
-                restTime = restTime
+                name = workoutViewModel.name,
+                sets = workoutViewModel.sets,
+                measurement1 = workoutViewModel.measurement1,
+                measurement2 = workoutViewModel.measurement2,
+                restTime = workoutViewModel.restTime
             )
             exerciseDao.upsertExercise(newExercise)
         }
