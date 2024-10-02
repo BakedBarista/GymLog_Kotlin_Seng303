@@ -1,9 +1,7 @@
 package com.example.seng303_groupb_assignment2.screens
 
 import ExerciseModalViewModel
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,19 +15,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.paddingFrom
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -46,9 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -63,10 +53,10 @@ fun AddWorkout(
     viewModel: ManageWorkoutViewModel,
 ) {
     // TODO - replace ui text with string resources
-    var modalOpen by rememberSaveable { mutableStateOf(false) }
+    var addModalOpen by rememberSaveable { mutableStateOf(false) }
     AddExerciseModal(
-        modalOpen = modalOpen,
-        closeModal = { modalOpen = false },
+        modalOpen = addModalOpen,
+        closeModal = { addModalOpen = false },
         addExercise = { name, sets, m1, m2, restTime -> viewModel.addExercise(name, sets, m1, m2, restTime) }
     )
 
@@ -81,11 +71,11 @@ fun AddWorkout(
 
         Spacer(modifier = Modifier.padding(15.dp))
 
-        AddExerciseRow(openAddExerciseModal = { modalOpen = true } )
+        AddExerciseRow(openAddExerciseModal = { addModalOpen = true } )
 
         Spacer(modifier = Modifier.padding(10.dp))
 
-        DisplayExerciseList(viewModel.exercises)
+        DisplayExerciseList(viewModel)
 
         Spacer(modifier = Modifier.padding(10.dp))
 
@@ -276,7 +266,7 @@ private fun AddExerciseRow (
 
 @Composable
 private fun DisplayExerciseList (
-    exercises: List<Exercise>
+    viewModel: ManageWorkoutViewModel
 ) {
     LazyColumn(
         modifier = Modifier
@@ -284,9 +274,12 @@ private fun DisplayExerciseList (
             .fillMaxWidth(0.9f),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        exercises.forEachIndexed() { index, exercise ->
+        viewModel.exercises.forEachIndexed { index, exercise ->
             item {
-                DisplayExerciseCard(exercise)
+                DisplayExerciseCard(
+                    exercise = exercise,
+                    delete = { viewModel.deleteExercise(index) }
+                )
             }
         }
     }
@@ -294,7 +287,8 @@ private fun DisplayExerciseList (
 
 @Composable
 private fun DisplayExerciseCard(
-    exercise: Exercise
+    exercise: Exercise,
+    delete: () -> Unit
 ) {
     Card {
         Row(modifier = Modifier
@@ -305,7 +299,7 @@ private fun DisplayExerciseCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(text = exercise.name, style = MaterialTheme.typography.bodyLarge)
-            IconButton(onClick = { /*TODO*/ }) {
+            IconButton(onClick = { delete() }) {
                 Icon(
                     painter = painterResource(id = R.drawable.delete),
                     contentDescription = "Delete"
@@ -418,7 +412,9 @@ fun MeasurementSelection(
                     onValueChange = { it: String -> updateValue(index, it) },
                     isError = values[index].toFloatOrNull() == null,
                     label = { Text("Set ${index + 1} (${options[selectedIndex]})") },
-                    modifier = Modifier.fillMaxWidth(0.95f).padding(vertical = 3.dp)
+                    modifier = Modifier
+                        .fillMaxWidth(0.95f)
+                        .padding(vertical = 3.dp)
                 )
             }
         }

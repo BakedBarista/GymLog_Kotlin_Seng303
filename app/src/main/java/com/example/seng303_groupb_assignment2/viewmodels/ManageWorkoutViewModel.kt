@@ -2,6 +2,7 @@ package com.example.seng303_groupb_assignment2.viewmodels
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -16,7 +17,7 @@ class ManageWorkoutViewModel: ViewModel() {
         name = newName
     }
 
-    var exercises: MutableList<Exercise> = mutableListOf()
+    var exercises = mutableStateListOf<Exercise>()
         private set
 
     fun addExercise(
@@ -35,5 +36,9 @@ class ManageWorkoutViewModel: ViewModel() {
         )
 
         exercises.add(exercise)
+    }
+
+    fun deleteExercise(index: Int) {
+        exercises.removeAt(index)
     }
 }
