@@ -16,18 +16,6 @@ class ManageWorkoutViewModel: ViewModel() {
         name = newName
     }
 
-    var sets by mutableIntStateOf(0)
-        private set
-
-    var measurement1: Measurement by mutableStateOf(Measurement(type = "", values = listOf()))
-        private set
-
-    var measurement2: Measurement by mutableStateOf(Measurement(type = "", values = listOf()))
-        private set
-
-    var restTime by mutableIntStateOf(0)
-        private set
-
     var exercises: MutableList<Exercise> = mutableListOf()
         private set
 

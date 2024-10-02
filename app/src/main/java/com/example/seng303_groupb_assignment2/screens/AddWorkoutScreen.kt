@@ -1,5 +1,6 @@
 package com.example.seng303_groupb_assignment2.screens
 
+import ExerciseModalViewModel
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -47,6 +48,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.seng303_groupb_assignment2.R
 import com.example.seng303_groupb_assignment2.entities.Exercise
@@ -59,13 +61,12 @@ fun AddWorkout(
     viewModel: ManageWorkoutViewModel,
 ) {
     // TODO - replace ui text with string resources
-    // TODO - user rememberBy to handle orientation changes
 
     var modalOpen by rememberSaveable { mutableStateOf(false) }
     AddExerciseModal(
-        modalOpen,
+        modalOpen = modalOpen,
         closeModal = { modalOpen = false },
-        { name, sets, m1, m2, restTime -> viewModel.addExercise(name, sets, m1, m2, restTime) }
+        addExercise = { name, sets, m1, m2, restTime -> viewModel.addExercise(name, sets, m1, m2, restTime) }
     )
 
     Column(
@@ -83,29 +84,21 @@ fun AddWorkout(
 
         Spacer(modifier = Modifier.padding(10.dp))
 
-        // List of exercises that have been added to the workout
         DisplayExerciseList(viewModel.exercises)
 
         Spacer(modifier = Modifier.padding(10.dp))
 
-        CancelAndSaveRow()
+        CancelAndSaveRow(cancel = { navController.navigate("Home") })
     }
 }
 
 @Composable
 private fun AddExerciseModal(
+    exerciseModel: ExerciseModalViewModel = viewModel(),
     modalOpen: Boolean,
     closeModal: () -> Unit,
     addExercise: (String, Int, Measurement, Measurement, Int) -> Unit
 ) {
-    var exerciseName by rememberSaveable { mutableStateOf("") }
-    var sets by rememberSaveable { mutableStateOf("") }
-    var measurementType1 by rememberSaveable { mutableStateOf("") }
-    var measurementValues1 by rememberSaveable { mutableStateOf(listOf<String>()) }
-    var measurementType2 by rememberSaveable { mutableStateOf("") }
-    var measurementValues2 by rememberSaveable { mutableStateOf(listOf<String>()) }
-    var restTime by rememberSaveable { mutableStateOf("") }
-
     if (modalOpen) {
         Dialog(onDismissRequest = { closeModal() }) {
             Box(
@@ -121,8 +114,8 @@ private fun AddExerciseModal(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     TextField(
-                        value = exerciseName,
-                        onValueChange = { exerciseName = it },
+                        value = exerciseModel.exerciseName,
+                        onValueChange = { exerciseModel.updateExerciseName(it) },
                         label = { Text("Exercise name") },
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -130,29 +123,11 @@ private fun AddExerciseModal(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     TextField(
-                        value = sets,
+                        value = exerciseModel.sets,
                         onValueChange =
                         {
                             if (it.isBlank() || it.toIntOrNull() != null) {
-                                sets = it
-                            }
-
-                            if (sets.isNotBlank()) {
-                                val setsSize = sets.toInt()
-
-                                measurementValues1 = measurementValues1.toMutableList().apply {
-                                    while (size != setsSize) {
-                                        if (size < setsSize) add("0")
-                                        else removeLast()
-                                    }
-                                }
-
-                                measurementValues2 = measurementValues2.toMutableList().apply {
-                                    while (size != setsSize) {
-                                        if (size < setsSize) add("0")
-                                        else removeLast()
-                                    }
-                                }
+                                exerciseModel.updateSets(it)
                             }
                         },
                         label = { Text("Sets") },
@@ -163,13 +138,14 @@ private fun AddExerciseModal(
 
                     MeasurementSelection(
                         options = listOf("Reps", "Time"),
-                        updateOption = { measurementType1 = it },
-                        sets = sets,
-                        values = measurementValues1,
+                        updateOption = { exerciseModel.updateMeasurementType1(it) },
+                        sets = exerciseModel.sets,
+                        values = exerciseModel.measurementValues1,
                         updateValue = { index, newValue ->
-                            measurementValues1 = measurementValues1.toMutableList().apply {
+                            val measurementValues1 = exerciseModel.measurementValues1.toMutableList().apply {
                                 this[index] = newValue
                             }
+                            exerciseModel.updateMeasurementValues1(measurementValues1)
                         }
                     )
 
@@ -177,21 +153,22 @@ private fun AddExerciseModal(
 
                     MeasurementSelection(
                         options = listOf("Weight", "Distance"),
-                        updateOption = { measurementType2 = it },
-                        sets = sets,
-                        values = measurementValues2,
+                        updateOption = { exerciseModel.updateMeasurementType2(it) },
+                        sets = exerciseModel.sets,
+                        values = exerciseModel.measurementValues1,
                         updateValue = { index, newValue ->
-                            measurementValues2 = measurementValues2.toMutableList().apply {
+                            val measurementValues2 = exerciseModel.measurementValues2.toMutableList().apply {
                                 this[index] = newValue
                             }
+                            exerciseModel.updateMeasurementValues1(measurementValues2)
                         }
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
 
                     TextField(
-                        value = restTime,
-                        onValueChange = { restTime = it },
+                        value = exerciseModel.restTime,
+                        onValueChange = { exerciseModel.updateRestTime(it) },
                         label = { Text("Rest time") },
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -210,45 +187,33 @@ private fun AddExerciseModal(
                             onClick =
                             {
                                 closeModal()
-                                exerciseName = ""
-                                sets = ""
-                                measurementType1 = ""
-                                measurementType2 = ""
-                                measurementValues1 = mutableListOf()
-                                measurementValues2 = mutableListOf()
-                                restTime = ""
+                                exerciseModel.clearSavedInfo()
                             }) { Text("Cancel", style = MaterialTheme.typography.bodyLarge) }
                         Button(
                             colors = buttonColors,
                             shape = RectangleShape,
                             onClick =
                             {
-                                closeModal()
-                                // TODO wait time and error checking
+                                if (exerciseModel.validMeasurementValues() && exerciseModel.validSetValue() && exerciseModel.validRestTime()) {
+                                    val measurement1 = Measurement(
+                                        type = exerciseModel.measurementType1,
+                                        values = exerciseModel.measurementValues1.toList().map { it.toFloat() }
+                                    )
+                                    val measurement2 = Measurement(
+                                        type = exerciseModel.measurementType1,
+                                        values = exerciseModel.measurementValues2.toList().map { it.toFloat() }
+                                    )
+                                    addExercise(
+                                        exerciseModel.exerciseName,
+                                        exerciseModel.sets.toInt(),
+                                        measurement1,
+                                        measurement2,
+                                        exerciseModel.restTime.toInt()
+                                    )
 
-                                val measurement1 = Measurement(
-                                    type = measurementType1,
-                                    values = measurementValues1.toList().map { it.toFloat() }
-                                )
-                                val measurement2 = Measurement(
-                                    type = measurementType1,
-                                    values = measurementValues2.toList().map { it.toFloat() }
-                                )
-                                addExercise(
-                                    exerciseName,
-                                    sets.toInt(),
-                                    measurement1,
-                                    measurement2,
-                                    restTime.toInt()
-                                )
-
-                                exerciseName = ""
-                                sets = ""
-                                measurementType1 = ""
-                                measurementType2 = ""
-                                measurementValues1 = mutableListOf()
-                                measurementValues2 = mutableListOf()
-                                restTime = ""
+                                    closeModal()
+                                    exerciseModel.clearSavedInfo()
+                                }
                             }) {
                             Text("Add", style = MaterialTheme.typography.bodyLarge)
                         }
@@ -324,7 +289,10 @@ private fun DisplayExerciseCard(
     exercise: Exercise
 ) {
     Card {
-        Row(modifier = Modifier.fillMaxWidth(0.9f).height(100.dp).padding(16.dp),
+        Row(modifier = Modifier
+            .fillMaxWidth(0.9f)
+            .height(100.dp)
+            .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -347,7 +315,7 @@ private fun DisplayExerciseCard(
 
 @Composable
 private fun CancelAndSaveRow (
-
+    cancel: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(0.8f),
@@ -360,7 +328,7 @@ private fun CancelAndSaveRow (
 
         // cancel
         Button(
-            onClick = { /*TODO cancel */ },
+            onClick = { cancel() },
             colors = buttonColors,
             shape = RectangleShape
         ) {
