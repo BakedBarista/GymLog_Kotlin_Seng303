@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.seng303_groupb_assignment2.R
+import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.entities.Measurement
 import com.example.seng303_groupb_assignment2.viewmodels.ManageWorkoutViewModel
 
@@ -81,7 +83,7 @@ fun AddWorkout(
         Spacer(modifier = Modifier.padding(10.dp))
 
         // List of exercises that have been added to the workout
-        DisplayExerciseList()
+        DisplayExerciseList(viewModel.exercises)
 
         Spacer(modifier = Modifier.padding(10.dp))
 
@@ -98,9 +100,9 @@ private fun AddExerciseModal(
     var exerciseName by rememberSaveable { mutableStateOf("") }
     var sets by rememberSaveable { mutableStateOf("") }
     var measurementType1 by rememberSaveable { mutableStateOf("") }
-    var measurementValues1 by rememberSaveable { mutableStateOf(listOf<Float>()) }
+    var measurementValues1 by rememberSaveable { mutableStateOf(mutableListOf<String>()) }
     var measurementType2 by rememberSaveable { mutableStateOf("") }
-    val measurementValues2 by rememberSaveable { mutableStateOf(listOf<Float>()) }
+    var measurementValues2 by rememberSaveable { mutableStateOf(mutableListOf<String>()) }
 
     if (modalOpen) {
         Dialog(onDismissRequest = { closeModal() }) {
@@ -112,7 +114,7 @@ private fun AddExerciseModal(
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "Add Exercise", style = MaterialTheme.typography.bodyLarge)
+                    Text(text = "Add Exercise", style = MaterialTheme.typography.bodyLarge, color = Color.Black)
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -134,10 +136,20 @@ private fun AddExerciseModal(
                             }
 
                             if (sets.isNotBlank()) {
-                                for (i in 0 until sets.toInt()) {
-//                                    if (measurementValues1.size < sets) {
-//                                        measurementValues1.add("0")
-//                                    }
+                                val setsSize = sets.toInt()
+
+                                measurementValues1 = measurementValues1.toMutableList().apply {
+                                    while (size != setsSize) {
+                                        if (size < setsSize) add("0")
+                                        else removeLast()
+                                    }
+                                }
+
+                                measurementValues2 = measurementValues2.toMutableList().apply {
+                                    while (size != setsSize) {
+                                        if (size < setsSize) add("0")
+                                        else removeLast()
+                                    }
                                 }
                             }
                         },
@@ -153,11 +165,8 @@ private fun AddExerciseModal(
                         sets = sets,
                         values = measurementValues1,
                         updateValue = { index, newValue ->
-                            if (index in measurementValues1.indices) {
-                                val updatedList = measurementValues1.toMutableList().apply {
-                                    this[index] = newValue.toFloat()
-                                }
-                                measurementValues1 = updatedList
+                            measurementValues1 = measurementValues1.toMutableList().apply {
+                                this[index] = newValue
                             }
                         }
                     )
@@ -170,11 +179,8 @@ private fun AddExerciseModal(
                         sets = sets,
                         values = measurementValues2,
                         updateValue = { index, newValue ->
-                            if (index in measurementValues1.indices) {
-                                val updatedList = measurementValues1.toMutableList().apply {
-                                    this[index] = newValue.toFloat()
-                                }
-                                measurementValues1 = updatedList
+                            measurementValues2 = measurementValues2.toMutableList().apply {
+                                this[index] = newValue
                             }
                         }
                     )
@@ -187,11 +193,11 @@ private fun AddExerciseModal(
 
                         val measurement1 = Measurement(
                             type = measurementType1,
-                            values = measurementValues1
+                            values = measurementValues1.toList().map { it.toFloat() }
                         )
                         val measurement2 = Measurement(
                             type = measurementType1,
-                            values = measurementValues2
+                            values = measurementValues2.toList().map { it.toFloat() }
                         )
                         addExercise(
                             exerciseName,
@@ -253,23 +259,47 @@ private fun AddExerciseRow (
 
 @Composable
 private fun DisplayExerciseList (
-
+    exercises: List<Exercise>
 ) {
     // TODO give this a fixed height
     LazyColumn(
         modifier = Modifier
             .fillMaxHeight(0.75f)
-            .fillMaxWidth(0.9f)
+            .fillMaxWidth(0.9f),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // TODO for each exercise added
+        exercises.forEachIndexed() { index, exercise ->
+            item {
+                DisplayExerciseCard(exercise)
+            }
+        }
     }
 }
 
 @Composable
 private fun DisplayExerciseCard(
-
+    exercise: Exercise
 ) {
-
+    Card {
+        Row(modifier = Modifier.fillMaxWidth(0.9f).height(100.dp).padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = exercise.name, style = MaterialTheme.typography.bodyLarge)
+            IconButton(onClick = { /*TODO*/ }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.delete),
+                    contentDescription = "Delete"
+                )
+            }
+            IconButton(onClick = { /*TODO*/ }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.edit),
+                    contentDescription = "Edit"
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -312,7 +342,7 @@ fun MeasurementSelection(
     options: List<String>,
     updateOption: (String) -> Unit,
     sets: String,
-    values: List<Float>,
+    values: List<String>,
     updateValue: (Int, String) -> Unit
 ) {
     var open by rememberSaveable { mutableStateOf(false) }
@@ -357,15 +387,17 @@ fun MeasurementSelection(
         }
     }
 
-    LazyColumn(
-        modifier = Modifier.padding(16.dp)
-    ) {
-        if (sets.isNotBlank()) {
+    if (sets.isNotBlank() && values.size == sets.toInt()) {
+        LazyColumn(
+            modifier = Modifier
+                .padding(8.dp)
+                .height(100.dp)
+        ) {
             items(sets.toInt()) { index ->
                 TextField(
-                    value = values[index].toString(),
+                    value = values[index],
                     onValueChange = { it: String -> updateValue(index, it) },
-                    label = { Text("Set $index") },
+                    label = { Text("Set ${index + 1}") },
                     modifier = Modifier.fillMaxWidth(0.8f)
                 )
             }
