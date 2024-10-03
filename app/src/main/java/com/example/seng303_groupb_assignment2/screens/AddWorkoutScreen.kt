@@ -1,6 +1,7 @@
 package com.example.seng303_groupb_assignment2.screens
 
 import ExerciseModalViewModel
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.scrollable
@@ -40,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -153,13 +155,16 @@ private fun AddExerciseRow (
 private fun DisplayExerciseList (
     viewModel: ManageWorkoutViewModel
 ) {
+    val configuration = LocalConfiguration.current
+    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+    val minHeight = if (isPortrait) 350.dp else 10.dp
+
     LazyColumn(
         modifier = Modifier
             .fillMaxHeight(0.75f)
             .fillMaxWidth(0.9f)
-            .heightIn(max = 300.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        contentPadding = PaddingValues(bottom = 5.dp)
+            .heightIn(min = minHeight, max = 350.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         viewModel.exercises.forEachIndexed { index, exercise ->
             item {
@@ -168,6 +173,7 @@ private fun DisplayExerciseList (
                     edit = { name, sets, m1, m2, restTime -> viewModel.updateExercise(index, name, sets, m1, m2, restTime) },
                     delete = { viewModel.deleteExercise(index) }
                 )
+                Spacer(modifier = Modifier.height(10.dp))
             }
         }
     }
@@ -386,9 +392,6 @@ private fun ManageExerciseModal(
                         Text(text = context.getString(R.string.exercises_modal_title),
                             style = MaterialTheme.typography.bodyLarge,
                             color = Color.Black)
-                    }
-
-                    item {
                         Spacer(modifier = Modifier.height(16.dp))
                     }
 
@@ -400,9 +403,6 @@ private fun ManageExerciseModal(
                             isError = !exerciseModel.validExerciseName(),
                             modifier = Modifier.fillMaxWidth()
                         )
-                    }
-
-                    item {
                         Spacer(modifier = Modifier.height(4.dp))
                     }
 
@@ -418,9 +418,6 @@ private fun ManageExerciseModal(
                             isError = !exerciseModel.validSetValue(),
                             modifier = Modifier.fillMaxWidth()
                         )
-                    }
-
-                    item {
                         Spacer(modifier = Modifier.height(8.dp))
                     }
 
@@ -437,9 +434,6 @@ private fun ManageExerciseModal(
                                 exerciseModel.updateMeasurementValues1(measurementValues1)
                             }
                         )
-                    }
-
-                    item {
                         Spacer(modifier = Modifier.height(8.dp))
                     }
 
@@ -456,9 +450,6 @@ private fun ManageExerciseModal(
                                 exerciseModel.updateMeasurementValues2(measurementValues2)
                             }
                         )
-                    }
-
-                    item {
                         Spacer(modifier = Modifier.height(8.dp))
                     }
 
@@ -470,9 +461,6 @@ private fun ManageExerciseModal(
                             isError = !exerciseModel.validRestTime(),
                             modifier = Modifier.fillMaxWidth()
                         )
-                    }
-
-                    item {
                         Spacer(modifier = Modifier.height(16.dp))
                     }
 
