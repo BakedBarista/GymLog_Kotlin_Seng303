@@ -16,9 +16,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -38,13 +41,17 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -70,30 +77,55 @@ fun SelectWorkout(
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
-    val columns = if (isPortrait) 1 else 2
-
-    LazyVerticalGrid (
-        columns = if (isPortrait) GridCells.Fixed(1) else GridCells.Adaptive(minSize = 300.dp),
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(workouts) { workoutWithExercises ->
-            WorkoutItem(
-                workoutWithExercises = workoutWithExercises,
-                isPortrait = isPortrait,
-                onStartWorkout = { /* TODO - add a function to navigate to the run workout screen */ },
-                onEditWorkout = { workout ->
-                    workoutViewModel.editWorkout(workout)
-                },
-                onDeleteWorkout = { workoutViewModel.deleteWorkout(workoutWithExercises.workout) },
-                onEditExercise = { exercise ->
-                    exerciseViewModel.editExercise(exercise)
-                },
-                onDeleteExercise = { /* TODO - implement this */ }
-            )
+    if (isPortrait) {
+        // Vertical scroll in portrait mode
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(1),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(workouts) { workoutWithExercises ->
+                WorkoutItem(
+                    workoutWithExercises = workoutWithExercises,
+                    isPortrait = true,
+                    onStartWorkout = { /* TODO - add a function to navigate to the run workout screen */ },
+                    onEditWorkout = { workout ->
+                        workoutViewModel.editWorkout(workout)
+                    },
+                    onDeleteWorkout = { workoutViewModel.deleteWorkout(workoutWithExercises.workout) },
+                    onEditExercise = { exercise ->
+                        exerciseViewModel.editExercise(exercise)
+                    },
+                    onDeleteExercise = { /* TODO - implement this */ }
+                )
+            }
+        }
+    } else {
+        // Horizontal scroll in landscape mode
+        LazyRow(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(workouts) { workoutWithExercises ->
+                WorkoutItem(
+                    workoutWithExercises = workoutWithExercises,
+                    isPortrait = false,
+                    onStartWorkout = { /* TODO - add a function to navigate to the run workout screen */ },
+                    onEditWorkout = { workout ->
+                        workoutViewModel.editWorkout(workout)
+                    },
+                    onDeleteWorkout = { workoutViewModel.deleteWorkout(workoutWithExercises.workout) },
+                    onEditExercise = { exercise ->
+                        exerciseViewModel.editExercise(exercise)
+                    },
+                    onDeleteExercise = { /* TODO - implement this */ }
+                )
+            }
         }
     }
 }
@@ -108,13 +140,9 @@ fun WorkoutItem(
     onEditExercise: (Exercise) -> Unit,
     onDeleteExercise: (Exercise) -> Unit
 ) {
-    var isFlipped by rememberSaveable { mutableStateOf(false) }
     var expanded by rememberSaveable { mutableStateOf(false) }
     var showEditDialog by rememberSaveable { mutableStateOf(false) }
     var showDropdownMenu by rememberSaveable { mutableStateOf(false) }
-
-    val frontAlpha by animateFloatAsState(targetValue = if (isFlipped) 0f else 1f)
-    val backAlpha by animateFloatAsState(targetValue = if (isFlipped) 1f else 0f)
 
     if (showEditDialog) {
         EditWorkoutDialog(
@@ -127,188 +155,142 @@ fun WorkoutItem(
         )
     }
 
+    val expandedState = if (isPortrait) expanded else true
+
+    // This is really nasty. I am using this to calculate how much I need to offset the exercise column by
+    val headerHeightPx = remember { mutableFloatStateOf(0f) }
+    val density = LocalDensity.current
+
     Card(
         modifier = Modifier
-            .fillMaxWidth()
             .let {
-                if (isPortrait) it.padding(vertical = 8.dp) else it.fillMaxHeight().padding(8.dp)
+                if (isPortrait) {
+                    it.fillMaxWidth()
+                        .padding(8.dp)
+                } else {
+                    it.width(300.dp)
+                        .fillMaxHeight()
+                        .padding(8.dp)
+                }
             },
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
-        Box(modifier = Modifier.heightIn(max = 300.dp)) {
-            if (isPortrait) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = workoutWithExercises.workout.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(8.dp),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        IconButton(onClick = onStartWorkout) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.play_arrow),
-                                contentDescription = stringResource(R.string.start_workout)
-                            )
-                        }
-                        IconButton(onClick = { showDropdownMenu = true }) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.more_vert),
-                                contentDescription = stringResource(R.string.more_options)
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = showDropdownMenu,
-                            onDismissRequest = { showDropdownMenu = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.edit_workout)) },
-                                onClick = {
-                                    showEditDialog = true
-                                    showDropdownMenu = false
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.delete_workout)) },
-                                onClick = {
-                                    onDeleteWorkout()
-                                    showDropdownMenu = false
-                                }
-                            )
-                        }
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .onGloballyPositioned { coordinates ->
+                        // Getting the header height in pixels
+                        headerHeightPx.floatValue = coordinates.size.height.toFloat()
                     }
-
-                    ScheduleInformation(workoutWithExercises.workout.schedule)
-
-                    if (expanded) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = workoutWithExercises.workout.description,
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        )
-                        workoutWithExercises.exercises.forEach { exercise ->
-                            ExerciseItem(
-                                exercise = exercise,
-                                onEditExercise = { onEditExercise(exercise) },
-                                onDeleteExercise = { onDeleteExercise(exercise) }
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    IconButton(
-                        onClick = { expanded = !expanded },
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    ) {
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        text = workoutWithExercises.workout.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(8.dp),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    IconButton(onClick = onStartWorkout) {
                         Icon(
-                            painter = painterResource(id = if (expanded) R.drawable.expand_less else R.drawable.expand_more),
-                            contentDescription = if (expanded) stringResource(R.string.collapse) else stringResource(R.string.expand)
+                            painter = painterResource(id = R.drawable.play_arrow),
+                            contentDescription = stringResource(R.string.start_workout)
+                        )
+                    }
+                    IconButton(onClick = { showDropdownMenu = true }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.more_vert),
+                            contentDescription = stringResource(R.string.more_options)
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = showDropdownMenu,
+                        onDismissRequest = { showDropdownMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.edit_workout)) },
+                            onClick = {
+                                showEditDialog = true
+                                showDropdownMenu = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.delete_workout)) },
+                            onClick = {
+                                onDeleteWorkout()
+                                showDropdownMenu = false
+                            }
                         )
                     }
                 }
-            } else {
-                if (!isFlipped) {
-                    Column(
-                        modifier = Modifier
-                            .graphicsLayer { alpha = frontAlpha }
-                            .padding(16.dp)
-                            .fillMaxWidth()
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = workoutWithExercises.workout.name,
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(8.dp),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                ScheduleInformation(workoutWithExercises.workout.schedule)
+                if (!isPortrait) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    HorizontalDivider()
+                }
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .let {
+                        if (isPortrait) {
+                            val headerHeightDp = with(density) { headerHeightPx.value.toDp() }
+                            it.padding(
+                                top = headerHeightDp,
+                                start = 16.dp,
+                                end = 16.dp,
+                                bottom = 0.dp)
+                        } else {
+                            val headerHeightDp = with(density) { headerHeightPx.value.toDp() }
+                            it.padding(
+                                top = headerHeightDp,
+                                start = 16.dp,
+                                end = 16.dp,
+                                bottom = 16.dp
                             )
-                            IconButton(onClick = onStartWorkout) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.play_arrow),
-                                    contentDescription = stringResource(R.string.start_workout)
-                                )
-                            }
-                            IconButton(onClick = { showDropdownMenu = true }) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.more_vert),
-                                    contentDescription = stringResource(R.string.more_options)
-                                )
-                            }
-                            DropdownMenu(
-                                expanded = showDropdownMenu,
-                                onDismissRequest = { showDropdownMenu = false }
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.edit_workout)) },
-                                    onClick = {
-                                        showEditDialog = true
-                                        showDropdownMenu = false
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.delete_workout)) },
-                                    onClick = {
-                                        onDeleteWorkout()
-                                        showDropdownMenu = false
-                                    }
-                                )
-                            }
-                        }
-
-                        ScheduleInformation(workoutWithExercises.workout.schedule)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        IconButton(
-                            onClick = { isFlipped = !isFlipped },
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.flip),
-                                contentDescription = if (isFlipped) stringResource(R.string.view_workout) else stringResource(R.string.view_details)
-                            )
+                                .verticalScroll(rememberScrollState())
                         }
                     }
-                } else {
-                    Column(
-                        modifier = Modifier
-                            .graphicsLayer { alpha = backAlpha }
-                            .padding(16.dp)
-                            .verticalScroll(rememberScrollState())
-                    ) {
-                        Text(
-                            text = workoutWithExercises.workout.description,
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(bottom = 8.dp)
+            ) {
+                if (expandedState) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = workoutWithExercises.workout.description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+                    workoutWithExercises.exercises.forEach { exercise ->
+                        ExerciseItem(
+                            exercise = exercise,
+                            onEditExercise = { onEditExercise(exercise) },
+                            onDeleteExercise = { onDeleteExercise(exercise) }
                         )
-                        workoutWithExercises.exercises.forEach { exercise ->
-                            ExerciseItem(
-                                exercise = exercise,
-                                onEditExercise = { onEditExercise(exercise) },
-                                onDeleteExercise = { onDeleteExercise(exercise) }
+                    }
+                }
+                if (isPortrait) {
+                    IconButton(
+                        onClick = { expanded = !expanded },
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                            .padding(bottom = 0.dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(id = if (expanded) R.drawable.expand_less else R.drawable.expand_more),
+                            contentDescription = if (expanded) stringResource(R.string.collapse) else stringResource(
+                                R.string.expand
                             )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        IconButton(
-                            onClick = { isFlipped = !isFlipped },
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.flip),
-                                contentDescription = if (isFlipped) stringResource(R.string.view_workout) else stringResource(R.string.view_details)
-                            )
-                        }
+                        )
                     }
                 }
             }
@@ -355,6 +337,7 @@ fun ScheduleInformation(schedule: List<Days>) {
     }
 }
 
+// Have not styled this at all as the information present here will depend on what has been done in other tasks
 @Composable
 fun EditWorkoutDialog(
     workout: Workout,
