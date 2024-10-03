@@ -5,6 +5,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +38,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
@@ -132,17 +135,18 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun CustomBottomAppBar(
     navController: NavController
-) {
+) {val currentBackStackEntry = navController.currentBackStackEntryAsState()
+    val currentDestination = currentBackStackEntry.value?.destination?.route
     BottomAppBar {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            AppBarIconButton(navController, "Run", R.drawable.run, "Run")
-            AppBarIconButton(navController, "Add", R.drawable.add, "Add")
-            AppBarIconButton(navController, "Home", R.drawable.home, "Home")
-            AppBarIconButton(navController, "Progress", R.drawable.progress, "Progress")
-            AppBarIconButton(navController, "Leaderboard", R.drawable.leaderboard, "Leaderboard")
+            AppBarIconButton(navController, "Run", R.drawable.run, "Run", currentDestination == "Run")
+            AppBarIconButton(navController, "Add", R.drawable.add, "Add", currentDestination == "Add")
+            AppBarIconButton(navController, "Home", R.drawable.home, "Home", currentDestination == "Home")
+            AppBarIconButton(navController, "Progress", R.drawable.progress, "Progress", currentDestination == "Progress")
+            AppBarIconButton(navController, "Leaderboard", R.drawable.leaderboard, "Leaderboard", currentDestination == "Leaderboard")
         }
     }
 }
@@ -158,17 +162,21 @@ fun CustomSideBar(
     NavigationRail(
         modifier = modifier
             .fillMaxHeight()
-            .windowInsetsPadding(
-                WindowInsets.systemBars.only(WindowInsetsSides.Top)
-            ),
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
-        AppBarNavigationRailItem(navController, "Run", R.drawable.run, "Run", currentDestination == "Run")
-        AppBarNavigationRailItem(navController, "Add", R.drawable.add, "Add", currentDestination == "Add")
-        AppBarNavigationRailItem(navController, "Home", R.drawable.home, "Home", currentDestination == "Home")
-        AppBarNavigationRailItem(navController, "Progress", R.drawable.progress, "Progress", currentDestination == "Progress")
-        AppBarNavigationRailItem(navController, "Leaderboard", R.drawable.leaderboard, "Leaderboard", currentDestination == "Leaderboard")
+        Box(
+            modifier = Modifier.fillMaxHeight(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                verticalArrangement = Arrangement.Center
+            ) {
+                AppBarNavigationRailItem(navController, "Run", R.drawable.run, "Run", currentDestination == "Run")
+                AppBarNavigationRailItem(navController, "Add", R.drawable.add, "Add", currentDestination == "Add")
+                AppBarNavigationRailItem(navController, "Home", R.drawable.home, "Home", currentDestination == "Home")
+                AppBarNavigationRailItem(navController, "Progress", R.drawable.progress, "Progress", currentDestination == "Progress")
+                AppBarNavigationRailItem(navController, "Leaderboard", R.drawable.leaderboard, "Leaderboard", currentDestination == "Leaderboard")
+            }
+        }
     }
 }
 
@@ -201,10 +209,21 @@ fun AppBarIconButton(
     navController: NavController,
     destination: String,
     iconResId: Int,
-    contentDescription: String
+    contentDescription: String,
+    selected: Boolean
 ) {
-    IconButton(onClick = { navController.navigate(destination) }) {
-        Icon(
+    Box(
+        modifier = Modifier
+            .padding(8.dp)
+            .clip(MaterialTheme.shapes.small)
+            .background(
+                color = if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
+                shape = MaterialTheme.shapes.small
+            )
+            .clickable { navController.navigate(destination) }
+            .padding(16.dp)
+    ) {
+        Icon (
             painter = painterResource(id = iconResId),
             contentDescription = contentDescription
         )
