@@ -21,8 +21,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -31,6 +35,7 @@ import com.example.seng303_groupb_assignment2.screens.AddWorkout
 import com.example.seng303_groupb_assignment2.screens.Home
 import com.example.seng303_groupb_assignment2.screens.RunWorkout
 import com.example.seng303_groupb_assignment2.screens.ViewLeaderboard
+import com.example.seng303_groupb_assignment2.screens.ViewPreferences
 import com.example.seng303_groupb_assignment2.screens.ViewProgress
 import com.example.seng303_groupb_assignment2.ui.theme.SENG303_GroupB_Assignment2Theme
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
@@ -50,7 +55,7 @@ class MainActivity : ComponentActivity() {
                 var currentTitle by rememberSaveable { mutableStateOf("Home") }
 
                 Scaffold(
-                    topBar = { CustomTopAppBar(title = currentTitle) },
+                    topBar = { CustomTopAppBar(title = currentTitle, navController) },
                     bottomBar = { CustomBottomAppBar(navController) }
                 ) { padding ->
                     Box(modifier = Modifier.padding(padding)) {
@@ -74,6 +79,10 @@ class MainActivity : ComponentActivity() {
                             composable("Leaderboard") {
                                 currentTitle = "Leaderboard"
                                 ViewLeaderboard(navController = navController)
+                            }
+                            composable("Preferences") {
+                                currentTitle = "Preferences"
+                                ViewPreferences(navController = navController)
                             }
                         }
                     }
@@ -129,14 +138,36 @@ fun CustomBottomAppBar(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomTopAppBar(
-    title: String
+    title: String,
+    navController: NavController
 ) {
-    // TODO possibly update this to center the text and maybe make the text larger.
     TopAppBar(
         title = {
-            Text(
-                text = title,
-            )
+            Box(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = title,
+                    style = androidx.compose.ui.text.TextStyle(
+                        fontSize = 30.sp
+                    ),
+                    modifier = Modifier.align(Alignment.Center)
+                )
+
+                IconButton(
+                    onClick = { navController.navigate("Preferences") },
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(end = 12.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_gear),
+                        contentDescription = "Settings"
+                    )
+                }
+            }
         }
     )
 }
+
+
