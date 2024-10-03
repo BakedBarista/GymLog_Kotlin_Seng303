@@ -1,6 +1,7 @@
 package com.example.seng303_groupb_assignment2.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -25,32 +26,38 @@ fun ViewPreferences(
     val metricUnits = preferences?.metricUnits ?: false
     val soundOn = preferences?.soundOn ?: false
 
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Dark Mode toggle
-        PreferenceToggleRow(
-            title = "Dark Mode",
-            isChecked = darkMode,
-            onCheckedChange = { preferenceViewModel.setPreferences(it, metricUnits, soundOn) }
-        )
+        item {
+            // Dark Mode toggle
+            PreferenceToggleRow(
+                title = "Dark Mode",
+                isChecked = darkMode,
+                onCheckedChange = { preferenceViewModel.setPreferences(it, metricUnits, soundOn) }
+            )
+        }
 
-        // Units toggle
-        PreferenceToggleRow(
-            title = "Units (Metric / Imperial)",
-            isChecked = metricUnits,
-            onCheckedChange = { preferenceViewModel.setPreferences(darkMode, it, soundOn) }
-        )
+        item {
+            // Units toggle
+            PreferenceToggleRow(
+                title = "Units (Metric / Imperial)",
+                isChecked = metricUnits,
+                onCheckedChange = { preferenceViewModel.setPreferences(darkMode, it, soundOn) }
+            )
+        }
 
-        // Sound On/Off toggle
-        PreferenceToggleRow(
-            title = "Sound",
-            isChecked = soundOn,
-            onCheckedChange = { preferenceViewModel.setPreferences(darkMode, metricUnits, it) }
-        )
+        item {
+            // Sound On/Off toggle
+            PreferenceToggleRow(
+                title = "Sound",
+                isChecked = soundOn,
+                onCheckedChange = { preferenceViewModel.setPreferences(darkMode, metricUnits, it) }
+            )
+        }
     }
 }
 
