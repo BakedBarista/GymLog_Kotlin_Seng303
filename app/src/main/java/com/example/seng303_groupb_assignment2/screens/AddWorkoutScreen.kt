@@ -3,6 +3,7 @@ package com.example.seng303_groupb_assignment2.screens
 import ExerciseModalViewModel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -50,7 +53,6 @@ import com.example.seng303_groupb_assignment2.entities.Workout
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.ManageWorkoutViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
-import kotlinx.coroutines.Deferred
 
 @Composable
 fun AddWorkout(
@@ -60,39 +62,45 @@ fun AddWorkout(
     exerciseViewModel: ExerciseViewModel,
 ) {
     var manageExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
+
     ManageExerciseModal(
         modalOpen = manageExerciseModalOpen,
         closeModal = { manageExerciseModalOpen = false },
         submitModal = { name, sets, m1, m2, restTime -> manageViewModel.addExercise(name, sets, m1, m2, restTime) }
     )
 
-    Column(
+    LazyColumn(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        WorkoutNameTextBox(
-            name = manageViewModel.name,
-            updateName = { manageViewModel.updateName(it) },
-            isError = { !manageViewModel.validName() }
-        )
+        item {
+            WorkoutNameTextBox(
+                name = manageViewModel.name,
+                updateName = { manageViewModel.updateName(it) },
+                isError = { !manageViewModel.validName() }
+            )
+            Spacer(modifier = Modifier.padding(15.dp))
+        }
 
-        Spacer(modifier = Modifier.padding(15.dp))
+        item {
+            AddExerciseRow(openAddExerciseModal = { manageExerciseModalOpen = true })
+            Spacer(modifier = Modifier.padding(10.dp))
+        }
 
-        AddExerciseRow(openAddExerciseModal = { manageExerciseModalOpen = true } )
+        item {
+            DisplayExerciseList(manageViewModel)
+            Spacer(modifier = Modifier.padding(10.dp))
+        }
 
-        Spacer(modifier = Modifier.padding(10.dp))
-
-        DisplayExerciseList(manageViewModel)
-
-        Spacer(modifier = Modifier.padding(10.dp))
-
-        CancelAndSaveRow(
-            cancel = { navController.navigate("Home") },
-            manageViewModel = manageViewModel,
-            workoutViewModel =  workoutViewModel,
-            exerciseViewModel = exerciseViewModel,
-            navController = navController
-        )
+        item {
+            CancelAndSaveRow(
+                cancel = { navController.navigate("Home") },
+                manageViewModel = manageViewModel,
+                workoutViewModel = workoutViewModel,
+                exerciseViewModel = exerciseViewModel,
+                navController = navController
+            )
+        }
     }
 }
 
@@ -148,7 +156,8 @@ private fun DisplayExerciseList (
     LazyColumn(
         modifier = Modifier
             .fillMaxHeight(0.75f)
-            .fillMaxWidth(0.9f),
+            .fillMaxWidth(0.9f)
+            .heightIn(max = 300.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         contentPadding = PaddingValues(bottom = 5.dp)
     ) {
@@ -256,14 +265,16 @@ private fun CancelAndSaveRow (
         // save
         Button(
             onClick = {
-                val workout = Workout(name = manageViewModel.name, description = "", schedule = "")
-                workoutViewModel.addWorkout(workout)
+                if (manageViewModel.validName()) {
+                    val workout = Workout(name = manageViewModel.name, description = "", schedule = "")
+                    workoutViewModel.addWorkout(workout)
 
-                manageViewModel.exercises.forEach {
-                    exerciseViewModel.addExercise(workout.id, it)
+                    manageViewModel.exercises.forEach {
+                        exerciseViewModel.addExercise(workout.id, it)
+                    }
+
+                    navController.navigate("Run")
                 }
-
-                navController.navigate("Run")
             },
             colors = buttonColors,
             shape = RectangleShape
@@ -370,126 +381,152 @@ private fun ManageExerciseModal(
                     .padding(16.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = context.getString(R.string.exercises_modal_title),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = Color.Black)
+                LazyColumn(horizontalAlignment = Alignment.CenterHorizontally) {
+                    item {
+                        Text(text = context.getString(R.string.exercises_modal_title),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = Color.Black)
+                    }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
 
-                    TextField(
-                        value = exerciseModel.exerciseName,
-                        onValueChange = { exerciseModel.updateExerciseName(it) },
-                        label = { Text(context.getString(R.string.exercise_name_label)) },
-                        isError = !exerciseModel.validExerciseName(),
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    item {
+                        TextField(
+                            value = exerciseModel.exerciseName,
+                            onValueChange = { exerciseModel.updateExerciseName(it) },
+                            label = { Text(context.getString(R.string.exercise_name_label)) },
+                            isError = !exerciseModel.validExerciseName(),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
 
-                    Spacer(modifier = Modifier.height(4.dp))
+                    item {
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
 
-                    TextField(
-                        value = exerciseModel.sets,
-                        onValueChange = {
-                            if (it.isBlank() || it.toIntOrNull() != null) {
-                                exerciseModel.updateSets(it)
+                    item {
+                        TextField(
+                            value = exerciseModel.sets,
+                            onValueChange = {
+                                if (it.isBlank() || it.toIntOrNull() != null) {
+                                    exerciseModel.updateSets(it)
+                                }
+                            },
+                            label = { Text(context.getString(R.string.sets_label)) },
+                            isError = !exerciseModel.validSetValue(),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
+                    item {
+                        MeasurementSelection(
+                            options = listOf("Reps", "Time"),
+                            updateOption = { exerciseModel.updateMeasurementType1(it) },
+                            sets = exerciseModel.sets,
+                            values = exerciseModel.measurementValues1,
+                            updateValue = { index, newValue ->
+                                val measurementValues1 = exerciseModel.measurementValues1.toMutableList().apply {
+                                    this[index] = newValue
+                                }
+                                exerciseModel.updateMeasurementValues1(measurementValues1)
                             }
-                        },
-                        label = { Text(context.getString(R.string.sets_label)) },
-                        isError = !exerciseModel.validSetValue(),
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                        )
+                    }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    item {
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
 
-                    MeasurementSelection(
-                        options = listOf("Reps", "Time"),
-                        updateOption = { exerciseModel.updateMeasurementType1(it) },
-                        sets = exerciseModel.sets,
-                        values = exerciseModel.measurementValues1,
-                        updateValue = { index, newValue ->
-                            val measurementValues1 = exerciseModel.measurementValues1.toMutableList().apply {
-                                this[index] = newValue
+                    item {
+                        MeasurementSelection(
+                            options = listOf("Weight", "Distance"),
+                            updateOption = { exerciseModel.updateMeasurementType2(it) },
+                            sets = exerciseModel.sets,
+                            values = exerciseModel.measurementValues2,
+                            updateValue = { index, newValue ->
+                                val measurementValues2 = exerciseModel.measurementValues2.toMutableList().apply {
+                                    this[index] = newValue
+                                }
+                                exerciseModel.updateMeasurementValues2(measurementValues2)
                             }
-                            exerciseModel.updateMeasurementValues1(measurementValues1)
-                        }
-                    )
+                        )
+                    }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    item {
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
 
-                    MeasurementSelection(
-                        options = listOf("Weight", "Distance"),
-                        updateOption = { exerciseModel.updateMeasurementType2(it) },
-                        sets = exerciseModel.sets,
-                        values = exerciseModel.measurementValues2,
-                        updateValue = { index, newValue ->
-                            val measurementValues2 = exerciseModel.measurementValues2.toMutableList().apply {
-                                this[index] = newValue
-                            }
-                            exerciseModel.updateMeasurementValues2(measurementValues2)
-                        }
-                    )
+                    item {
+                        TextField(
+                            value = exerciseModel.restTime,
+                            onValueChange = { exerciseModel.updateRestTime(it) },
+                            label = { Text(context.getString(R.string.rest_time_label)) },
+                            isError = !exerciseModel.validRestTime(),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
 
-                    TextField(
-                        value = exerciseModel.restTime,
-                        onValueChange = { exerciseModel.updateRestTime(it) },
-                        label = { Text(context.getString(R.string.rest_time_label)) },
-                        isError = !exerciseModel.validRestTime(),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    val buttonColors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                    Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth(0.9f)) {
-                        Button(
-                            modifier = Modifier.padding(paddingValues = PaddingValues(horizontal = 8.dp)),
-                            colors = buttonColors,
-                            shape = RectangleShape,
-                            onClick = {
-                                closeModal()
-                                exerciseModel.clearSavedInfo()
-                            }
-                        ) { Text(context.getString(R.string.cancel), style = MaterialTheme.typography.bodyLarge) }
-                        Button(
-                            colors = buttonColors,
-                            shape = RectangleShape,
-                            onClick =
-                            {
-                                if (exerciseModel.validMeasurementValues()
-                                    && exerciseModel.validSetValue()
-                                    && exerciseModel.validRestTime()) {
-                                    val measurement1 = Measurement(
-                                        type = exerciseModel.measurementType1,
-                                        values = exerciseModel.measurementValues1.toList().map { it.toFloat() }
-                                    )
-                                    val measurement2 = Measurement(
-                                        type = exerciseModel.measurementType1,
-                                        values = exerciseModel.measurementValues2.toList().map { it.toFloat() }
-                                    )
-
-                                    var restTime: Int? = null;
-                                    if (exerciseModel.restTime.isNotBlank()) {
-                                        restTime = exerciseModel.restTime.toInt()
-                                    }
-
-                                    submitModal(
-                                        exerciseModel.exerciseName,
-                                        exerciseModel.sets.toInt(),
-                                        measurement1,
-                                        measurement2,
-                                        restTime
-                                    )
-
+                    item {
+                        val buttonColors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth(0.9f)) {
+                            Button(
+                                modifier = Modifier.padding(paddingValues = PaddingValues(horizontal = 8.dp)),
+                                colors = buttonColors,
+                                shape = RectangleShape,
+                                onClick = {
                                     closeModal()
                                     exerciseModel.clearSavedInfo()
                                 }
-                            }) {
-                            Text(context.getString(R.string.add), style = MaterialTheme.typography.bodyLarge)
+                            ) { Text(context.getString(R.string.cancel), style = MaterialTheme.typography.bodyLarge) }
+                            Button(
+                                colors = buttonColors,
+                                shape = RectangleShape,
+                                onClick =
+                                {
+                                    if (exerciseModel.validMeasurementValues()
+                                        && exerciseModel.validSetValue()
+                                        && exerciseModel.validRestTime()) {
+                                        val measurement1 = Measurement(
+                                            type = exerciseModel.measurementType1,
+                                            values = exerciseModel.measurementValues1.toList().map { it.toFloat() }
+                                        )
+                                        val measurement2 = Measurement(
+                                            type = exerciseModel.measurementType1,
+                                            values = exerciseModel.measurementValues2.toList().map { it.toFloat() }
+                                        )
+
+                                        var restTime: Int? = null;
+                                        if (exerciseModel.restTime.isNotBlank()) {
+                                            restTime = exerciseModel.restTime.toInt()
+                                        }
+
+                                        submitModal(
+                                            exerciseModel.exerciseName,
+                                            exerciseModel.sets.toInt(),
+                                            measurement1,
+                                            measurement2,
+                                            restTime
+                                        )
+
+                                        closeModal()
+                                        exerciseModel.clearSavedInfo()
+                                    }
+                                }) {
+                                Text(context.getString(R.string.add), style = MaterialTheme.typography.bodyLarge)
+                            }
                         }
                     }
                 }
