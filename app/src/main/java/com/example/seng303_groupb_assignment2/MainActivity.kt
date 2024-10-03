@@ -31,6 +31,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.seng303_groupb_assignment2.screens.AddWorkout
 import com.example.seng303_groupb_assignment2.screens.Home
 import com.example.seng303_groupb_assignment2.screens.RunWorkout
+import com.example.seng303_groupb_assignment2.screens.RunWorkoutPreview
 import com.example.seng303_groupb_assignment2.screens.ViewLeaderboard
 import com.example.seng303_groupb_assignment2.screens.ViewProgress
 import com.example.seng303_groupb_assignment2.ui.theme.SENG303_GroupB_Assignment2Theme
@@ -60,18 +61,7 @@ class MainActivity : ComponentActivity() {
                                 currentTitle = "Home"
                                 Home(navController = navController)
                             }
-                            composable("Run?workoutId={workoutId}") { backStackEntry ->
-                                val workoutId = backStackEntry.arguments?.getString("workoutId")?.toLong()
-                                currentTitle = "Run Workout"
-                                workoutId?.let { id ->
-                                    viewModel.loadWorkoutWithExercises(id)
-
-                                    val workoutWithExercises by viewModel.workoutWithExercises.observeAsState()
-
-                                    workoutWithExercises?.let {
-                                        RunWorkout(navController = navController, workoutWithExercises = it)
-                                    }
-                                }
+                            composable("Run") { RunWorkoutPreview(navController = navController)
                             }
                             composable("Add") {
                                 currentTitle = "Workout Builder"
