@@ -46,18 +46,24 @@ import androidx.navigation.NavController
 import com.example.seng303_groupb_assignment2.R
 import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.entities.Measurement
+import com.example.seng303_groupb_assignment2.entities.Workout
+import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.ManageWorkoutViewModel
+import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
+import kotlinx.coroutines.Deferred
 
 @Composable
 fun AddWorkout(
     navController: NavController,
-    viewModel: ManageWorkoutViewModel,
+    manageViewModel: ManageWorkoutViewModel,
+    workoutViewModel: WorkoutViewModel,
+    exerciseViewModel: ExerciseViewModel,
 ) {
     var manageExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
     ManageExerciseModal(
         modalOpen = manageExerciseModalOpen,
         closeModal = { manageExerciseModalOpen = false },
-        submitModal = { name, sets, m1, m2, restTime -> viewModel.addExercise(name, sets, m1, m2, restTime) }
+        submitModal = { name, sets, m1, m2, restTime -> manageViewModel.addExercise(name, sets, m1, m2, restTime) }
     )
 
     Column(
@@ -65,9 +71,9 @@ fun AddWorkout(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         WorkoutNameTextBox(
-            name = viewModel.name,
-            updateName = { viewModel.updateName(it) },
-            isError = { !viewModel.validName() }
+            name = manageViewModel.name,
+            updateName = { manageViewModel.updateName(it) },
+            isError = { !manageViewModel.validName() }
         )
 
         Spacer(modifier = Modifier.padding(15.dp))
@@ -76,14 +82,270 @@ fun AddWorkout(
 
         Spacer(modifier = Modifier.padding(10.dp))
 
-        DisplayExerciseList(viewModel)
+        DisplayExerciseList(manageViewModel)
 
         Spacer(modifier = Modifier.padding(10.dp))
 
         CancelAndSaveRow(
             cancel = { navController.navigate("Home") },
-            save = { viewModel.saveWorkout() }
+            manageViewModel = manageViewModel,
+            workoutViewModel =  workoutViewModel,
+            exerciseViewModel = exerciseViewModel,
+            navController = navController
         )
+    }
+}
+
+@Composable
+private fun WorkoutNameTextBox(
+    name: String,
+    updateName: (String) -> Unit,
+    isError: () -> Boolean
+) {
+    val context = LocalContext.current
+
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        TextField(
+            value = name,
+            onValueChange = { updateName(it) },
+            textStyle = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier
+                .padding(16.dp)
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            isError = isError(),
+            label = { Text(context.getString(R.string.workout_name_label)) },
+        )
+    }
+}
+
+@Composable
+private fun AddExerciseRow (
+    openAddExerciseModal: () -> Unit
+) {
+    val context = LocalContext.current
+
+    Row(modifier = Modifier.fillMaxWidth(0.8f),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceAround
+    ) {
+        Text(text = context.getString(R.string.exercises_title), style = MaterialTheme.typography.titleLarge)
+        IconButton(onClick = { openAddExerciseModal() }) {
+            Icon(
+                painter = painterResource(id = R.drawable.plus),
+                contentDescription = context.getString(R.string.plus)
+            )
+        }
+    }
+}
+
+@Composable
+private fun DisplayExerciseList (
+    viewModel: ManageWorkoutViewModel
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxHeight(0.75f)
+            .fillMaxWidth(0.9f),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        contentPadding = PaddingValues(bottom = 5.dp)
+    ) {
+        viewModel.exercises.forEachIndexed { index, exercise ->
+            item {
+                DisplayExerciseCard(
+                    exercise = exercise,
+                    edit = { name, sets, m1, m2, restTime -> viewModel.updateExercise(index, name, sets, m1, m2, restTime) },
+                    delete = { viewModel.deleteExercise(index) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DisplayExerciseCard(
+    exercise: Exercise,
+    edit: (String, Int, Measurement, Measurement, Int?) -> Unit,
+    delete: () -> Unit
+) {
+    val context = LocalContext.current
+
+    var manageExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
+    val exerciseModel: ExerciseModalViewModel = viewModel()
+
+    ManageExerciseModal(
+        modalOpen = manageExerciseModalOpen,
+        closeModal = { manageExerciseModalOpen = false },
+        submitModal = edit,
+        exerciseModel = exerciseModel
+    )
+
+    Card {
+        Row(modifier = Modifier
+            .fillMaxWidth(0.9f)
+            .height(100.dp)
+            .padding(24.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = exercise.name,
+                style = MaterialTheme.typography.bodyLarge)
+            Row(modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End) {
+                IconButton(onClick = { delete() }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.delete),
+                        contentDescription = context.getString(R.string.delete)
+                    )
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                IconButton(onClick = {
+                    manageExerciseModalOpen = true
+                    exerciseModel.updateExerciseName(exercise.name)
+                    exerciseModel.updateSets(exercise.sets.toString())
+                    if (exercise.restTime != null) {
+                        exerciseModel.updateRestTime(exercise.restTime.toString())
+                    }
+                    exerciseModel.updateMeasurementType1(exercise.measurement1.type)
+                    exerciseModel.updateMeasurementType2(exercise.measurement2.type)
+                    exerciseModel.updateMeasurementValues1(exercise.measurement1.values.map { it.toString() })
+                    exerciseModel.updateMeasurementValues2(exercise.measurement2.values.map { it.toString() })
+                }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.edit),
+                        contentDescription = context.getString(R.string.edit)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CancelAndSaveRow (
+    cancel: () -> Unit,
+    manageViewModel: ManageWorkoutViewModel,
+    workoutViewModel: WorkoutViewModel,
+    exerciseViewModel: ExerciseViewModel,
+    navController: NavController
+) {
+    val context = LocalContext.current
+
+    Row(
+        modifier = Modifier.fillMaxWidth(0.8f),
+        horizontalArrangement = Arrangement.End
+    ) {
+        val buttonColors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+
+        // cancel
+        Button(
+            onClick = { cancel() },
+            colors = buttonColors,
+            shape = RectangleShape
+        ) {
+            Text(text = context.getString(R.string.cancel), style = MaterialTheme.typography.bodyLarge)
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // save
+        Button(
+            onClick = {
+                val workout = Workout(name = manageViewModel.name, description = "", schedule = "")
+                workoutViewModel.addWorkout(workout)
+
+                manageViewModel.exercises.forEach {
+                    exerciseViewModel.addExercise(workout.id, it)
+                }
+
+                navController.navigate("Run")
+            },
+            colors = buttonColors,
+            shape = RectangleShape
+        ) {
+            Text(text = context.getString(R.string.save), style = MaterialTheme.typography.bodyLarge)
+        }
+    }
+}
+
+@Composable
+fun MeasurementSelection(
+    options: List<String>,
+    updateOption: (String) -> Unit,
+    sets: String,
+    values: List<String>,
+    updateValue: (Int, String) -> Unit
+) {
+    val context = LocalContext.current
+
+    var open by rememberSaveable { mutableStateOf(false) }
+    var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.Gray, shape = MaterialTheme.shapes.small)
+            .clickable { open = true }
+            .padding(16.dp)
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = options[selectedIndex],
+                modifier = Modifier.weight(1f),
+            )
+            Icon(
+                painter = painterResource(id = R.drawable.dropdown),
+                contentDescription =  context.getString(R.string.leaderboard),
+            )
+        }
+
+        DropdownMenu(
+            expanded = open,
+            onDismissRequest = { open = false }
+        ) {
+            options.forEachIndexed { index, option ->
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = {
+                        selectedIndex = index
+                        open = false
+                        updateOption(option)
+                    }
+                )
+            }
+        }
+    }
+
+    if (sets.isNotBlank()) {
+        LazyColumn(
+            modifier = Modifier
+                .padding(8.dp)
+                .heightIn(max = 100.dp)
+        ) {
+            items(sets.toInt()) { index ->
+                val displayText = context.getString(R.string.measurement_text,
+                    index + 1, options[selectedIndex])
+
+                TextField(
+                    value = values[index],
+                    onValueChange = { it: String -> updateValue(index, it) },
+                    isError = values[index].toFloatOrNull() == null,
+                    label = { Text(displayText) },
+                    modifier = Modifier
+                        .fillMaxWidth(0.95f)
+                        .padding(vertical = 3.dp)
+                )
+            }
+        }
     }
 }
 
@@ -231,249 +493,6 @@ private fun ManageExerciseModal(
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun WorkoutNameTextBox(
-    name: String,
-    updateName: (String) -> Unit,
-    isError: () -> Boolean
-) {
-    val context = LocalContext.current
-
-    Box(
-        modifier = Modifier.fillMaxWidth(),
-        contentAlignment = Alignment.Center
-    ) {
-        TextField(
-            value = name,
-            onValueChange = { updateName(it) },
-            textStyle = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier
-                .padding(16.dp)
-                .background(MaterialTheme.colorScheme.primaryContainer),
-            isError = isError(),
-            label = { Text(context.getString(R.string.workout_name_label)) },
-        )
-    }
-}
-
-@Composable
-private fun AddExerciseRow (
-    openAddExerciseModal: () -> Unit
-) {
-    val context = LocalContext.current
-
-    Row(modifier = Modifier.fillMaxWidth(0.8f),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceAround
-    ) {
-        Text(text = context.getString(R.string.exercises_title), style = MaterialTheme.typography.titleLarge)
-        IconButton(onClick = { openAddExerciseModal() }) {
-            Icon(
-                painter = painterResource(id = R.drawable.plus),
-                contentDescription = context.getString(R.string.plus)
-            )
-        }
-    }
-}
-
-@Composable
-private fun DisplayExerciseList (
-    viewModel: ManageWorkoutViewModel
-) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxHeight(0.75f)
-            .fillMaxWidth(0.9f),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        contentPadding = PaddingValues(bottom = 5.dp)
-    ) {
-        viewModel.exercises.forEachIndexed { index, exercise ->
-            item {
-                DisplayExerciseCard(
-                    exercise = exercise,
-                    edit = { name, sets, m1, m2, restTime -> viewModel.updateExercise(index, name, sets, m1, m2, restTime) },
-                    delete = { viewModel.deleteExercise(index) }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun DisplayExerciseCard(
-    exercise: Exercise,
-    edit: (String, Int, Measurement, Measurement, Int?) -> Unit,
-    delete: () -> Unit
-) {
-    val context = LocalContext.current
-
-    var manageExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
-    val exerciseModel: ExerciseModalViewModel = viewModel()
-
-    ManageExerciseModal(
-        modalOpen = manageExerciseModalOpen,
-        closeModal = { manageExerciseModalOpen = false },
-        submitModal = edit,
-        exerciseModel = exerciseModel
-    )
-
-    Card {
-        Row(modifier = Modifier
-            .fillMaxWidth(0.9f)
-            .height(100.dp)
-            .padding(24.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(text = exercise.name,
-                style = MaterialTheme.typography.bodyLarge)
-            Row(modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End) {
-                IconButton(onClick = { delete() }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.delete),
-                        contentDescription = context.getString(R.string.delete)
-                    )
-                }
-                Spacer(modifier = Modifier.width(10.dp))
-                IconButton(onClick = {
-                    manageExerciseModalOpen = true
-                    exerciseModel.updateExerciseName(exercise.name)
-                    exerciseModel.updateSets(exercise.sets.toString())
-                    if (exercise.restTime != null) {
-                        exerciseModel.updateRestTime(exercise.restTime.toString())
-                    }
-                    exerciseModel.updateMeasurementType1(exercise.measurement1.type)
-                    exerciseModel.updateMeasurementType2(exercise.measurement2.type)
-                    exerciseModel.updateMeasurementValues1(exercise.measurement1.values.map { it.toString() })
-                    exerciseModel.updateMeasurementValues2(exercise.measurement2.values.map { it.toString() })
-                }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.edit),
-                        contentDescription = context.getString(R.string.edit)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CancelAndSaveRow (
-    cancel: () -> Unit,
-    save: () -> Unit
-) {
-    val context = LocalContext.current
-
-    Row(
-        modifier = Modifier.fillMaxWidth(0.8f),
-        horizontalArrangement = Arrangement.End
-    ) {
-        val buttonColors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-        )
-
-        // cancel
-        Button(
-            onClick = { cancel() },
-            colors = buttonColors,
-            shape = RectangleShape
-        ) {
-            Text(text = context.getString(R.string.cancel), style = MaterialTheme.typography.bodyLarge)
-        }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        // save
-        Button(
-            onClick = {
-                save()
-            },
-            colors = buttonColors,
-            shape = RectangleShape
-        ) {
-            Text(text = context.getString(R.string.save), style = MaterialTheme.typography.bodyLarge)
-        }
-    }
-}
-
-@Composable
-fun MeasurementSelection(
-    options: List<String>,
-    updateOption: (String) -> Unit,
-    sets: String,
-    values: List<String>,
-    updateValue: (Int, String) -> Unit
-) {
-    val context = LocalContext.current
-
-    var open by rememberSaveable { mutableStateOf(false) }
-    var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.Gray, shape = MaterialTheme.shapes.small)
-            .clickable { open = true }
-            .padding(16.dp)
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = options[selectedIndex],
-                modifier = Modifier.weight(1f),
-            )
-            Icon(
-                painter = painterResource(id = R.drawable.dropdown),
-                contentDescription =  context.getString(R.string.leaderboard),
-            )
-        }
-
-        DropdownMenu(
-            expanded = open,
-            onDismissRequest = { open = false }
-        ) {
-            options.forEachIndexed { index, option ->
-                DropdownMenuItem(
-                    text = { Text(option) },
-                    onClick = {
-                        selectedIndex = index
-                        open = false
-                        updateOption(option)
-                    }
-                )
-            }
-        }
-    }
-
-    if (sets.isNotBlank()) {
-        LazyColumn(
-            modifier = Modifier
-                .padding(8.dp)
-                .heightIn(max = 100.dp)
-        ) {
-            items(sets.toInt()) { index ->
-                val displayText = context.getString(R.string.measurement_text,
-                    index + 1, options[selectedIndex])
-
-                TextField(
-                    value = values[index],
-                    onValueChange = { it: String -> updateValue(index, it) },
-                    isError = values[index].toFloatOrNull() == null,
-                    label = { Text(displayText) },
-                    modifier = Modifier
-                        .fillMaxWidth(0.95f)
-                        .padding(vertical = 3.dp)
-                )
             }
         }
     }

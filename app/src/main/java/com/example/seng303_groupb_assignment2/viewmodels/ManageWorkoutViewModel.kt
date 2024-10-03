@@ -1,11 +1,11 @@
 package com.example.seng303_groupb_assignment2.viewmodels
 
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.entities.Measurement
 
@@ -57,11 +57,5 @@ class ManageWorkoutViewModel(): ViewModel() {
 
     fun validName(): Boolean {
         return name.isNotBlank()
-    }
-
-    fun saveWorkout() {
-        if (validName()) {
-            // save
-        }
     }
 }

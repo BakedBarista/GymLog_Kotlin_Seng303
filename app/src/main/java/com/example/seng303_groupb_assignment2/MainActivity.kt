@@ -36,6 +36,7 @@ import com.example.seng303_groupb_assignment2.screens.ViewProgress
 import com.example.seng303_groupb_assignment2.ui.theme.SENG303_GroupB_Assignment2Theme
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel as koinViewModel
 
 class MainActivity : ComponentActivity() {
@@ -46,6 +47,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             SENG303_GroupB_Assignment2Theme {
                 val navController = rememberNavController()
+                val exerciseViewModel: ExerciseViewModel = viewModel()
+                val workoutViewModel: WorkoutViewModel = viewModel()
 
                 // TODO - make this use string resources instead of hard coded string literals
                 var currentTitle by rememberSaveable { mutableStateOf("Home") }
@@ -62,14 +65,19 @@ class MainActivity : ComponentActivity() {
                             }
                             composable("Run") {
                                 currentTitle = "Run Workout"
-                                RunWorkout(navController = navController)
+                                RunWorkout(
+                                    navController = navController,
+                                    workoutViewModel = workoutViewModel
+                                    )
                             }
                             composable("Add") {
                                 currentTitle = "Workout Builder"
                                 val manageWorkoutViewModel: ManageWorkoutViewModel = viewModel()
                                 AddWorkout(
                                     navController = navController,
-                                    manageWorkoutViewModel
+                                    manageViewModel = manageWorkoutViewModel,
+                                    exerciseViewModel = exerciseViewModel,
+                                    workoutViewModel = workoutViewModel
                                 )
                             }
                             composable("Progress") {
