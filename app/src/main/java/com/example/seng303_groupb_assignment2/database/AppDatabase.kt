@@ -7,18 +7,21 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.example.seng303_groupb_assignment2.daos.ExerciseDao
 import com.example.seng303_groupb_assignment2.daos.ExerciseLogDao
+import com.example.seng303_groupb_assignment2.daos.PreferenceDao
 import com.example.seng303_groupb_assignment2.daos.WorkoutDao
 import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.entities.ExerciseLog
 import com.example.seng303_groupb_assignment2.entities.Workout
 import com.example.seng303_groupb_assignment2.entities.WorkoutExerciseCrossRef
+import com.example.seng303_groupb_assignment2.entities.Preference // Make sure to import Preference
 
-@Database(entities = [Workout::class, Exercise::class, ExerciseLog::class, WorkoutExerciseCrossRef::class], version = 1)
+@Database(entities = [Workout::class, Exercise::class, ExerciseLog::class, WorkoutExerciseCrossRef::class, Preference::class], version = 2)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun workoutDao(): WorkoutDao
     abstract fun exerciseDao(): ExerciseDao
     abstract fun exerciseLogDao(): ExerciseLogDao
+    abstract fun preferenceDao(): PreferenceDao
 
     companion object{
         @Volatile
