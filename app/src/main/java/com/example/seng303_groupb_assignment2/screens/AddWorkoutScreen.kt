@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -52,12 +53,11 @@ fun AddWorkout(
     navController: NavController,
     viewModel: ManageWorkoutViewModel,
 ) {
-    // TODO - replace ui text with string resources
-    var addModalOpen by rememberSaveable { mutableStateOf(false) }
-    AddExerciseModal(
-        modalOpen = addModalOpen,
-        closeModal = { addModalOpen = false },
-        addExercise = { name, sets, m1, m2, restTime -> viewModel.addExercise(name, sets, m1, m2, restTime) }
+    var manageExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
+    ManageExerciseModal(
+        modalOpen = manageExerciseModalOpen,
+        closeModal = { manageExerciseModalOpen = false },
+        submitModal = { name, sets, m1, m2, restTime -> viewModel.addExercise(name, sets, m1, m2, restTime) }
     )
 
     Column(
@@ -66,12 +66,13 @@ fun AddWorkout(
     ) {
         WorkoutNameTextBox(
             name = viewModel.name,
-            updateName = { viewModel.updateName(it) }
+            updateName = { viewModel.updateName(it) },
+            isError = { !viewModel.validName() }
         )
 
         Spacer(modifier = Modifier.padding(15.dp))
 
-        AddExerciseRow(openAddExerciseModal = { addModalOpen = true } )
+        AddExerciseRow(openAddExerciseModal = { manageExerciseModalOpen = true } )
 
         Spacer(modifier = Modifier.padding(10.dp))
 
@@ -79,19 +80,27 @@ fun AddWorkout(
 
         Spacer(modifier = Modifier.padding(10.dp))
 
-        CancelAndSaveRow(cancel = { navController.navigate("Home") })
+        CancelAndSaveRow(
+            cancel = { navController.navigate("Home") },
+            save = { viewModel.saveWorkout() }
+        )
     }
 }
 
 @Composable
-private fun AddExerciseModal(
+private fun ManageExerciseModal(
     exerciseModel: ExerciseModalViewModel = viewModel(),
     modalOpen: Boolean,
     closeModal: () -> Unit,
-    addExercise: (String, Int, Measurement, Measurement, Int?) -> Unit
+    submitModal: (String, Int, Measurement, Measurement, Int?) -> Unit
 ) {
+    val context = LocalContext.current
+
     if (modalOpen) {
-        Dialog(onDismissRequest = { closeModal() }) {
+        Dialog(onDismissRequest = {
+            closeModal()
+            exerciseModel.clearSavedInfo()
+        }) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -100,14 +109,16 @@ private fun AddExerciseModal(
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "Add Exercise", style = MaterialTheme.typography.bodyLarge, color = Color.Black)
+                    Text(text = context.getString(R.string.exercises_modal_title),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.Black)
 
                     Spacer(modifier = Modifier.height(16.dp))
 
                     TextField(
                         value = exerciseModel.exerciseName,
                         onValueChange = { exerciseModel.updateExerciseName(it) },
-                        label = { Text("Exercise name") },
+                        label = { Text(context.getString(R.string.exercise_name_label)) },
                         isError = !exerciseModel.validExerciseName(),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -121,7 +132,7 @@ private fun AddExerciseModal(
                                 exerciseModel.updateSets(it)
                             }
                         },
-                        label = { Text("Sets") },
+                        label = { Text(context.getString(R.string.sets_label)) },
                         isError = !exerciseModel.validSetValue(),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -161,7 +172,7 @@ private fun AddExerciseModal(
                     TextField(
                         value = exerciseModel.restTime,
                         onValueChange = { exerciseModel.updateRestTime(it) },
-                        label = { Text("Rest time") },
+                        label = { Text(context.getString(R.string.rest_time_label)) },
                         isError = !exerciseModel.validRestTime(),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -181,13 +192,15 @@ private fun AddExerciseModal(
                                 closeModal()
                                 exerciseModel.clearSavedInfo()
                             }
-                        ) { Text("Cancel", style = MaterialTheme.typography.bodyLarge) }
+                        ) { Text(context.getString(R.string.cancel), style = MaterialTheme.typography.bodyLarge) }
                         Button(
                             colors = buttonColors,
                             shape = RectangleShape,
                             onClick =
                             {
-                                if (exerciseModel.validMeasurementValues() && exerciseModel.validSetValue() && exerciseModel.validRestTime()) {
+                                if (exerciseModel.validMeasurementValues()
+                                    && exerciseModel.validSetValue()
+                                    && exerciseModel.validRestTime()) {
                                     val measurement1 = Measurement(
                                         type = exerciseModel.measurementType1,
                                         values = exerciseModel.measurementValues1.toList().map { it.toFloat() }
@@ -202,7 +215,7 @@ private fun AddExerciseModal(
                                         restTime = exerciseModel.restTime.toInt()
                                     }
 
-                                    addExercise(
+                                    submitModal(
                                         exerciseModel.exerciseName,
                                         exerciseModel.sets.toInt(),
                                         measurement1,
@@ -214,7 +227,7 @@ private fun AddExerciseModal(
                                     exerciseModel.clearSavedInfo()
                                 }
                             }) {
-                            Text("Add", style = MaterialTheme.typography.bodyLarge)
+                            Text(context.getString(R.string.add), style = MaterialTheme.typography.bodyLarge)
                         }
                     }
                 }
@@ -227,7 +240,10 @@ private fun AddExerciseModal(
 private fun WorkoutNameTextBox(
     name: String,
     updateName: (String) -> Unit,
+    isError: () -> Boolean
 ) {
+    val context = LocalContext.current
+
     Box(
         modifier = Modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center
@@ -239,9 +255,8 @@ private fun WorkoutNameTextBox(
             modifier = Modifier
                 .padding(16.dp)
                 .background(MaterialTheme.colorScheme.primaryContainer),
-            placeholder = {
-                Text("Workout name...", style = MaterialTheme.typography.bodyLarge)
-            },
+            isError = isError(),
+            label = { Text(context.getString(R.string.workout_name_label)) },
         )
     }
 }
@@ -250,15 +265,17 @@ private fun WorkoutNameTextBox(
 private fun AddExerciseRow (
     openAddExerciseModal: () -> Unit
 ) {
+    val context = LocalContext.current
+
     Row(modifier = Modifier.fillMaxWidth(0.8f),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceAround
     ) {
-        Text(text = "Exercises ", style = MaterialTheme.typography.titleLarge)
+        Text(text = context.getString(R.string.exercises_title), style = MaterialTheme.typography.titleLarge)
         IconButton(onClick = { openAddExerciseModal() }) {
             Icon(
                 painter = painterResource(id = R.drawable.plus),
-                contentDescription = "Plus"
+                contentDescription = context.getString(R.string.plus)
             )
         }
     }
@@ -272,12 +289,14 @@ private fun DisplayExerciseList (
         modifier = Modifier
             .fillMaxHeight(0.75f)
             .fillMaxWidth(0.9f),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        contentPadding = PaddingValues(bottom = 5.dp)
     ) {
         viewModel.exercises.forEachIndexed { index, exercise ->
             item {
                 DisplayExerciseCard(
                     exercise = exercise,
+                    edit = { name, sets, m1, m2, restTime -> viewModel.updateExercise(index, name, sets, m1, m2, restTime) },
                     delete = { viewModel.deleteExercise(index) }
                 )
             }
@@ -288,28 +307,57 @@ private fun DisplayExerciseList (
 @Composable
 private fun DisplayExerciseCard(
     exercise: Exercise,
+    edit: (String, Int, Measurement, Measurement, Int?) -> Unit,
     delete: () -> Unit
 ) {
+    val context = LocalContext.current
+
+    var manageExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
+    val exerciseModel: ExerciseModalViewModel = viewModel()
+
+    ManageExerciseModal(
+        modalOpen = manageExerciseModalOpen,
+        closeModal = { manageExerciseModalOpen = false },
+        submitModal = edit,
+        exerciseModel = exerciseModel
+    )
+
     Card {
         Row(modifier = Modifier
             .fillMaxWidth(0.9f)
             .height(100.dp)
-            .padding(16.dp),
+            .padding(24.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = exercise.name, style = MaterialTheme.typography.bodyLarge)
-            IconButton(onClick = { delete() }) {
-                Icon(
-                    painter = painterResource(id = R.drawable.delete),
-                    contentDescription = "Delete"
-                )
-            }
-            IconButton(onClick = { /*TODO*/ }) {
-                Icon(
-                    painter = painterResource(id = R.drawable.edit),
-                    contentDescription = "Edit"
-                )
+            Text(text = exercise.name,
+                style = MaterialTheme.typography.bodyLarge)
+            Row(modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End) {
+                IconButton(onClick = { delete() }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.delete),
+                        contentDescription = context.getString(R.string.delete)
+                    )
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                IconButton(onClick = {
+                    manageExerciseModalOpen = true
+                    exerciseModel.updateExerciseName(exercise.name)
+                    exerciseModel.updateSets(exercise.sets.toString())
+                    if (exercise.restTime != null) {
+                        exerciseModel.updateRestTime(exercise.restTime.toString())
+                    }
+                    exerciseModel.updateMeasurementType1(exercise.measurement1.type)
+                    exerciseModel.updateMeasurementType2(exercise.measurement2.type)
+                    exerciseModel.updateMeasurementValues1(exercise.measurement1.values.map { it.toString() })
+                    exerciseModel.updateMeasurementValues2(exercise.measurement2.values.map { it.toString() })
+                }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.edit),
+                        contentDescription = context.getString(R.string.edit)
+                    )
+                }
             }
         }
     }
@@ -317,8 +365,11 @@ private fun DisplayExerciseCard(
 
 @Composable
 private fun CancelAndSaveRow (
-    cancel: () -> Unit
+    cancel: () -> Unit,
+    save: () -> Unit
 ) {
+    val context = LocalContext.current
+
     Row(
         modifier = Modifier.fillMaxWidth(0.8f),
         horizontalArrangement = Arrangement.End
@@ -334,18 +385,20 @@ private fun CancelAndSaveRow (
             colors = buttonColors,
             shape = RectangleShape
         ) {
-            Text(text = "Cancel", style = MaterialTheme.typography.bodyLarge)
+            Text(text = context.getString(R.string.cancel), style = MaterialTheme.typography.bodyLarge)
         }
 
         Spacer(modifier = Modifier.width(8.dp))
 
         // save
         Button(
-            onClick = { /*TODO save workout */ },
+            onClick = {
+                save()
+            },
             colors = buttonColors,
             shape = RectangleShape
         ) {
-            Text(text = "Save", style = MaterialTheme.typography.bodyLarge)
+            Text(text = context.getString(R.string.save), style = MaterialTheme.typography.bodyLarge)
         }
     }
 }
@@ -358,6 +411,8 @@ fun MeasurementSelection(
     values: List<String>,
     updateValue: (Int, String) -> Unit
 ) {
+    val context = LocalContext.current
+
     var open by rememberSaveable { mutableStateOf(false) }
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
 
@@ -379,7 +434,7 @@ fun MeasurementSelection(
             )
             Icon(
                 painter = painterResource(id = R.drawable.dropdown),
-                contentDescription = "Leaderboard",
+                contentDescription =  context.getString(R.string.leaderboard),
             )
         }
 
@@ -407,11 +462,14 @@ fun MeasurementSelection(
                 .heightIn(max = 100.dp)
         ) {
             items(sets.toInt()) { index ->
+                val displayText = context.getString(R.string.measurement_text,
+                    index + 1, options[selectedIndex])
+
                 TextField(
                     value = values[index],
                     onValueChange = { it: String -> updateValue(index, it) },
                     isError = values[index].toFloatOrNull() == null,
-                    label = { Text("Set ${index + 1} (${options[selectedIndex]})") },
+                    label = { Text(displayText) },
                     modifier = Modifier
                         .fillMaxWidth(0.95f)
                         .padding(vertical = 3.dp)

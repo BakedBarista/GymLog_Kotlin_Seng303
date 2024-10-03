@@ -35,6 +35,7 @@ import com.example.seng303_groupb_assignment2.screens.ViewLeaderboard
 import com.example.seng303_groupb_assignment2.screens.ViewProgress
 import com.example.seng303_groupb_assignment2.ui.theme.SENG303_GroupB_Assignment2Theme
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel as koinViewModel
 
 class MainActivity : ComponentActivity() {
@@ -65,9 +66,10 @@ class MainActivity : ComponentActivity() {
                             }
                             composable("Add") {
                                 currentTitle = "Workout Builder"
+                                val manageWorkoutViewModel: ManageWorkoutViewModel = viewModel()
                                 AddWorkout(
                                     navController = navController,
-                                    viewModel = ManageWorkoutViewModel(),
+                                    manageWorkoutViewModel
                                 )
                             }
                             composable("Progress") {

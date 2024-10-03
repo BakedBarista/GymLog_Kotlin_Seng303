@@ -1,3 +1,25 @@
 <resources>
     <string name="app_name">SENG303_GroupB_Assignment2</string>
+
+    <!-- buttons -->
+    <string name="add">Add</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="edit">Edit</string>
+    <string name="delete">Delete</string>
+
+    <!-- titles -->
+    <string name="exercises_modal_title">Add Exercise</string>
+    <string name="exercises_title">Exercises</string>
+
+    <!-- form labels -->
+    <string name="workout_name_label">Workout name</string>
+    <string name="exercise_name_label">Exercise name</string>
+    <string name="sets_label">Sets</string>
+    <string name="rest_time_label">Rest time</string>
+
+    <!-- other -->
+    <string name="leaderboard">Leaderboard</string>
+    <string name="plus">Plus</string>
+    <string name="measurement_text">Set %1$d (%2$s)</string>
 </resources>

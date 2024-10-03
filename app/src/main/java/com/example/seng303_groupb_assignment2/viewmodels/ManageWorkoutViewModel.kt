@@ -9,7 +9,7 @@ import androidx.lifecycle.ViewModel
 import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.entities.Measurement
 
-class ManageWorkoutViewModel: ViewModel() {
+class ManageWorkoutViewModel(): ViewModel() {
     var name by mutableStateOf("")
         private set
 
@@ -40,5 +40,28 @@ class ManageWorkoutViewModel: ViewModel() {
 
     fun deleteExercise(index: Int) {
         exercises.removeAt(index)
+    }
+
+    fun updateExercise(index: Int, name: String, sets: Int, m1: Measurement,
+                       m2: Measurement, restTime: Int?) {
+        val exercise = exercises[index]
+        exercise.name = name
+        exercise.sets = sets
+        exercise.measurement1 = m1
+        exercise.measurement2 = m2
+
+        if (restTime != null) {
+            exercise.restTime = restTime
+        }
+    }
+
+    fun validName(): Boolean {
+        return name.isNotBlank()
+    }
+
+    fun saveWorkout() {
+        if (validName()) {
+            // save
+        }
     }
 }
