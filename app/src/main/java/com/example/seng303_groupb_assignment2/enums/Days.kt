@@ -1,9 +1,7 @@
 package com.example.seng303_groupb_assignment2.enums
 
 import java.time.DayOfWeek
-import java.time.Instant
 import java.time.LocalDateTime
-import java.time.ZoneId
 
 enum class Days {
     SUNDAY, MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY;
@@ -21,7 +19,7 @@ enum class Days {
     }
 
     companion object {
-        fun getCurrentDate(): Days {
+        fun getCurrentDay(): Days {
             val currentDay = LocalDateTime.now().dayOfWeek
             return entries.first { it.toDayOfWeek() == currentDay }
         }

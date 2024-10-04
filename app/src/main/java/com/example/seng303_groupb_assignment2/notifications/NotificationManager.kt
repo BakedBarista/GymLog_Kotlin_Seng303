@@ -59,7 +59,7 @@ class NotificationManager(private val context: Context) {
         )
 
         val calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 4)
+            set(Calendar.HOUR_OF_DAY, 3)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)

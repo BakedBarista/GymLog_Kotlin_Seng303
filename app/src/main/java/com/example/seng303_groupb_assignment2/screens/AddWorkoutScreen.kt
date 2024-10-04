@@ -43,9 +43,6 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.toLowerCase
-import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -59,7 +56,6 @@ import com.example.seng303_groupb_assignment2.notifications.NotificationManager
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.ManageWorkoutViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
-import java.util.Locale
 
 @Composable
 fun AddWorkout(
@@ -661,7 +657,7 @@ private fun EditableScheduleInformation(
 }
 
 private fun getNextDay(schedule: List<Days>): String {
-    val currentOrdinal = Days.getCurrentDate().ordinal
+    val currentOrdinal = Days.getCurrentDay().ordinal
     val nextDays = (currentOrdinal + 1 until Days.entries.size)
         .map { Days.entries[it % Days.entries.size] }
         .plus(Days.entries.take(currentOrdinal + 1))

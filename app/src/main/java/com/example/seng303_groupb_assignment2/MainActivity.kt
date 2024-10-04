@@ -13,22 +13,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailDefaults
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -59,6 +52,8 @@ import com.example.seng303_groupb_assignment2.screens.ViewProgress
 import com.example.seng303_groupb_assignment2.ui.theme.SENG303_GroupB_Assignment2Theme
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.seng303_groupb_assignment2.enums.Days
+import com.example.seng303_groupb_assignment2.notifications.NotificationManager
 import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel as koinViewModel
 
@@ -69,6 +64,20 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        intent?.let {
+            if (it.getBooleanExtra("notify", false)) {
+                val notificationHandler = NotificationManager(this)
+                workoutViewModel.allWorkouts.observe(this) { workouts ->
+                    val currentDay: Days = Days.getCurrentDay();
+                    workouts.forEach { workoutWithExercises ->
+                        if (workoutWithExercises.workout.schedule.contains(currentDay)) {
+                            notificationHandler.sendWorkoutNotification(workoutWithExercises.workout.name)
+                        }
+                    }
+                }
+            }
+        }
+
         enableEdgeToEdge()
         setContent {
             SENG303_GroupB_Assignment2Theme {
