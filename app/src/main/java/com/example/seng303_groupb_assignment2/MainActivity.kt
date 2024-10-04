@@ -1,10 +1,12 @@
 package com.example.seng303_groupb_assignment2
 
 import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -64,6 +66,7 @@ class MainActivity : ComponentActivity() {
     private val exerciseViewModel: ExerciseViewModel by koinViewModel()
     private val workoutViewModel: WorkoutViewModel by koinViewModel()
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

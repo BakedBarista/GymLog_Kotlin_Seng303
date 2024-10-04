@@ -19,6 +19,10 @@
     <string name="sets_label">Sets</string>
     <string name="rest_time_label">Rest time</string>
 
+    <!-- notifications -->
+    <string name="notification_schedule_title">Workout Scheduled</string>
+    <string name="notification_schedule_content">Reminder: %1$s is scheduled for today.</string>
+
     <!-- other -->
     <string name="leaderboard">Leaderboard</string>
     <string name="plus">Plus</string>
