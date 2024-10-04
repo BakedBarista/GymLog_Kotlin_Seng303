@@ -26,6 +26,10 @@ interface WorkoutDao {
     fun getAllWorkoutsWithExercises(): Flow<List<WorkoutWithExercises>>
 
     @Transaction
+    @Query("SELECT * FROM Workout ORDER BY name ASC")
+    fun getAllWorkouts(): Flow<List<Workout>>
+
+    @Transaction
     @Query("SELECT * FROM Workout WHERE id = :workoutId")
     suspend fun getWorkoutWithExercises(workoutId: Long): WorkoutWithExercises
 

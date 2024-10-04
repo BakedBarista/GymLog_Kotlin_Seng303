@@ -1,6 +1,7 @@
 package com.example.seng303_groupb_assignment2.database
 
 import androidx.room.TypeConverter
+import com.example.seng303_groupb_assignment2.entities.Measurement
 import com.example.seng303_groupb_assignment2.enums.Days
 
 /**
@@ -38,5 +39,22 @@ class Converters {
     @TypeConverter
     fun toDayList(value: String?): List<Days>? {
         return value?.split(",")?.map { Days.valueOf(it) }
+    }
+
+    @TypeConverter
+    fun fromMeasurement(value: Measurement?): String? {
+        return value?.let { it.type + ";" + it.values.joinToString(separator = ",") }
+    }
+
+    @TypeConverter
+    fun toMeasurement(value: String?): Measurement? {
+        if (value.isNullOrEmpty()) return null
+        val typeAndValues = value.split(";")
+
+        if (typeAndValues.size < 2) return null
+
+        val type = typeAndValues[0]
+        val values = typeAndValues[1].split(",").mapNotNull { it.toFloatOrNull() }
+        return Measurement(type, values)
     }
 }

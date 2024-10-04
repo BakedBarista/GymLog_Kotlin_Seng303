@@ -48,24 +48,27 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.seng303_groupb_assignment2.viewmodels.ManageWorkoutViewModel
 import com.example.seng303_groupb_assignment2.screens.AddWorkout
 import com.example.seng303_groupb_assignment2.screens.Home
-import com.example.seng303_groupb_assignment2.screens.RunWorkout
 import com.example.seng303_groupb_assignment2.screens.SelectWorkout
 import com.example.seng303_groupb_assignment2.screens.ViewLeaderboard
 import com.example.seng303_groupb_assignment2.screens.ViewProgress
 import com.example.seng303_groupb_assignment2.ui.theme.SENG303_GroupB_Assignment2Theme
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel as koinViewModel
 
 class MainActivity : ComponentActivity() {
-    private val viewModel: ExerciseViewModel by koinViewModel()
+    private val exerciseViewModel: ExerciseViewModel by koinViewModel()
+    private val workoutViewModel: WorkoutViewModel by koinViewModel()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             SENG303_GroupB_Assignment2Theme {
-
                 val navController = rememberNavController()
                 val configuration = LocalConfiguration.current
                 val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
@@ -89,7 +92,6 @@ class MainActivity : ComponentActivity() {
                     Row(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(padding)
                     ) {
                         NavHost(
                             navController = navController,
@@ -97,6 +99,7 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight()
+                                .padding(padding)
                         ) {
                             composable("Home") {
                                 currentTitle = "Home"
@@ -108,7 +111,13 @@ class MainActivity : ComponentActivity() {
                             }
                             composable("Add") {
                                 currentTitle = "Workout Builder"
-                                AddWorkout(navController = navController)
+                                val manageWorkoutViewModel: ManageWorkoutViewModel = viewModel()
+                                AddWorkout(
+                                    navController = navController,
+                                    manageViewModel = manageWorkoutViewModel,
+                                    exerciseViewModel = exerciseViewModel,
+                                    workoutViewModel = workoutViewModel
+                                )
                             }
                             composable("Progress") {
                                 currentTitle = "View Progress"

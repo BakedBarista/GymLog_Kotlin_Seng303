@@ -1,5 +1,7 @@
 package com.example.seng303_groupb_assignment2.datastore
 
+import com.example.seng303_groupb_assignment2.daos.ExerciseDao
+import com.example.seng303_groupb_assignment2.daos.WorkoutDao
 import com.example.seng303_groupb_assignment2.database.AppDatabase
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
@@ -12,6 +14,6 @@ val dataAccessModule = module {
     single { get<AppDatabase>().workoutDao() }
     single { get<AppDatabase>().exerciseDao() }
 
-    viewModel { ExerciseViewModel(get()) }
-    viewModel { WorkoutViewModel(get(), get()) }
+    viewModel { ExerciseViewModel(get<ExerciseDao>(), get<WorkoutDao>()) }
+    viewModel { WorkoutViewModel(get<WorkoutDao>(), get<ExerciseDao>()) }
 }

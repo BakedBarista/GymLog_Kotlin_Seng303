@@ -5,19 +5,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.seng303_groupb_assignment2.daos.ExerciseDao
+import com.example.seng303_groupb_assignment2.daos.WorkoutDao
 import com.example.seng303_groupb_assignment2.entities.Exercise
+import com.example.seng303_groupb_assignment2.entities.WorkoutExerciseCrossRef
 import kotlinx.coroutines.launch
 
 class ExerciseViewModel(
-    private val exerciseDao: ExerciseDao
+    private val exerciseDao: ExerciseDao,
+    private val workoutDao: WorkoutDao
 ) : ViewModel() {
     val allExercises: LiveData<List<Exercise>> = exerciseDao.getAllExercises().asLiveData()
-
-    fun addExercise(exercise: Exercise) {
-        viewModelScope.launch {
-            exerciseDao.upsertExercise(exercise)
-        }
-    }
 
     fun deleteExercise(exercise: Exercise) {
         viewModelScope.launch {
@@ -31,18 +28,11 @@ class ExerciseViewModel(
         }
     }
 
-    fun addExercise(name: String, sets: Int, reps: Int?, weight: Float?, distance: Float?, time: Float?, restTime: Int) {
+    fun addExercise(workoutId: Long, exercise: Exercise) {
         viewModelScope.launch {
-            val newExercise = Exercise(
-                name = name,
-                sets = sets,
-                reps = reps?.let { listOf(it) },
-                weight = weight?.let { listOf(it) },
-                distance = distance,
-                time = time,
-                restTime = restTime
-            )
-            exerciseDao.upsertExercise(newExercise)
+            val exerciseId = exerciseDao.upsertExercise(exercise)
+            val crossRef = WorkoutExerciseCrossRef(workoutId = workoutId, exerciseId = exerciseId)
+            workoutDao.upsertWorkoutExerciseCrossRef(crossRef)
         }
     }
 }
