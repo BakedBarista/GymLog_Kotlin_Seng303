@@ -21,7 +21,7 @@
 
     <!-- notifications -->
     <string name="notification_schedule_title">Workout Scheduled</string>
-    <string name="notification_schedule_content">Reminder: %1$s is scheduled for today.</string>
+    <string name="notification_schedule_content">Reminder: Your workout \"%1$s\" has been scheduled for today.</string>
 
     <!-- other -->
     <string name="leaderboard">Leaderboard</string>

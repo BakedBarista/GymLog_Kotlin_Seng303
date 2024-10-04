@@ -36,8 +36,7 @@ fun Home(
 
     Column {
         Button(onClick = {
-            val workout = Workout(name = "chest day", description = "cool", schedule = listOf())
-            notificationHandler.scheduleNotificationTest(workout)
+            notificationHandler.scheduleNotificationTest("chest day")
         }) { Text(text = "Simple notification") }
     }
 }

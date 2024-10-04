@@ -10,10 +10,11 @@ import android.provider.Settings
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import com.example.seng303_groupb_assignment2.R
-import com.example.seng303_groupb_assignment2.entities.Workout
 import com.example.seng303_groupb_assignment2.enums.Days
 import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.temporal.TemporalAdjusters
 import kotlin.random.Random
 
@@ -21,32 +22,36 @@ import kotlin.random.Random
 class NotificationManager(private val context: Context) {
     private val notificationManager = context.getSystemService(NotificationManager::class.java)
     private val notificationChannelID = "schedule_channel_id"
+    private val repeatNotification: List<Long> = listOf()
 
     @RequiresApi(Build.VERSION_CODES.S)
-    fun sendNotification() {
+    fun sendNotification(intent: Intent) {
+        val workoutName = intent.getStringExtra("workoutName")
         val notification = NotificationCompat.Builder(context, notificationChannelID)
             .setContentTitle(context.getString(R.string.notification_schedule_title))
-            .setContentText(context.getString(R.string.notification_schedule_content, "Bench"))
+            .setContentText(context.getString(R.string.notification_schedule_content, workoutName))
             .setSmallIcon(R.drawable.run)
             .setPriority(NotificationManager.IMPORTANCE_HIGH)
             .setAutoCancel(true)
             .build()
 
         notificationManager.notify(Random.nextInt(), notification)
+
+        scheduleNotificationOnDay(workoutName = workoutName ?: "", day = getCurrentDay())
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
-    fun scheduleNotificationOnDay(workout: Workout, day: Days) {
-        scheduleNotification(workout, timeInMillsForDaysAtHour(day))
+    fun scheduleNotificationOnDay(workoutName: String, day: Days) {
+        scheduleNotification(workoutName, timeInMillsForDaysAtHour(day))
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
-    fun scheduleNotificationTest(workout: Workout) {
-        scheduleNotification(workout, System.currentTimeMillis())
+    fun scheduleNotificationTest(workoutName: String) {
+        scheduleNotification(workoutName, System.currentTimeMillis())
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
-    private fun scheduleNotification(workout: Workout, timeInMillis: Long) {
+    private fun scheduleNotification(workoutName: String, timeInMillis: Long) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         if (!alarmManager.canScheduleExactAlarms()) {
             context.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
@@ -54,7 +59,7 @@ class NotificationManager(private val context: Context) {
         }
 
         val intent = Intent(context, NotificationReceiver::class.java).apply {
-            putExtra("workoutName", workout.name)
+            putExtra("workoutName", workoutName)
         }
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -73,7 +78,27 @@ class NotificationManager(private val context: Context) {
 
     private fun timeInMillsForDaysAtHour(day: Days): Long {
         val dateTime: LocalDateTime = LocalDateTime.now()
-        val nextMonday: LocalDateTime = dateTime.with(TemporalAdjusters.next(DayOfWeek.MONDAY))
-        return 1L;
+        val nextDateForDay: LocalDateTime = dateTime.with(TemporalAdjusters.next(day.toDayOfWeek())).withHour(4)
+        val zoneId = ZoneId.systemDefault()
+        val timeInMillis: Long = nextDateForDay.atZone(zoneId).toInstant().toEpochMilli()
+        return timeInMillis
+    }
+
+    private fun getCurrentDay(): Days {
+        val currentDateTime = LocalDateTime.ofInstant(
+            Instant.ofEpochMilli(System.currentTimeMillis()),
+            ZoneId.systemDefault()
+        )
+        val dayOfWeek = currentDateTime.dayOfWeek
+
+        return when (dayOfWeek) {
+            DayOfWeek.SUNDAY -> Days.SUNDAY
+            DayOfWeek.MONDAY -> Days.MONDAY
+            DayOfWeek.TUESDAY -> Days.TUESDAY
+            DayOfWeek.WEDNESDAY -> Days.WEDNESDAY
+            DayOfWeek.THURSDAY -> Days.THURSDAY
+            DayOfWeek.FRIDAY -> Days.FRIDAY
+            DayOfWeek.SATURDAY -> Days.SATURDAY
+        }
     }
 }
