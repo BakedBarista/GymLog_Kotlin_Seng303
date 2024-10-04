@@ -1,6 +1,7 @@
 package com.example.seng303_groupb_assignment2.daos
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
@@ -17,6 +18,13 @@ interface WorkoutDao {
     @Upsert
     suspend fun upsertWorkoutExerciseCrossRef(crossRef: WorkoutExerciseCrossRef)
 
+    @Delete
+    suspend fun deleteWorkout(workout: Workout)
+
+    @Transaction
+    @Query("SELECT * FROM Workout")
+    fun getAllWorkoutsWithExercises(): Flow<List<WorkoutWithExercises>>
+
     @Transaction
     @Query("SELECT * FROM Workout ORDER BY name ASC")
     fun getAllWorkouts(): Flow<List<Workout>>
@@ -24,4 +32,7 @@ interface WorkoutDao {
     @Transaction
     @Query("SELECT * FROM Workout WHERE id = :workoutId")
     suspend fun getWorkoutWithExercises(workoutId: Long): WorkoutWithExercises
+
+    @Query("SELECT COUNT(*) FROM Workout")
+    suspend fun getWorkoutCount(): Int
 }

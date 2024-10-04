@@ -23,4 +23,25 @@
     <string name="leaderboard">Leaderboard</string>
     <string name="plus">Plus</string>
     <string name="measurement_text">Set %1$d (%2$s)</string>
+    <string name="start_workout">Start Workout</string>
+    <string name="edit_workout">Edit Workout</string>
+    <string name="edit_exercise">Edit Exercise</string>
+    <string name="delete_workout">Delete Workout</string>
+    <string name="delete_exercise">Delete Exercise</string>
+    <string name="collapse">Collapse</string>
+    <string name="expand">Expand</string>
+    <string name="view_details">View Details</string>
+    <string name="view_workout">View Workout</string>
+    <string name="more_options">More Options</string>
+    <string name="edit_workout_title">Edit Workout</string>
+    <string name="workout_name">Workout Name</string>
+    <string name="description">Description</string>
+    <string name="schedule">Schedule</string>
+    <string name="monday_abbreviation">M</string>
+    <string name="tuesday_abbreviation">T</string>
+    <string name="wednesday_abbreviation">W</string>
+    <string name="thursday_abbreviation">T</string>
+    <string name="friday_abbreviation">F</string>
+    <string name="saturday_abbreviation">S</string>
+    <string name="sunday_abbreviation">S</string>
 </resources>
