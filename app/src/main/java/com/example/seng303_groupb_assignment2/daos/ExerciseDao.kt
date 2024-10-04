@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.Flow
 interface ExerciseDao {
     // Updates an exercise if the id exists, otherwise insert a new exercise
     @Upsert
-    suspend fun upsertExercise(exercise: Exercise)
+    suspend fun upsertExercise(exercise: Exercise) : Long
 
     @Delete
     suspend fun deleteExercise(exercise: Exercise)

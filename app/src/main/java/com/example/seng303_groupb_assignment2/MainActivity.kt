@@ -51,6 +51,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.seng303_groupb_assignment2.screens.AddWorkout
 import com.example.seng303_groupb_assignment2.screens.Home
 import com.example.seng303_groupb_assignment2.screens.RunWorkout
+import com.example.seng303_groupb_assignment2.screens.SelectWorkout
 import com.example.seng303_groupb_assignment2.screens.ViewLeaderboard
 import com.example.seng303_groupb_assignment2.screens.ViewProgress
 import com.example.seng303_groupb_assignment2.ui.theme.SENG303_GroupB_Assignment2Theme
@@ -88,6 +89,7 @@ class MainActivity : ComponentActivity() {
                     Row(
                         modifier = Modifier
                             .fillMaxSize()
+                            .padding(padding)
                     ) {
                         NavHost(
                             navController = navController,
@@ -95,15 +97,14 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight()
-                                .padding(padding)
                         ) {
                             composable("Home") {
                                 currentTitle = "Home"
                                 Home(navController = navController)
                             }
-                            composable("Run") {
-                                currentTitle = "Run Workout"
-                                RunWorkout(navController = navController)
+                            composable("SelectWorkout") {
+                                currentTitle = "Select Workout"
+                                SelectWorkout(navController = navController)
                             }
                             composable("Add") {
                                 currentTitle = "Workout Builder"
@@ -142,7 +143,7 @@ fun CustomBottomAppBar(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            AppBarIconButton(navController, "Run", R.drawable.run, "Run", currentDestination == "Run")
+            AppBarIconButton(navController, "SelectWorkout", R.drawable.run, "Select Workout", currentDestination == "SelectWorkout")
             AppBarIconButton(navController, "Add", R.drawable.add, "Add", currentDestination == "Add")
             AppBarIconButton(navController, "Home", R.drawable.home, "Home", currentDestination == "Home")
             AppBarIconButton(navController, "Progress", R.drawable.progress, "Progress", currentDestination == "Progress")
@@ -170,7 +171,7 @@ fun CustomSideBar(
             Column(
                 verticalArrangement = Arrangement.Center
             ) {
-                AppBarNavigationRailItem(navController, "Run", R.drawable.run, "Run", currentDestination == "Run")
+                AppBarNavigationRailItem(navController, "SelectWorkout", R.drawable.run, "Select Workout", currentDestination == "SelectWorkout")
                 AppBarNavigationRailItem(navController, "Add", R.drawable.add, "Add", currentDestination == "Add")
                 AppBarNavigationRailItem(navController, "Home", R.drawable.home, "Home", currentDestination == "Home")
                 AppBarNavigationRailItem(navController, "Progress", R.drawable.progress, "Progress", currentDestination == "Progress")
