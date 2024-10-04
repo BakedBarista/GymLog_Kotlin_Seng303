@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     id("com.google.devtools.ksp")
+    kotlin("plugin.serialization") version "2.0.20"
 }
 
 android {
@@ -91,4 +92,19 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // To serialise data
+    implementation(libs.jetbrains.kotlinx.serialization.json)
+
+    // Dependencies for Vico, a graphing library
+    // For Jetpack Compose.
+    implementation(libs.compose)
+    // For `compose`. Creates a `ChartStyle` based on an M2 Material Theme.
+    implementation(libs.compose.m2)
+    // For `compose`. Creates a `ChartStyle` based on an M3 Material Theme.
+    implementation(libs.compose.m3)
+    // Houses the core logic for charts and other elements. Included in all other modules.
+    implementation(libs.core)
+    // For the view system.
+    implementation(libs.views)
 }

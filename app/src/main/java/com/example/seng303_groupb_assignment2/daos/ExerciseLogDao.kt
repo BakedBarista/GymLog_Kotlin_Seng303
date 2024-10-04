@@ -12,5 +12,5 @@ interface ExerciseLogDao {
     suspend fun upsertExerciseLog(exerciseLog: ExerciseLog)
 
     @Query("SELECT * FROM ExerciseLog WHERE exerciseId = :exerciseId ORDER BY timestamp ASC")
-    fun getExerciseLogsByExercise(exerciseId: Long): Flow<List<ExerciseLog>>
+    fun getExerciseLogsByExerciseId(exerciseId: Long): Flow<List<ExerciseLog>>
 }
