@@ -51,7 +51,6 @@ import androidx.navigation.compose.rememberNavController
 import com.example.seng303_groupb_assignment2.viewmodels.ManageWorkoutViewModel
 import com.example.seng303_groupb_assignment2.screens.AddWorkout
 import com.example.seng303_groupb_assignment2.screens.Home
-import com.example.seng303_groupb_assignment2.screens.RunWorkout
 import com.example.seng303_groupb_assignment2.screens.SelectWorkout
 import com.example.seng303_groupb_assignment2.screens.ViewLeaderboard
 import com.example.seng303_groupb_assignment2.screens.ViewProgress
@@ -62,7 +61,9 @@ import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel as koinViewModel
 
 class MainActivity : ComponentActivity() {
-    private val viewModel: ExerciseViewModel by koinViewModel()
+    private val exerciseViewModel: ExerciseViewModel by koinViewModel()
+    private val workoutViewModel: WorkoutViewModel by koinViewModel()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -71,8 +72,6 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val configuration = LocalConfiguration.current
                 val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
-                val exerciseViewModel: ExerciseViewModel = viewModel()
-                val workoutViewModel: WorkoutViewModel = viewModel()
 
                 // TODO - make this use string resources instead of hard coded string literals
                 var currentTitle by rememberSaveable { mutableStateOf("Home") }
@@ -93,7 +92,6 @@ class MainActivity : ComponentActivity() {
                     Row(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(padding)
                     ) {
                         NavHost(
                             navController = navController,

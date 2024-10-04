@@ -53,6 +53,7 @@ import com.example.seng303_groupb_assignment2.R
 import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.entities.Measurement
 import com.example.seng303_groupb_assignment2.entities.Workout
+import com.example.seng303_groupb_assignment2.enums.Days
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.ManageWorkoutViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
@@ -335,14 +336,14 @@ private fun CancelAndSaveRow (
         Button(
             onClick = {
                 if (manageViewModel.validName()) {
-                    val workout = Workout(name = manageViewModel.name, description = manageViewModel.description, schedule = "")
+                    val workout = Workout(name = manageViewModel.name, description = manageViewModel.description, schedule = listOf(Days.MONDAY, Days.WEDNESDAY))
                     workoutViewModel.addWorkout(workout)
 
                     manageViewModel.exercises.forEach {
                         exerciseViewModel.addExercise(workout.id, it)
                     }
 
-                    navController.navigate("Run")
+                    navController.navigate("SelectWorkout")
                 }
             },
             colors = buttonColors,

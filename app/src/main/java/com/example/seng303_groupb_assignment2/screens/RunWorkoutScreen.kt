@@ -10,16 +10,5 @@ import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
 
 @Composable
 fun RunWorkout(
-    navController: NavController,
-    workoutViewModel: WorkoutViewModel
 ) {
-    val workouts by workoutViewModel.allWorkouts.observeAsState(emptyList())
-
-    // just here for testing
-    Column {
-        Text(text = "Run Workouts")
-        workouts.forEach { workout ->
-            Text(text = workout.name)
-        }
-    }
 }
