@@ -415,7 +415,7 @@ fun ExerciseItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp, horizontal = 4.dp)
+            .padding(vertical = 2.dp)
             .background(MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.shapes.small),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
@@ -423,7 +423,9 @@ fun ExerciseItem(
         Text(
             text = exercise.name,
             style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 12.dp),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
