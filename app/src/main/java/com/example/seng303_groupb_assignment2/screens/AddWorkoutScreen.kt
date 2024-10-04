@@ -587,6 +587,7 @@ private fun ManageExerciseModal(
 
                                     closeModal()
                                     exerciseModel.clearSavedInfo()
+//                                    notificationHandler.setupDailyNotifications()
                                 }
                             }) {
                             Text(context.getString(R.string.add), style = MaterialTheme.typography.bodyLarge)

@@ -10,6 +10,6 @@ class NotificationReceiver: BroadcastReceiver() {
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onReceive(context: Context, intent: Intent) {
         val notificationHandler = NotificationManager(context)
-        notificationHandler.sendNotification(intent)
+        notificationHandler.sendNotification("test")
     }
 }

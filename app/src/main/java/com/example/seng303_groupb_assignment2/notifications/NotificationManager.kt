@@ -7,26 +7,20 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import com.example.seng303_groupb_assignment2.R
-import com.example.seng303_groupb_assignment2.enums.Days
-import java.time.DayOfWeek
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.temporal.TemporalAdjusters
+import java.util.Calendar
 import kotlin.random.Random
 
 
 class NotificationManager(private val context: Context) {
     private val notificationManager = context.getSystemService(NotificationManager::class.java)
     private val notificationChannelID = "schedule_channel_id"
-    private val repeatNotification: List<Long> = listOf()
 
     @RequiresApi(Build.VERSION_CODES.S)
-    fun sendNotification(intent: Intent) {
-        val workoutName = intent.getStringExtra("workoutName")
+    fun sendNotification(workoutName: String) {
         val notification = NotificationCompat.Builder(context, notificationChannelID)
             .setContentTitle(context.getString(R.string.notification_schedule_title))
             .setContentText(context.getString(R.string.notification_schedule_content, workoutName))
@@ -36,69 +30,54 @@ class NotificationManager(private val context: Context) {
             .build()
 
         notificationManager.notify(Random.nextInt(), notification)
-
-        scheduleNotificationOnDay(workoutName = workoutName ?: "", day = getCurrentDay())
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
-    fun scheduleNotificationOnDay(workoutName: String, day: Days) {
-        scheduleNotification(workoutName, timeInMillsForDaysAtHour(day))
+    fun setupDailyNotifications(notificationPermission: Boolean) {
+        if (notificationPermission) {
+            turnOnNotifications()
+        } else {
+            turnOffNotifications()
+        }
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
-    fun scheduleNotificationTest(workoutName: String) {
-        scheduleNotification(workoutName, System.currentTimeMillis())
-    }
-
-    @RequiresApi(Build.VERSION_CODES.S)
-    private fun scheduleNotification(workoutName: String, timeInMillis: Long) {
+    private fun turnOffNotifications() {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        if (!alarmManager.canScheduleExactAlarms()) {
-            context.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
-            return
-        }
-
-        val intent = Intent(context, NotificationReceiver::class.java).apply {
-            putExtra("workoutName", workoutName)
-        }
+        val intent = Intent(context, NotificationReceiver::class.java)
 
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            0,
+            999,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        alarmManager.setExact(
+        alarmManager.cancel(pendingIntent)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.S)
+    private fun turnOnNotifications() {
+        val intent = Intent(context, NotificationReceiver::class.java)
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            999,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 11)
+            set(Calendar.MINUTE, 4)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        alarmManager.setInexactRepeating(
             AlarmManager.RTC_WAKEUP,
-            timeInMillis,
+            calendar.timeInMillis,
+            AlarmManager.INTERVAL_DAY,
             pendingIntent
         )
-    }
-
-    private fun timeInMillsForDaysAtHour(day: Days): Long {
-        val dateTime: LocalDateTime = LocalDateTime.now()
-        val nextDateForDay: LocalDateTime = dateTime.with(TemporalAdjusters.next(day.toDayOfWeek())).withHour(4)
-        val zoneId = ZoneId.systemDefault()
-        val timeInMillis: Long = nextDateForDay.atZone(zoneId).toInstant().toEpochMilli()
-        return timeInMillis
-    }
-
-    private fun getCurrentDay(): Days {
-        val currentDateTime = LocalDateTime.ofInstant(
-            Instant.ofEpochMilli(System.currentTimeMillis()),
-            ZoneId.systemDefault()
-        )
-        val dayOfWeek = currentDateTime.dayOfWeek
-
-        return when (dayOfWeek) {
-            DayOfWeek.SUNDAY -> Days.SUNDAY
-            DayOfWeek.MONDAY -> Days.MONDAY
-            DayOfWeek.TUESDAY -> Days.TUESDAY
-            DayOfWeek.WEDNESDAY -> Days.WEDNESDAY
-            DayOfWeek.THURSDAY -> Days.THURSDAY
-            DayOfWeek.FRIDAY -> Days.FRIDAY
-            DayOfWeek.SATURDAY -> Days.SATURDAY
-        }
     }
 }

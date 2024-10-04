@@ -2,12 +2,18 @@ package com.example.seng303_groupb_assignment2.screens
 
 import android.Manifest
 import android.os.Build
+import android.widget.ToggleButton
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Button
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import com.example.seng303_groupb_assignment2.entities.Workout
@@ -29,14 +35,10 @@ fun Home(
     val notificationHandler = NotificationManager(context)
 
     LaunchedEffect(key1 = true) {
-        if (!postNotificationPermission.status.isGranted) {
+        val notificationPermission = postNotificationPermission.status.isGranted
+        if (!notificationPermission) {
             postNotificationPermission.launchPermissionRequest()
         }
-    }
-
-    Column {
-        Button(onClick = {
-            notificationHandler.scheduleNotificationTest("chest day")
-        }) { Text(text = "Simple notification") }
+        notificationHandler.setupDailyNotifications(notificationPermission)
     }
 }
