@@ -17,6 +17,13 @@ class ManageWorkoutViewModel(): ViewModel() {
         name = newName
     }
 
+    var description by mutableStateOf("")
+        private set
+
+    fun updateDescription(newDescription: String) {
+        description = newDescription
+    }
+
     var exercises = mutableStateListOf<Exercise>()
         private set
 

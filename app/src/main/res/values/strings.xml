@@ -14,6 +14,7 @@
 
     <!-- form labels -->
     <string name="workout_name_label">Workout name</string>
+    <string name="description_label">Description</string>
     <string name="exercise_name_label">Exercise name</string>
     <string name="sets_label">Sets</string>
     <string name="rest_time_label">Rest time</string>

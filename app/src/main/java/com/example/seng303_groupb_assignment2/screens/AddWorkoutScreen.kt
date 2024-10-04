@@ -1,6 +1,7 @@
 package com.example.seng303_groupb_assignment2.screens
 
 import ExerciseModalViewModel
+import android.content.ClipDescription
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -71,37 +72,75 @@ fun AddWorkout(
         submitModal = { name, sets, m1, m2, restTime -> manageViewModel.addExercise(name, sets, m1, m2, restTime) }
     )
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        item {
-            WorkoutNameTextBox(
-                name = manageViewModel.name,
-                updateName = { manageViewModel.updateName(it) },
-                isError = { !manageViewModel.validName() }
-            )
-            Spacer(modifier = Modifier.padding(15.dp))
-        }
+    val configuration = LocalConfiguration.current
+    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
-        item {
-            AddExerciseRow(openAddExerciseModal = { manageExerciseModalOpen = true })
-            Spacer(modifier = Modifier.padding(10.dp))
-        }
+    if (isPortrait) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            item {
+                WorkoutNameTextBox(
+                    name = manageViewModel.name,
+                    updateName = { manageViewModel.updateName(it) },
+                    isError = { !manageViewModel.validName() }
+                )
+            }
 
-        item {
-            DisplayExerciseList(manageViewModel)
-            Spacer(modifier = Modifier.padding(10.dp))
-        }
+            item {
+                DescriptionTextBox(
+                    description = manageViewModel.description,
+                    updateDescription = { manageViewModel.updateDescription(it) },
+                )
+                Spacer(modifier = Modifier.padding(15.dp))
+            }
 
-        item {
-            CancelAndSaveRow(
-                cancel = { navController.navigate("Home") },
-                manageViewModel = manageViewModel,
-                workoutViewModel = workoutViewModel,
-                exerciseViewModel = exerciseViewModel,
-                navController = navController
-            )
+            item {
+                AddExerciseRow(openAddExerciseModal = { manageExerciseModalOpen = true })
+                Spacer(modifier = Modifier.padding(10.dp))
+            }
+
+            item {
+                DisplayExerciseList(manageViewModel)
+                Spacer(modifier = Modifier.padding(10.dp))
+            }
+
+            item {
+                CancelAndSaveRow(
+                    cancel = { navController.navigate("Home") },
+                    manageViewModel = manageViewModel,
+                    workoutViewModel = workoutViewModel,
+                    exerciseViewModel = exerciseViewModel,
+                    navController = navController
+                )
+            }
+        }
+    } else {
+        Row(Modifier.fillMaxWidth()) {
+            Column(Modifier.fillMaxWidth(0.5f).fillMaxHeight(), verticalArrangement = Arrangement.Center) {
+                WorkoutNameTextBox(
+                    name = manageViewModel.name,
+                    updateName = { manageViewModel.updateName(it) },
+                    isError = { !manageViewModel.validName() }
+                )
+                DescriptionTextBox(
+                    description = manageViewModel.description,
+                    updateDescription = { manageViewModel.updateDescription(it) },
+                )
+            }
+            Column(Modifier.fillMaxWidth()) {
+                AddExerciseRow(openAddExerciseModal = { manageExerciseModalOpen = true })
+                Spacer(modifier = Modifier.padding(5.dp))
+                DisplayExerciseList(manageViewModel)
+                CancelAndSaveRow(
+                    cancel = { navController.navigate("Home") },
+                    manageViewModel = manageViewModel,
+                    workoutViewModel = workoutViewModel,
+                    exerciseViewModel = exerciseViewModel,
+                    navController = navController
+                )
+            }
         }
     }
 }
@@ -132,6 +171,29 @@ private fun WorkoutNameTextBox(
 }
 
 @Composable
+private fun DescriptionTextBox(
+    description: String,
+    updateDescription: (String) -> Unit
+) {
+    val context = LocalContext.current
+
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        TextField(
+            value = description,
+            onValueChange = { updateDescription(it) },
+            textStyle = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier
+                .padding(16.dp)
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            label = { Text(context.getString(R.string.description_label)) },
+        )
+    }
+}
+
+@Composable
 private fun AddExerciseRow (
     openAddExerciseModal: () -> Unit
 ) {
@@ -157,11 +219,12 @@ private fun DisplayExerciseList (
 ) {
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
-    val minHeight = if (isPortrait) 350.dp else 10.dp
+    val minHeight = if (isPortrait) 270.dp else 0.dp
+    val maxHeightFloat = if (isPortrait) 0.75f else 0.6f
 
     LazyColumn(
         modifier = Modifier
-            .fillMaxHeight(0.75f)
+            .fillMaxHeight(maxHeightFloat)
             .fillMaxWidth(0.9f)
             .heightIn(min = minHeight, max = 350.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -272,7 +335,7 @@ private fun CancelAndSaveRow (
         Button(
             onClick = {
                 if (manageViewModel.validName()) {
-                    val workout = Workout(name = manageViewModel.name, description = "", schedule = "")
+                    val workout = Workout(name = manageViewModel.name, description = manageViewModel.description, schedule = "")
                     workoutViewModel.addWorkout(workout)
 
                     manageViewModel.exercises.forEach {
