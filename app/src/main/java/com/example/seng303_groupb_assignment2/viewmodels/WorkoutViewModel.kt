@@ -19,9 +19,10 @@ class WorkoutViewModel(
 ) : ViewModel() {
     val allWorkouts: LiveData<List<WorkoutWithExercises>> = workoutDao.getAllWorkoutsWithExercises().asLiveData()
 
-    fun addWorkout(workout: Workout) {
+    fun addWorkout(workout: Workout, onWorkoutAdded: (Long) -> Unit) {
         viewModelScope.launch {
-            workoutDao.upsertWorkout(workout)
+            val workoutId = workoutDao.upsertWorkout(workout)
+            onWorkoutAdded(workoutId)
         }
     }
 

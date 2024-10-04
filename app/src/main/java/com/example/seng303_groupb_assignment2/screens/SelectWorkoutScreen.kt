@@ -165,10 +165,12 @@ fun WorkoutItem(
         modifier = Modifier
             .let {
                 if (isPortrait) {
-                    it.fillMaxWidth()
+                    it
+                        .fillMaxWidth()
                         .padding(8.dp)
                 } else {
-                    it.width(300.dp)
+                    it
+                        .width(300.dp)
                         .fillMaxHeight()
                         .padding(8.dp)
                 }
@@ -251,15 +253,17 @@ fun WorkoutItem(
                                 top = headerHeightDp,
                                 start = 16.dp,
                                 end = 16.dp,
-                                bottom = 0.dp)
+                                bottom = 0.dp
+                            )
                         } else {
                             val headerHeightDp = with(density) { headerHeightPx.value.toDp() }
-                            it.padding(
-                                top = headerHeightDp,
-                                start = 16.dp,
-                                end = 16.dp,
-                                bottom = 16.dp
-                            )
+                            it
+                                .padding(
+                                    top = headerHeightDp,
+                                    start = 16.dp,
+                                    end = 16.dp,
+                                    bottom = 16.dp
+                                )
                                 .verticalScroll(rememberScrollState())
                         }
                     }
@@ -282,7 +286,8 @@ fun WorkoutItem(
                 if (isPortrait) {
                     IconButton(
                         onClick = { expanded = !expanded },
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
                             .padding(bottom = 0.dp),
                     ) {
                         Icon(
@@ -416,7 +421,10 @@ fun ExerciseItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 2.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.shapes.small),
+            .background(
+                MaterialTheme.colorScheme.surfaceVariant,
+                shape = MaterialTheme.shapes.small
+            ),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {

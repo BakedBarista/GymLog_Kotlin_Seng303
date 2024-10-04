@@ -30,8 +30,8 @@ class ExerciseViewModel(
 
     fun addExercise(workoutId: Long, exercise: Exercise) {
         viewModelScope.launch {
-            exerciseDao.upsertExercise(exercise)
-            val crossRef = WorkoutExerciseCrossRef(workoutId = workoutId, exerciseId = exercise.id)
+            val exerciseId = exerciseDao.upsertExercise(exercise)
+            val crossRef = WorkoutExerciseCrossRef(workoutId = workoutId, exerciseId = exerciseId)
             workoutDao.upsertWorkoutExerciseCrossRef(crossRef)
         }
     }

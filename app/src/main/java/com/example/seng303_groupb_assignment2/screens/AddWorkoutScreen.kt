@@ -3,6 +3,7 @@ package com.example.seng303_groupb_assignment2.screens
 import ExerciseModalViewModel
 import android.content.ClipDescription
 import android.content.res.Configuration
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.scrollable
@@ -119,7 +120,10 @@ fun AddWorkout(
         }
     } else {
         Row(Modifier.fillMaxWidth()) {
-            Column(Modifier.fillMaxWidth(0.5f).fillMaxHeight(), verticalArrangement = Arrangement.Center) {
+            Column(
+                Modifier
+                    .fillMaxWidth(0.5f)
+                    .fillMaxHeight(), verticalArrangement = Arrangement.Center) {
                 WorkoutNameTextBox(
                     name = manageViewModel.name,
                     updateName = { manageViewModel.updateName(it) },
@@ -336,11 +340,15 @@ private fun CancelAndSaveRow (
         Button(
             onClick = {
                 if (manageViewModel.validName()) {
-                    val workout = Workout(name = manageViewModel.name, description = manageViewModel.description, schedule = listOf(Days.MONDAY, Days.WEDNESDAY))
-                    workoutViewModel.addWorkout(workout)
-
-                    manageViewModel.exercises.forEach {
-                        exerciseViewModel.addExercise(workout.id, it)
+                    val workout = Workout(
+                        name = manageViewModel.name,
+                        description = manageViewModel.description,
+                        schedule = listOf(Days.MONDAY, Days.WEDNESDAY)
+                    )
+                    workoutViewModel.addWorkout(workout) { workoutId ->
+                        manageViewModel.exercises.forEach {
+                            exerciseViewModel.addExercise(workoutId, it)
+                        }
                     }
 
                     navController.navigate("SelectWorkout")
