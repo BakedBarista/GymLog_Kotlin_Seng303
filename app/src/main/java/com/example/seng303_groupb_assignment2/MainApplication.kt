@@ -1,9 +1,17 @@
 package com.example.seng303_groupb_assignment2
 
+import android.Manifest
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
 import com.example.seng303_groupb_assignment2.datastore.dataAccessModule
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 

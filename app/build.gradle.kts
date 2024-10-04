@@ -51,7 +51,7 @@ android {
 }
 
 dependencies {
-    implementation(libs.accompanist.permissions)
+    implementation(libs.accompanist.permissions.v0360)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.runtime.livedata)

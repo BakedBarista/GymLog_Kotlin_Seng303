@@ -5,25 +5,34 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
-import android.provider.Settings
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import com.example.seng303_groupb_assignment2.R
 import java.util.Calendar
 import kotlin.random.Random
 
-
 class NotificationManager(private val context: Context) {
     private val notificationManager = context.getSystemService(NotificationManager::class.java)
     private val notificationChannelID = "schedule_channel_id"
 
-    @RequiresApi(Build.VERSION_CODES.S)
-    fun sendNotification(workoutName: String) {
+    fun sendNewWorkoutNotification(day: String, workoutName: String) {
+        sendNotification(
+            context.getString(R.string.notification_new_workout_title),
+            context.getString(R.string.notification_new_workout_content, day, workoutName)
+        )
+    }
+
+    fun sendWorkoutNotification(workoutName: String) {
+        sendNotification(
+            context.getString(R.string.notification_schedule_title),
+            context.getString(R.string.notification_schedule_content, workoutName)
+        )
+    }
+
+    private fun sendNotification(title: String, content: String) {
         val notification = NotificationCompat.Builder(context, notificationChannelID)
-            .setContentTitle(context.getString(R.string.notification_schedule_title))
-            .setContentText(context.getString(R.string.notification_schedule_content, workoutName))
+            .setContentTitle(title)
+            .setContentText(content)
             .setSmallIcon(R.drawable.run)
             .setPriority(NotificationManager.IMPORTANCE_HIGH)
             .setAutoCancel(true)
@@ -32,42 +41,26 @@ class NotificationManager(private val context: Context) {
         notificationManager.notify(Random.nextInt(), notification)
     }
 
-    fun setupDailyNotifications(notificationPermission: Boolean) {
-        if (notificationPermission) {
-            turnOnNotifications()
-        } else {
-            turnOffNotifications()
-        }
+    fun setupDailyNotifications() {
+        // makes sure that there is no repeating alarm in the background
+        turnOffNotifications()
+        turnOnNotifications()
+        Log.i("NotificationManager", "Setup alarm")
     }
 
-    private fun turnOffNotifications() {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(context, NotificationReceiver::class.java)
-
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            999,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        alarmManager.cancel(pendingIntent)
-    }
-
-    @RequiresApi(Build.VERSION_CODES.S)
     private fun turnOnNotifications() {
         val intent = Intent(context, NotificationReceiver::class.java)
 
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            999,
+            0,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 11)
-            set(Calendar.MINUTE, 4)
+            set(Calendar.HOUR_OF_DAY, 4)
+            set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
         }
@@ -79,5 +72,19 @@ class NotificationManager(private val context: Context) {
             AlarmManager.INTERVAL_DAY,
             pendingIntent
         )
+    }
+
+    private fun turnOffNotifications() {
+        val intent = Intent(context, NotificationReceiver::class.java)
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        alarmManager.cancel(pendingIntent)
     }
 }

@@ -19,4 +19,11 @@ enum class Days {
             SATURDAY -> DayOfWeek.SATURDAY
         }
     }
+
+    companion object {
+        fun getCurrentDate(): Days {
+            val currentDay = LocalDateTime.now().dayOfWeek
+            return entries.first { it.toDayOfWeek() == currentDay }
+        }
+    }
 }

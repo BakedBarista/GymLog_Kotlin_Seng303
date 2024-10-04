@@ -44,6 +44,8 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.toLowerCase
+import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -53,9 +55,11 @@ import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.entities.Measurement
 import com.example.seng303_groupb_assignment2.entities.Workout
 import com.example.seng303_groupb_assignment2.enums.Days
+import com.example.seng303_groupb_assignment2.notifications.NotificationManager
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.ManageWorkoutViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
+import java.util.Locale
 
 @Composable
 fun AddWorkout(
@@ -106,6 +110,7 @@ fun AddWorkout(
                 Spacer(modifier = Modifier.padding(10.dp))
             }
 
+            // TODO - add this to landscape AND amke it look a little nicer
             item {
                 EditableScheduleInformation(
                     schedule = manageViewModel.schedule,
@@ -355,6 +360,15 @@ private fun CancelAndSaveRow (
                         manageViewModel.exercises.forEach {
                             exerciseViewModel.addExercise(workoutId, it)
                         }
+                    }
+
+                    if (manageViewModel.schedule.isNotEmpty()) {
+                        val notificationHandler = NotificationManager(context)
+                        val nextDayFormatted = getNextDay(manageViewModel.schedule)
+                        notificationHandler.sendNewWorkoutNotification(
+                            nextDayFormatted,
+                            workout.name
+                        )
                     }
 
                     navController.navigate("SelectWorkout")
@@ -644,4 +658,16 @@ private fun EditableScheduleInformation(
             }
         }
     }
+}
+
+private fun getNextDay(schedule: List<Days>): String {
+    val currentOrdinal = Days.getCurrentDate().ordinal
+    val nextDays = (currentOrdinal + 1 until Days.entries.size)
+        .map { Days.entries[it % Days.entries.size] }
+        .plus(Days.entries.take(currentOrdinal + 1))
+    return nextDays
+        .firstOrNull { it in schedule }
+        .toString()
+        .lowercase()
+        .replaceFirstChar { it.uppercaseChar() }
 }

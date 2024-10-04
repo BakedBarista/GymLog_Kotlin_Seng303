@@ -10,6 +10,8 @@ class NotificationReceiver: BroadcastReceiver() {
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onReceive(context: Context, intent: Intent) {
         val notificationHandler = NotificationManager(context)
-        notificationHandler.sendNotification("test")
+
+        // TODO - implement this to notify for scheduled workouts
+        notificationHandler.sendWorkoutNotification("test")
     }
 }
