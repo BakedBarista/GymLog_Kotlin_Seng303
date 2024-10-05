@@ -11,6 +11,7 @@
     <!-- titles -->
     <string name="exercises_modal_title">Add Exercise</string>
     <string name="exercises_title">Exercises</string>
+    <string name="preferences_title">Preferences</string>
 
     <!-- form labels -->
     <string name="workout_name_label">Workout name</string>

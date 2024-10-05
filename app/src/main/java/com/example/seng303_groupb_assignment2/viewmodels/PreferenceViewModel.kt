@@ -1,24 +1,34 @@
 package com.example.seng303_groupb_assignment2.viewmodels
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
-import com.example.seng303_groupb_assignment2.database.AppDatabase
-import com.example.seng303_groupb_assignment2.entities.Preference
+import com.example.seng303_groupb_assignment2.datastore.PreferencePersistentStorage
+import com.example.seng303_groupb_assignment2.models.UserPreferences
 import kotlinx.coroutines.launch
 
-class PreferenceViewModel(application: Application) : AndroidViewModel(application) {
+class PreferenceViewModel(
+    private val preferenceStorage: PreferencePersistentStorage<UserPreferences>
+) : ViewModel() {
 
-    private val preferenceDao = AppDatabase.getDatabase(application).preferenceDao()
+    val preferences = preferenceStorage.get().asLiveData()
 
-    val preferences = preferenceDao.getPreferences().asLiveData()
-
-    // Update preferences
-    fun setPreferences(darkMode: Boolean, metricUnits: Boolean, soundOn: Boolean) {
+    fun updateDarkMode(darkMode: Boolean) {
         viewModelScope.launch {
-            val newPreference = Preference(id = 1, darkMode = darkMode, metricUnits = metricUnits, soundOn = soundOn)
-            preferenceDao.upsertPreference(newPreference)
+            preferenceStorage.update { it.copy(darkMode = darkMode) }
+        }
+    }
+
+    fun updateMetricUnits(metricUnits: Boolean) {
+        viewModelScope.launch {
+            preferenceStorage.update { it.copy(metricUnits = metricUnits) }
+        }
+    }
+
+    fun updateSoundOn(soundOn: Boolean) {
+        viewModelScope.launch {
+            preferenceStorage.update { it.copy(soundOn = soundOn) }
         }
     }
 }
+

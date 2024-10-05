@@ -54,6 +54,13 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.runtime.livedata)
+    implementation(libs.androidx.datastore.core.android)
+    implementation(libs.androidx.datastore.preferences.core.jvm)
+    implementation("androidx.preference:preference-ktx:1.2.1")
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+
+
+    implementation(libs.gson)
 
     // To use Kotlin Symbol Processing (KSP)
     ksp(libs.androidx.room.compiler)

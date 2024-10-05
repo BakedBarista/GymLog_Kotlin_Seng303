@@ -8,19 +8,17 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.seng303_groupb_assignment2.entities.Preference
 import com.example.seng303_groupb_assignment2.viewmodels.PreferenceViewModel
+
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun ViewPreferences(
     navController: NavController,
-    preferenceViewModel: PreferenceViewModel = viewModel()
+    preferenceViewModel: PreferenceViewModel = koinViewModel()
 ) {
-    val preferences = preferenceViewModel.preferences.observeAsState(
-        null
-    ).value
+    val preferences = preferenceViewModel.preferences.observeAsState(null).value
 
     val darkMode = preferences?.darkMode ?: false
     val metricUnits = preferences?.metricUnits ?: false
@@ -37,7 +35,7 @@ fun ViewPreferences(
             PreferenceToggleRow(
                 title = "Dark Mode",
                 isChecked = darkMode,
-                onCheckedChange = { preferenceViewModel.setPreferences(it, metricUnits, soundOn) }
+                onCheckedChange = { preferenceViewModel.updateDarkMode(it) }
             )
         }
 
@@ -46,7 +44,7 @@ fun ViewPreferences(
             PreferenceToggleRow(
                 title = "Units (Metric / Imperial)",
                 isChecked = metricUnits,
-                onCheckedChange = { preferenceViewModel.setPreferences(darkMode, it, soundOn) }
+                onCheckedChange = { preferenceViewModel.updateMetricUnits(it) }
             )
         }
 
@@ -55,11 +53,12 @@ fun ViewPreferences(
             PreferenceToggleRow(
                 title = "Sound",
                 isChecked = soundOn,
-                onCheckedChange = { preferenceViewModel.setPreferences(darkMode, metricUnits, it) }
+                onCheckedChange = { preferenceViewModel.updateSoundOn(it) }
             )
         }
     }
 }
+
 
 @Composable
 fun PreferenceToggleRow(

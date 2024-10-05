@@ -1,5 +1,6 @@
 [versions]
 agp = "8.5.2"
+gson = "2.10.1"
 koinAndroid = "3.4.0"
 koinAndroidxCompose = "3.4.0"
 kotlin = "1.9.22"
@@ -14,6 +15,8 @@ navigationCompose = "2.8.1"
 roomCompiler = "2.6.1"
 lifecycleLivedataKtx = "2.8.6"
 runtimeLivedata = "1.7.2"
+datastoreCoreAndroid = "1.1.1"
+datastorePreferencesCoreJvm = "1.1.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -25,6 +28,7 @@ androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "
 androidx-room-rxjava2 = { module = "androidx.room:room-rxjava2", version.ref = "roomCompiler" }
 androidx-room-rxjava3 = { module = "androidx.room:room-rxjava3", version.ref = "roomCompiler" }
 androidx-room-testing = { module = "androidx.room:room-testing", version.ref = "roomCompiler" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -43,6 +47,8 @@ androidx-lifecycle-livedata-ktx = { group = "androidx.lifecycle", name = "lifecy
 androidx-runtime-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata", version.ref = "runtimeLivedata" }
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koinAndroid" }
 koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koinAndroidxCompose" }
+androidx-datastore-core-android = { group = "androidx.datastore", name = "datastore-core-android", version.ref = "datastoreCoreAndroid" }
+androidx-datastore-preferences-core-jvm = { group = "androidx.datastore", name = "datastore-preferences-core-jvm", version.ref = "datastorePreferencesCoreJvm" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
