@@ -13,6 +13,8 @@ import com.example.seng303_groupb_assignment2.entities.WorkoutExerciseCrossRef
 import com.example.seng303_groupb_assignment2.entities.ExerciseLog
 import com.example.seng303_groupb_assignment2.entities.Measurement
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.ZoneId
 import kotlin.random.Random
 
 class ExerciseViewModel(
@@ -35,7 +37,7 @@ class ExerciseViewModel(
     }
 
     fun getExercisesByName(name: String): LiveData<List<Exercise>> {
-        return exerciseDao.getExercisesByName("%$name%").asLiveData()
+        return exerciseDao.getAllExercisesByName("%$name%").asLiveData()
     }
 
     fun getExerciseLogsByExercise(exerciseId: Long): LiveData<List<ExerciseLog>> {
@@ -84,11 +86,16 @@ class ExerciseViewModel(
                     val exerciseIdTwo = exerciseDao.upsertExercise(run)
                     val exerciseIdThree = exerciseDao.upsertExercise(noLogs)
 
+                    for (i in 0 until 100) {
+                        exerciseDao.upsertExercise(Exercise(name= "Exercise $i", sets = 3, measurement1 = Measurement("Reps", listOf(10f, 10f, 10f)), measurement2 = Measurement("Weight", listOf(10f, 10f, 10f)), restTime = 60))
+                    }
+
                     val logsBench = mutableListOf<ExerciseLog>()
                     val logsRun = mutableListOf<ExerciseLog>()
 
                     for (i in 0 until 365) {
-                        val timestamp = System.currentTimeMillis() - (i * 24 * 60 * 60 * 1000L)
+                        val date = LocalDate.of(2020, 1, 1).plusDays(i.toLong())
+                        val timestamp = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
                         val randomWeights = List(4) { Random.nextFloat() * 50 + 50 }
 
                         val log = ExerciseLog(

@@ -55,18 +55,25 @@ import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLa
 import com.patrykandpatrick.vico.compose.cartesian.marker.rememberDefaultCartesianMarker
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
+import com.patrykandpatrick.vico.compose.cartesian.rememberVicoZoomState
 import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
 import com.patrykandpatrick.vico.compose.common.fill
 import com.patrykandpatrick.vico.core.cartesian.Scroll
+import com.patrykandpatrick.vico.core.cartesian.Zoom
 import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianLayerRangeProvider
+import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
 import com.patrykandpatrick.vico.core.common.component.Component
 import com.patrykandpatrick.vico.core.common.data.ExtraStore
 import org.koin.androidx.compose.getViewModel
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import kotlin.math.ceil
 
 @Composable
@@ -111,8 +118,15 @@ fun ViewProgress(
             )
         }
 
-        if (selectedExercise != null && exerciseLogs.isNotEmpty()) {
+        if (selectedExercise != null && exerciseLogs.isNotEmpty() && selectedOption != null) {
             ExerciseProgressGraph(exerciseLogs, selectedOption)
+        } else {
+            Text(
+                text = stringResource(R.string.no_logs_available),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(top = 16.dp),
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }
@@ -244,25 +258,46 @@ fun ExerciseSelectionDialog(
 @Composable
 fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: ChartOption?) {
     val modelProducer = remember { CartesianChartModelProducer() }
+
+    val xToDateMapKey = ExtraStore.Key<Map<Float, Long>>()
+
     LaunchedEffect(exerciseLogs, selectedOption) {
         val dataSeries = when (selectedOption) {
             ChartOption.MaxWeight -> {
-                exerciseLogs.map { log -> log.measurement2.values.maxOrNull() ?: 0f }
+                exerciseLogs.map { log ->
+                    val epochDay = Instant.ofEpochMilli(log.timestamp)
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate()
+                        .toEpochDay()
+                    epochDay.toDouble() to (log.measurement2.values.maxOrNull() ?: 0f)
+                }
             }
-
             ChartOption.TotalWorkoutVolume -> {
                 exerciseLogs.map { log ->
-                    log.measurement1.values.zip(log.measurement2.values)
+                    val epochDay = Instant.ofEpochMilli(log.timestamp)
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate()
+                        .toEpochDay()
+                    val totalVolume = log.measurement1.values.zip(log.measurement2.values)
                         .sumOf { (reps, weight) -> reps * weight.toDouble() }
+                    epochDay.toDouble() to totalVolume.toFloat()
                 }
             }
             ChartOption.MaxDistance -> {
-                exerciseLogs.map { log -> log.measurement1.values.maxOrNull() ?: 0f }
+                exerciseLogs.map { log ->
+                    val epochDay = Instant.ofEpochMilli(log.timestamp)
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate()
+                        .toEpochDay()
+                    epochDay.toDouble() to (log.measurement1.values.maxOrNull() ?: 0f) }
             }
             ChartOption.TotalDistance -> {
                 exerciseLogs.map { log ->
-                    log.measurement1.values.sum()
-                }
+                    val epochDay = Instant.ofEpochMilli(log.timestamp)
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate()
+                        .toEpochDay()
+                    epochDay.toDouble() to log.measurement1.values.sum() }
             }
 
             null -> {
@@ -270,13 +305,35 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
             }
         }
         if (dataSeries.isNotEmpty()) {
+            val xToTimestamps = dataSeries.associate { it.first to it.first.toLong() }
+
             modelProducer.runTransaction {
                 lineSeries {
-                    series(dataSeries)
+                    series(
+                        x = dataSeries.map { it.first },
+                        y = dataSeries.map { it.second }
+                    )
+                }
+            }
+        } else {
+            // Handle the case where dataSeries is empty
+            // Ensure that extraStore still contains a valid map or handle null in the formatter
+            modelProducer.runTransaction {
+                lineSeries { series(emptyList(), emptyList()) }
+                extras { extraStore ->
+                    extraStore[xToDateMapKey] = emptyMap()
                 }
             }
         }
     }
+
+    val dateTimeFormatter = DateTimeFormatter.ofPattern("d MMM")
+
+    val dateValueFormatter = CartesianValueFormatter { _, x, _ ->
+        val date = LocalDate.ofEpochDay(x.toLong())
+        date.format(dateTimeFormatter)
+    }
+
 
     CartesianChartHost(
         chart = rememberCartesianChart(
@@ -290,7 +347,9 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
                 rangeProvider = rangeProvider
             ),
             startAxis = VerticalAxis.rememberStart(),
-            bottomAxis = HorizontalAxis.rememberBottom(),
+            bottomAxis = HorizontalAxis.rememberBottom(
+                valueFormatter = dateValueFormatter
+            ),
             marker = rememberDefaultCartesianMarker(
                 label = rememberTextComponent(),
                 indicator = pointIndicator
@@ -298,6 +357,7 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
         ),
         modelProducer = modelProducer,
         scrollState = rememberVicoScrollState(true, Scroll.Absolute.End),
+        zoomState = rememberVicoZoomState(zoomEnabled = true, initialZoom = Zoom.Content),
         modifier = Modifier
             .fillMaxSize()
             .padding(top = 16.dp),
