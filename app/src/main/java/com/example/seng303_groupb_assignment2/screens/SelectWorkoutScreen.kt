@@ -1,6 +1,7 @@
 package com.example.seng303_groupb_assignment2.screens
 
 import android.content.res.Configuration
+import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -66,6 +67,8 @@ import com.example.seng303_groupb_assignment2.enums.Days
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
 import org.koin.androidx.compose.getViewModel
+import androidx.compose.ui.platform.LocalContext
+
 
 @Composable
 fun SelectWorkout(
@@ -76,6 +79,7 @@ fun SelectWorkout(
     val workouts by workoutViewModel.allWorkouts.observeAsState(initial = emptyList())
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+    val context = LocalContext.current
 
     if (isPortrait) {
         // Vertical scroll in portrait mode
@@ -99,7 +103,19 @@ fun SelectWorkout(
                     onEditExercise = { exercise ->
                         exerciseViewModel.editExercise(exercise)
                     },
-                    onDeleteExercise = { /* TODO - implement this */ }
+                    onDeleteExercise = { /* TODO - implement this */ },
+                    onExportWorkout = {
+                        workoutViewModel.exportWorkout(
+                            context = context, // Pass the required context
+                            workoutWithExercises = workoutWithExercises,
+                            onSuccess = { filePath ->
+                                Toast.makeText(context, "Workout exported to: $filePath", Toast.LENGTH_LONG).show()
+                            },
+                            onFailure = {
+                                Toast.makeText(context, "Failed to export workout", Toast.LENGTH_LONG).show()
+                            }
+                        )
+                    }
                 )
             }
         }
@@ -123,7 +139,19 @@ fun SelectWorkout(
                     onEditExercise = { exercise ->
                         exerciseViewModel.editExercise(exercise)
                     },
-                    onDeleteExercise = { /* TODO - implement this */ }
+                    onDeleteExercise = { /* TODO - implement this */ },
+                    onExportWorkout = {
+                        workoutViewModel.exportWorkout(
+                            context = context,
+                            workoutWithExercises = workoutWithExercises,
+                            onSuccess = { filePath ->
+                                Toast.makeText(context, "Workout exported to: $filePath", Toast.LENGTH_LONG).show()
+                            },
+                            onFailure = {
+                                Toast.makeText(context, "Failed to export workout", Toast.LENGTH_LONG).show()
+                            }
+                        )
+                    }
                 )
             }
         }
@@ -138,7 +166,8 @@ fun WorkoutItem(
     onEditWorkout: (Workout) -> Unit,
     onDeleteWorkout: () -> Unit,
     onEditExercise: (Exercise) -> Unit,
-    onDeleteExercise: (Exercise) -> Unit
+    onDeleteExercise: (Exercise) -> Unit,
+    onExportWorkout: () -> Unit
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     var showEditDialog by rememberSaveable { mutableStateOf(false) }
@@ -235,6 +264,11 @@ fun WorkoutItem(
                                 showDropdownMenu = false
                             }
                         )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(id = R.string.export_workout))},
+                            onClick = {
+                                onExportWorkout()
+                                showDropdownMenu = false })
                     }
                 }
                 ScheduleInformation(workoutWithExercises.workout.schedule)

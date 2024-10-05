@@ -27,8 +27,9 @@
     <string name="edit_workout">Edit Workout</string>
     <string name="edit_exercise">Edit Exercise</string>
     <string name="delete_workout">Delete Workout</string>
+    <string name="export_workout">Export Workout</string>
     <string name="delete_exercise">Delete Exercise</string>
-    <string name="collapse">Collapse</string>
+        <string name="collapse">Collapse</string>
     <string name="expand">Expand</string>
     <string name="view_details">View Details</string>
     <string name="view_workout">View Workout</string>
