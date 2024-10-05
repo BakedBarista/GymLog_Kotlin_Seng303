@@ -19,6 +19,11 @@
     <string name="sets_label">Sets</string>
     <string name="rest_time_label">Rest time</string>
 
+    <!-- informational -->
+    <string name="tap_select">Tap to select an exercise</string>
+    <string name="search_exercise">Search for an exercise</string>
+    <string name="no_exercises">"No exercises found"</string>
+
     <!-- other -->
     <string name="leaderboard">Leaderboard</string>
     <string name="plus">Plus</string>
