@@ -45,4 +45,8 @@
     <string name="friday_abbreviation">F</string>
     <string name="saturday_abbreviation">S</string>
     <string name="sunday_abbreviation">S</string>
+
+    <string name="sound">Sound</string>
+    <string name="dark_mode">Dark Mode</string>
+    <string name="units">Units (Metric / Imperial)</string>
 </resources>

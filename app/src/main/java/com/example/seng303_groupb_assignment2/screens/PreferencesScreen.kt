@@ -7,9 +7,12 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.seng303_groupb_assignment2.viewmodels.PreferenceViewModel
+import com.example.seng303_groupb_assignment2.R
+
 
 import org.koin.androidx.compose.koinViewModel
 
@@ -33,7 +36,7 @@ fun ViewPreferences(
         item {
             // Dark Mode toggle
             PreferenceToggleRow(
-                title = "Dark Mode",
+                title = stringResource(id = R.string.dark_mode),
                 isChecked = darkMode,
                 onCheckedChange = { preferenceViewModel.updateDarkMode(it) }
             )
@@ -42,7 +45,7 @@ fun ViewPreferences(
         item {
             // Units toggle
             PreferenceToggleRow(
-                title = "Units (Metric / Imperial)",
+                title = stringResource(id = R.string.units),
                 isChecked = metricUnits,
                 onCheckedChange = { preferenceViewModel.updateMetricUnits(it) }
             )
@@ -51,7 +54,7 @@ fun ViewPreferences(
         item {
             // Sound On/Off toggle
             PreferenceToggleRow(
-                title = "Sound",
+                title = stringResource(id = R.string.sound),
                 isChecked = soundOn,
                 onCheckedChange = { preferenceViewModel.updateSoundOn(it) }
             )
