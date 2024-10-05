@@ -13,7 +13,7 @@ import com.example.seng303_groupb_assignment2.entities.ExerciseLog
 import com.example.seng303_groupb_assignment2.entities.Workout
 import com.example.seng303_groupb_assignment2.entities.WorkoutExerciseCrossRef
 
-@Database(entities = [Workout::class, Exercise::class, ExerciseLog::class, WorkoutExerciseCrossRef::class], version = 2)
+@Database(entities = [Workout::class, Exercise::class, ExerciseLog::class, WorkoutExerciseCrossRef::class], version = 1)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun workoutDao(): WorkoutDao
