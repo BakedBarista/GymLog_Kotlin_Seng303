@@ -72,8 +72,17 @@ class ExerciseViewModel(
                         restTime = 0
                     )
 
+                    val noLogs = Exercise(
+                        name = "No logs",
+                        sets = 1,
+                        measurement1 = Measurement("Invalid Test", listOf(100f)),
+                        measurement2 = Measurement("Not a real measurement, seeing if the graph breaks", listOf(100f)),
+                        restTime = 0
+                    )
+
                     val exerciseId = exerciseDao.upsertExercise(benchPress)
                     val exerciseIdTwo = exerciseDao.upsertExercise(run)
+                    val exerciseIdThree = exerciseDao.upsertExercise(noLogs)
 
                     val logsBench = mutableListOf<ExerciseLog>()
                     val logsRun = mutableListOf<ExerciseLog>()

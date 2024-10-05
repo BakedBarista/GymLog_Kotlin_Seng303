@@ -43,6 +43,7 @@ import androidx.navigation.NavController
 import com.example.seng303_groupb_assignment2.R
 import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.entities.ExerciseLog
+import com.example.seng303_groupb_assignment2.enums.ChartOption
 import com.example.seng303_groupb_assignment2.graphcomponents.CircleComponent
 import com.example.seng303_groupb_assignment2.utils.exerciseSaver
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
@@ -114,13 +115,6 @@ fun ViewProgress(
             ExerciseProgressGraph(exerciseLogs, selectedOption)
         }
     }
-}
-
-enum class ChartOption(val label: String) {
-    MaxWeight("Max Weight"),
-    TotalWorkoutVolume("Total Workout Volume"),
-    MaxDistance("Max Distance"),// TODO replace with strings
-    TotalDistance("Total Distance")
 }
 
 @Composable
@@ -275,9 +269,11 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
                 emptyList()
             }
         }
-        modelProducer.runTransaction {
-            lineSeries {
-                series(dataSeries)
+        if (dataSeries.isNotEmpty()) {
+            modelProducer.runTransaction {
+                lineSeries {
+                    series(dataSeries)
+                }
             }
         }
     }
