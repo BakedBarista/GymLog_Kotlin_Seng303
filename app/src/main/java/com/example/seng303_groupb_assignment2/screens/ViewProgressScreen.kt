@@ -1,7 +1,9 @@
 package com.example.seng303_groupb_assignment2.screens
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,6 +11,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -22,12 +28,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -70,7 +78,7 @@ fun ViewProgress(
     var selectedExercise by rememberSaveable(stateSaver = exerciseSaver) { mutableStateOf<Exercise?>(null) }
     var showDialog by rememberSaveable { mutableStateOf(false) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
-    var selectedOption by rememberSaveable { mutableStateOf(ChartOption.MaxMeasurement2) }
+    var selectedOption by rememberSaveable { mutableStateOf<ChartOption?>(null) }
 
     val exercises by viewModel.getExercisesByName(searchQuery).observeAsState(emptyList())
     val exerciseLogs by viewModel.getExerciseLogsByExercise(selectedExercise?.id ?: 0L)
@@ -78,17 +86,24 @@ fun ViewProgress(
 
     Column(modifier = Modifier.padding(16.dp)) {
 
-        ExerciseHeader(selectedExercise) {
-            showDialog = true
-        }
+        ExerciseHeader(
+            selectedExercise = selectedExercise,
+            onHeaderClick = { showDialog = true },
+            onOptionSelected = { selectedOption = it }
+        )
 
         if (showDialog) {
             ExerciseSelectionDialog(
                 exercises = exercises,
                 searchQuery = searchQuery,
                 onSearchQueryChanged = { searchQuery = it },
-                onExerciseSelected = {
-                    selectedExercise = it
+                onExerciseSelected = { exercise ->
+                    selectedExercise = exercise
+                    selectedOption = when (exercise.measurement1.type) {
+                        "Reps" -> ChartOption.MaxWeight
+                        "Distance" -> ChartOption.MaxDistance
+                        else -> null
+                    }
                     showDialog = false
                 },
                 onDismissRequest = { showDialog = false }
@@ -96,30 +111,70 @@ fun ViewProgress(
         }
 
         if (selectedExercise != null && exerciseLogs.isNotEmpty()) {
-            ExerciseProgressGraph(exerciseLogs)
+            ExerciseProgressGraph(exerciseLogs, selectedOption)
         }
     }
 }
 
 enum class ChartOption(val label: String) {
-    MaxMeasurement2("Max Measurement2"),
-    TotalWorkoutVolume("Total Workout Volume")
+    MaxWeight("Max Weight"),
+    TotalWorkoutVolume("Total Workout Volume"),
+    MaxDistance("Max Distance"),// TODO replace with strings
+    TotalDistance("Total Distance")
 }
 
 @Composable
 fun ExerciseHeader(
     selectedExercise: Exercise?,
-    onHeaderClick: () -> Unit
+    onHeaderClick: () -> Unit,
+    onOptionSelected: (ChartOption) -> Unit
 ) {
-    Text(
-        text = selectedExercise?.name ?: stringResource(R.string.tap_select),
-        style = MaterialTheme.typography.headlineMedium,
+    var isDropdownExpanded by remember { mutableStateOf(false) }
+
+    val relevantOptions = remember(selectedExercise) {
+        when (selectedExercise?.measurement1?.type) {
+            "Reps" -> listOf(ChartOption.MaxWeight, ChartOption.TotalWorkoutVolume)
+            "Distance" -> listOf(ChartOption.MaxDistance, ChartOption.TotalDistance)
+            else -> emptyList()
+        }
+    }
+
+    Row(
         modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onHeaderClick() }
-            .padding(16.dp),
-        color = MaterialTheme.colorScheme.primary
-    )
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = selectedExercise?.name ?: stringResource(R.string.tap_select),
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier
+                .clickable { onHeaderClick() },
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        IconButton(onClick = { isDropdownExpanded = true }) {
+            Icon(
+                painter = painterResource(id = R.drawable.more_vert),
+                contentDescription = stringResource(R.string.more_options)
+            )
+        }
+
+        DropdownMenu(
+            expanded = isDropdownExpanded,
+            onDismissRequest = { isDropdownExpanded = false }
+        ) {
+            relevantOptions.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option.label) },
+                    onClick = {
+                        onOptionSelected(option)
+                        isDropdownExpanded = false
+                    }
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -193,13 +248,33 @@ fun ExerciseSelectionDialog(
 }
 
 @Composable
-fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>) {
+fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: ChartOption?) {
     val modelProducer = remember { CartesianChartModelProducer() }
-    LaunchedEffect(exerciseLogs) {
-        val dataSeries = exerciseLogs.map { log ->
-            log.measurement2.values.maxOrNull() ?: 0f
-        }
+    LaunchedEffect(exerciseLogs, selectedOption) {
+        val dataSeries = when (selectedOption) {
+            ChartOption.MaxWeight -> {
+                exerciseLogs.map { log -> log.measurement2.values.maxOrNull() ?: 0f }
+            }
 
+            ChartOption.TotalWorkoutVolume -> {
+                exerciseLogs.map { log ->
+                    log.measurement1.values.zip(log.measurement2.values)
+                        .sumOf { (reps, weight) -> reps * weight.toDouble() }
+                }
+            }
+            ChartOption.MaxDistance -> {
+                exerciseLogs.map { log -> log.measurement1.values.maxOrNull() ?: 0f }
+            }
+            ChartOption.TotalDistance -> {
+                exerciseLogs.map { log ->
+                    log.measurement1.values.sum()
+                }
+            }
+
+            null -> {
+                emptyList()
+            }
+        }
         modelProducer.runTransaction {
             lineSeries {
                 series(dataSeries)

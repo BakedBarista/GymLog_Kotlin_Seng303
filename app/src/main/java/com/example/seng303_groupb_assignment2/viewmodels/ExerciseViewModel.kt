@@ -64,8 +64,19 @@ class ExerciseViewModel(
                         restTime = 90
                     )
 
+                    val run = Exercise(
+                        name = "Run",
+                        sets = 1,
+                        measurement1 = Measurement("Distance", listOf(10f)),
+                        measurement2 = Measurement("Time", listOf(30f)),
+                        restTime = 0
+                    )
+
                     val exerciseId = exerciseDao.upsertExercise(benchPress)
-                    val logs = mutableListOf<ExerciseLog>()
+                    val exerciseIdTwo = exerciseDao.upsertExercise(run)
+
+                    val logsBench = mutableListOf<ExerciseLog>()
+                    val logsRun = mutableListOf<ExerciseLog>()
 
                     for (i in 0 until 365) {
                         val timestamp = System.currentTimeMillis() - (i * 24 * 60 * 60 * 1000L)
@@ -78,10 +89,28 @@ class ExerciseViewModel(
                             measurement1 = Measurement("Reps", listOf(10f, 9f, 8f, 6f)),
                             measurement2 = Measurement("Weight", randomWeights)
                         )
-                        logs.add(log)
+                        logsBench.add(log)
                     }
 
-                    for (log in logs) {
+                    for (i in 0 until 20) {
+                        val timestamp = System.currentTimeMillis() - (i * 24 * 60 * 60 * 1000L)
+                        val randomDistance = List(1) { Random.nextFloat() * 10 + 10 }
+
+                        val log = ExerciseLog(
+                            exerciseId = exerciseIdTwo,
+                            timestamp = timestamp,
+                            sets = 1,
+                            measurement1 = Measurement("Distance", randomDistance),
+                            measurement2 = Measurement("Time", listOf(10f))
+                        )
+                        logsRun.add(log)
+                    }
+
+                    for (log in logsBench) {
+                        exerciseLogDao.upsertExerciseLog(log)
+                    }
+
+                    for (log in logsRun) {
                         exerciseLogDao.upsertExerciseLog(log)
                     }
                 }
