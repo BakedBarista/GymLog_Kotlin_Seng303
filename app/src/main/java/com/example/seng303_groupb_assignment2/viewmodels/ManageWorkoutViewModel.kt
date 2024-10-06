@@ -5,27 +5,38 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.entities.Measurement
+import com.example.seng303_groupb_assignment2.enums.Days
 
 class ManageWorkoutViewModel(): ViewModel() {
     var name by mutableStateOf("")
+        private set
+
+    var description by mutableStateOf("")
+        private set
+
+    var exercises = mutableStateListOf<Exercise>()
+        private set
+
+    var schedule = mutableStateListOf<Days>()
         private set
 
     fun updateName(newName: String) {
         name = newName
     }
 
-    var description by mutableStateOf("")
-        private set
-
     fun updateDescription(newDescription: String) {
         description = newDescription
     }
 
-    var exercises = mutableStateListOf<Exercise>()
-        private set
+    fun toggleDay(day: Days) {
+        if (schedule.contains(day)) {
+            schedule.remove(day)
+        } else {
+            schedule.add(day)
+        }
+    }
 
     fun addExercise(
         name: String,
