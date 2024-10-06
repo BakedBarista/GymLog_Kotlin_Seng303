@@ -24,7 +24,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun exerciseDao(): ExerciseDao
     abstract fun exerciseLogDao(): ExerciseLogDao
 
-    companion object{
+    companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -38,33 +38,6 @@ abstract class AppDatabase : RoomDatabase() {
                 INSTANCE = instance
                 instance
             }
-        }
-        private val roomCallback = object : RoomDatabase.Callback() {
-            override fun onCreate(db: SupportSQLiteDatabase) {
-                super.onCreate(db)
-                INSTANCE?.let { database ->
-                    // Run your pre-population in IO thread
-                    CoroutineScope(Dispatchers.IO).launch {
-                        populateDatabase(database.exerciseDao(), database.workoutDao())
-                    }
-                }
-            }
-        }
-
-        suspend fun populateDatabase(exerciseDao: ExerciseDao, workoutDao: WorkoutDao) {
-            // Create dummy exercises
-            val exercise1 = Exercise(name = "Squat", sets = 3, reps = listOf(10, 12, 15), weight = listOf(60f, 65f, 70f), restTime = 90)
-            val exercise2 = Exercise(name = "Leg Press", sets = 4, reps = listOf(10, 12, 15, 15), weight = listOf(100f, 110f, 120f, 130f), restTime = 90)
-
-            // Insert exercises into the database
-            exerciseDao.upsertExercise(exercise1)
-            exerciseDao.upsertExercise(exercise2)
-
-            // Create a workout and cross-reference the exercises
-            val workout = Workout(name = "Lower Body", description = "lower body exercise", schedule = null)
-            workoutDao.upsertWorkout(workout)
-            workoutDao.upsertWorkoutExerciseCrossRef(WorkoutExerciseCrossRef(workout.id, exercise1.id))
-            workoutDao.upsertWorkoutExerciseCrossRef(WorkoutExerciseCrossRef(workout.id, exercise2.id))
         }
     }
 }

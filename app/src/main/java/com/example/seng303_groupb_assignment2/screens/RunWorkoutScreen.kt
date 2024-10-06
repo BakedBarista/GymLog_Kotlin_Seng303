@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -25,206 +26,165 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.seng303_groupb_assignment2.entities.Exercise
-import com.example.seng303_groupb_assignment2.entities.Workout
 import com.example.seng303_groupb_assignment2.entities.WorkoutWithExercises
+import com.example.seng303_groupb_assignment2.viewmodels.RunWorkoutViewModel
 
 @Composable
 fun RunWorkout(
     navController: NavController,
-    workoutWithExercises: WorkoutWithExercises
+    workoutWithExercises: WorkoutWithExercises,
+    viewModel: RunWorkoutViewModel
 ) {
-    var currentExerciseIndex by remember { mutableIntStateOf(0) }
-    val currentExercise = workoutWithExercises.exercises[currentExerciseIndex]
-
-    var currentSetIndex by remember { mutableIntStateOf(0) }
-    var currentReps by remember { mutableIntStateOf(0) }
-    var totalReps by remember { mutableIntStateOf(currentExercise.reps?.getOrNull(currentSetIndex) ?: 0) }
-    var isPlaying by remember { mutableStateOf(false) }
-    var actualReps = remember { mutableStateOf(currentExercise.reps?.map { 0 }?.toMutableList()) }
-
-    // Simulate countdown timer (for tracking purposes only)
-    LaunchedEffect(isPlaying) {
-        if (isPlaying) {
-            currentReps = 0
-            while (isPlaying && currentReps < totalReps) {
-                kotlinx.coroutines.delay(1000L) // 1-second delay simulating a timer
-                currentReps++ // Count up each second
-            }
-            // Stop when total reps are reached or timer is paused
-            if (currentReps >= totalReps) {
-                isPlaying = false
-            }
+    val workoutId = navController.currentBackStackEntry?.savedStateHandle?.get<Int>("workoutId")
+    workoutId?.let {
+        LaunchedEffect(it) {
+            viewModel.loadWorkoutWithExercises(it) // Make sure to create this function in your ViewModel
         }
     }
-
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
-    ) {
-        Text(
-            text = "Exercise: ${currentExercise.name}",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-            Text(text = "Weight", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-            Text(text = "Rep Goal", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-            Text(text = "Actual", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+    val workoutWithExercises by viewModel.workoutWithExercises.observeAsState()
+    workoutWithExercises ?.let { workout ->
+        LaunchedEffect(workout) {
+            viewModel.initialize(workout)
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        val currentExercise = workoutWithExercises!!.exercises[viewModel.currentExerciseIndex]
 
-        LazyColumn(modifier = Modifier.fillMaxWidth()) {
-            currentExercise.reps?.let { reps ->
-                items(reps.size) { index ->
-                    val weight = currentExercise.weight?.getOrNull(index) ?: 0f
-                    val repGoal = reps[index]
-                    val actual = actualReps.value?.get(index) ?: 0
+        LaunchedEffect(viewModel.isPlaying) {
+            if (viewModel.isPlaying) {
+                viewModel.currentReps = 0
+                while (viewModel.isPlaying && viewModel.currentReps < viewModel.totalReps) {
+                    kotlinx.coroutines.delay(1000L) // 1-second delay simulating a timer
+                    viewModel.currentReps++ // Count up each second
+                }
+                if (viewModel.currentReps >= viewModel.totalReps) {
+                    viewModel.isPlaying = false
+                }
+            }
+        }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceAround
-                    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
+        ) {
+            Text(
+                text = "Exercise: ${currentExercise.name}",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
 
-                        Text(text = "$weight kg", fontSize = 16.sp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                Text(text = "Weight", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                Text(text = "Rep Goal", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                Text(text = "Actual", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+            }
 
-                        Text(text = "$repGoal reps", fontSize = 16.sp)
+            Spacer(modifier = Modifier.height(8.dp))
 
-                        var actualRepsInput by remember { mutableStateOf(actual.toString()) }
+            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                currentExercise.reps?.let { reps ->
+                    items(reps.size) { index ->
+                        val weight = currentExercise.measurement1
+                        val repGoal = reps[index]
+                        val actual = viewModel.actualReps.getOrNull(index) ?: 0
 
-                        androidx.compose.material3.TextField(
-                            value = actualRepsInput,
-                            onValueChange = {
-                                actualRepsInput = it
-                                actualReps.value?.set(index, it.toIntOrNull() ?: 0)
-                            },
-                            modifier = Modifier.height(20.dp).width(50.dp)
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceAround
+                        ) {
+                            Text(text = "$weight kg", fontSize = 16.sp)
+                            Text(text = "$repGoal reps", fontSize = 16.sp)
+
+                            var actualRepsInput by remember { mutableStateOf(actual.toString()) }
+
+                            androidx.compose.material3.TextField(
+                                value = actualRepsInput,
+                                onValueChange = {
+                                    actualRepsInput = it
+                                    // Ensure we only update with valid numbers
+                                    val newActual = it.toIntOrNull() ?: 0
+                                    viewModel.updateActualReps(index, newActual)
+                                },
+                                modifier = Modifier
+                                    .height(20.dp)
+                                    .width(50.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Current Rep: ${viewModel.currentReps} / ${viewModel.totalReps}",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = { viewModel.isPlaying = true }) { Text("Start") }
+                Button(onClick = { viewModel.isPlaying = false }) { Text("Pause") }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceAround,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (viewModel.currentExerciseIndex > 0) {
+                    Button(onClick = {
+                        viewModel.previousExercise(workoutWithExercises!!)
+                    }) {
+                        Text("Previous Exercise")
+                    }
+                }
+
+                if (viewModel.currentExerciseIndex < workoutWithExercises!!.exercises.size - 1) {
+                    Button(onClick = {
+                        viewModel.nextExercise(workoutWithExercises!!)
+                    }) {
+                        Text("Next Exercise")
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceAround,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (viewModel.currentSetIndex > 0) {
+                    Button(onClick = {
+                        viewModel.previousSet()
+                    }) {
+                        Text("Previous Set")
+                    }
+                }
+
+                if (viewModel.currentSetIndex < (currentExercise.reps?.size ?: 1) - 1) {
+                    Button(onClick = {
+                        viewModel.nextSet()
+                    }) {
+                        Text("Next Set")
                     }
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Timer for tracking reps
-        Text(
-            text = "Current Rep: $currentReps / $totalReps",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Play, Pause buttons
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { isPlaying = true }) { Text("Start") }
-            Button(onClick = { isPlaying = false }) { Text("Pause") }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Navigation buttons to switch between exercises
-        Row(
-            horizontalArrangement = Arrangement.SpaceAround,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            if (currentExerciseIndex > 0) {
-                Button(onClick = {
-                    currentExerciseIndex--
-                    currentSetIndex = 0
-                    currentReps = 0
-                    totalReps = workoutWithExercises.exercises[currentExerciseIndex].reps?.getOrNull(currentSetIndex) ?: 0
-                }) {
-                    Text("Previous Exercise")
-                }
-            }
-
-            if (currentExerciseIndex < workoutWithExercises.exercises.size - 1) {
-                Button(onClick = {
-                    currentExerciseIndex++
-                    currentSetIndex = 0
-                    currentReps = 0
-                    totalReps = workoutWithExercises.exercises[currentExerciseIndex].reps?.getOrNull(currentSetIndex) ?: 0
-                }) {
-                    Text("Next Exercise")
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Navigation for sets within the current exercise
-        Row(
-            horizontalArrangement = Arrangement.SpaceAround,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            if (currentSetIndex > 0) {
-                Button(onClick = {
-                    currentSetIndex--
-                    currentReps = 0
-                    totalReps = currentExercise.reps?.getOrNull(currentSetIndex) ?: 0
-                }) {
-                    Text("Previous Set")
-                }
-            }
-
-            if (currentSetIndex < (currentExercise.reps?.size ?: 1) - 1) {
-                Button(onClick = {
-                    currentSetIndex++
-                    currentReps = 0
-                    totalReps = currentExercise.reps?.getOrNull(currentSetIndex) ?: 0
-                }) {
-                    Text("Next Set")
-                }
-            }
-        }
+    } ?: run {
+        Text(text = "Loading...")
     }
 }
-
-
-
-
-
-@Composable
-fun RunWorkoutPreview(navController: NavController) {
-    // Hardcoded workout and exercises
-    val workoutWithExercises = WorkoutWithExercises(
-        workout = Workout(id = 1, name = "Lower Body Workout", description = "Lower body exercises", schedule = null),
-        exercises = listOf(
-            Exercise(
-                id = 1,
-                name = "Squat",
-                sets = 3,
-                reps = listOf(10, 12, 15),
-                weight = listOf(60f, 65f, 70f),
-                restTime = 90
-            ),
-            Exercise(
-                id = 2,
-                name = "Leg Press",
-                sets = 4,
-                reps = listOf(10, 12, 15, 15),
-                weight = listOf(100f, 110f, 120f, 130f),
-                restTime = 90
-            ),
-            Exercise(
-                id = 3,
-                name = "Deadlift",
-                sets = 3,
-                reps = listOf(8, 10, 10),
-                weight = listOf(80f, 85f, 90f),
-                restTime = 120
-            )
-        )
-    )
-
-    // Call the actual RunWorkout composable with this hardcoded data
-    RunWorkout(navController = navController, workoutWithExercises = workoutWithExercises)
-}
-
