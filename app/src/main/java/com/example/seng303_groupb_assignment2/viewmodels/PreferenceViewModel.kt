@@ -1,5 +1,6 @@
 package com.example.seng303_groupb_assignment2.viewmodels
 
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
@@ -16,6 +17,9 @@ class PreferenceViewModel(
     fun updateDarkMode(darkMode: Boolean) {
         viewModelScope.launch {
             preferenceStorage.update { it.copy(darkMode = darkMode) }
+            AppCompatDelegate.setDefaultNightMode(
+                if (darkMode) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO
+            )
         }
     }
 
@@ -31,4 +35,3 @@ class PreferenceViewModel(
         }
     }
 }
-
