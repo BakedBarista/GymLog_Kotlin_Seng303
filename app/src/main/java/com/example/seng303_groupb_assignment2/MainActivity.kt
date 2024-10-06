@@ -107,7 +107,7 @@ class MainActivity : ComponentActivity() {
                             }
                             composable("SelectWorkout") {
                                 currentTitle = "Select Workout"
-                                SelectWorkout(navController = navController)
+                                SelectWorkout()
                             }
                             composable("Add") {
                                 currentTitle = "Workout Builder"
