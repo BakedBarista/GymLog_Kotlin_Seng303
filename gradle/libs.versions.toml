@@ -1,4 +1,6 @@
 [versions]
+accompanistPermissions = "0.31.1-alpha"
+accompanistPermissionsVersion = "0.36.0"
 agp = "8.5.2"
 gson = "2.10.1"
 koinAndroid = "3.4.0"
@@ -19,6 +21,8 @@ datastoreCoreAndroid = "1.1.1"
 datastorePreferencesCoreJvm = "1.1.1"
 
 [libraries]
+accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
+accompanist-permissions-v0360 = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissionsVersion" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomCompiler" }
 androidx-room-guava = { module = "androidx.room:room-guava", version.ref = "roomCompiler" }
