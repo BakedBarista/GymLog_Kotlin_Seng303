@@ -29,6 +29,7 @@
     <string name="tap_select">Tap to select an exercise</string>
     <string name="search_exercise">Search for an exercise</string>
     <string name="no_exercises">"No exercises found"</string>
+    <string name="no_logs_in_timeframe">No workout logs found for this time period</string>
     <string name="no_logs_available">No workout logs found for this workout</string>
 
     <!-- other -->

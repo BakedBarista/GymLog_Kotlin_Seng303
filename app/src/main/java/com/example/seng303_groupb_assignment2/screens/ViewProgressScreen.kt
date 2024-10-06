@@ -1,16 +1,22 @@
 package com.example.seng303_groupb_assignment2.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -44,6 +50,7 @@ import com.example.seng303_groupb_assignment2.R
 import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.entities.ExerciseLog
 import com.example.seng303_groupb_assignment2.enums.ChartOption
+import com.example.seng303_groupb_assignment2.enums.TimeRange
 import com.example.seng303_groupb_assignment2.graphcomponents.CircleComponent
 import com.example.seng303_groupb_assignment2.utils.exerciseSaver
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
@@ -87,10 +94,22 @@ fun ViewProgress(
     var showDialog by rememberSaveable { mutableStateOf(false) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var selectedOption by rememberSaveable { mutableStateOf<ChartOption?>(null) }
+    var selectedTimeRange by rememberSaveable { mutableStateOf(TimeRange.ALL) }
 
     val exercises by viewModel.getExercisesByName(searchQuery).observeAsState(emptyList())
     val exerciseLogs by viewModel.getExerciseLogsByExercise(selectedExercise?.id ?: 0L)
         .observeAsState(emptyList())
+
+    val filteredExerciseLogs = remember(exerciseLogs, selectedTimeRange) {
+        val now = System.currentTimeMillis()
+        val cutoffTime = selectedTimeRange.days?.let { now - it * 86400000 }
+
+        if (cutoffTime != null) {
+            exerciseLogs.filter { log -> log.timestamp >= cutoffTime }
+        } else {
+            exerciseLogs
+        }
+    }
 
     Column(modifier = Modifier.padding(16.dp)) {
 
@@ -99,6 +118,15 @@ fun ViewProgress(
             onHeaderClick = { showDialog = true },
             onOptionSelected = { selectedOption = it }
         )
+
+        if (selectedExercise != null && exerciseLogs.isNotEmpty()) {
+            TimeRangeSelector(
+                selectedTimeRange = selectedTimeRange,
+                onTimeRangeSelected = { timeRange ->
+                    selectedTimeRange = timeRange
+                }
+            )
+        }
 
         if (showDialog) {
             ExerciseSelectionDialog(
@@ -118,8 +146,15 @@ fun ViewProgress(
             )
         }
 
-        if (selectedExercise != null && exerciseLogs.isNotEmpty() && selectedOption != null) {
-            ExerciseProgressGraph(exerciseLogs, selectedOption)
+        if (selectedExercise != null && filteredExerciseLogs.isNotEmpty() && selectedOption != null) {
+            ExerciseProgressGraph(filteredExerciseLogs, selectedOption)
+        } else if (selectedExercise != null) {
+            Text(
+                text = stringResource(R.string.no_logs_in_timeframe),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(top = 16.dp),
+                color = MaterialTheme.colorScheme.onSurface
+            )
         } else {
             Text(
                 text = stringResource(R.string.no_logs_available),
@@ -160,25 +195,59 @@ fun ExerciseHeader(
                 .clickable { onHeaderClick() },
             color = MaterialTheme.colorScheme.primary
         )
+        Box {
+            IconButton(onClick = { isDropdownExpanded = true }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.more_vert),
+                    contentDescription = stringResource(R.string.more_options)
+                )
+            }
 
-        IconButton(onClick = { isDropdownExpanded = true }) {
-            Icon(
-                painter = painterResource(id = R.drawable.more_vert),
-                contentDescription = stringResource(R.string.more_options)
-            )
+            DropdownMenu(
+                expanded = isDropdownExpanded,
+                onDismissRequest = { isDropdownExpanded = false }
+            ) {
+                relevantOptions.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option.label) },
+                        onClick = {
+                            onOptionSelected(option)
+                            isDropdownExpanded = false
+                        }
+                    )
+                }
+            }
         }
+    }
+}
 
-        DropdownMenu(
-            expanded = isDropdownExpanded,
-            onDismissRequest = { isDropdownExpanded = false }
-        ) {
-            relevantOptions.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(option.label) },
-                    onClick = {
-                        onOptionSelected(option)
-                        isDropdownExpanded = false
-                    }
+@Composable
+fun TimeRangeSelector(
+    selectedTimeRange: TimeRange,
+    onTimeRangeSelected: (TimeRange) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        TimeRange.entries.forEach { timeRange ->
+            val isSelected = timeRange == selectedTimeRange
+            val backgroundColour = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
+            val textColour = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+
+            Box(
+                modifier = Modifier
+                    .padding(2.dp)
+                    .weight(1f)
+                    .background(color = backgroundColour, shape = MaterialTheme.shapes.small)
+                    .clickable(onClick = { onTimeRangeSelected(timeRange) }),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = timeRange.label,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = textColour
                 )
             }
         }
@@ -193,9 +262,6 @@ fun ExerciseSelectionDialog(
     onExerciseSelected: (Exercise) -> Unit,
     onDismissRequest: () -> Unit
 ) {
-    val focusRequester = remember { FocusRequester() }
-    val keyboardController = LocalSoftwareKeyboardController.current
-    val focusManager = LocalFocusManager.current
 
     Dialog(onDismissRequest = onDismissRequest) {
         Surface(
@@ -207,8 +273,6 @@ fun ExerciseSelectionDialog(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 DisposableEffect(Unit) {
-                    focusRequester.requestFocus()
-                    keyboardController?.show()
                     onDispose { }
                 }
 
@@ -218,7 +282,6 @@ fun ExerciseSelectionDialog(
                     label = { Text(stringResource(R.string.search_exercise)) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .focusRequester(focusRequester)
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -243,7 +306,6 @@ fun ExerciseSelectionDialog(
                                     .fillMaxWidth()
                                     .clickable {
                                         onExerciseSelected(exercise)
-                                        focusManager.clearFocus()
                                     }
                                     .padding(8.dp)
                             )
@@ -316,8 +378,6 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
                 }
             }
         } else {
-            // Handle the case where dataSeries is empty
-            // Ensure that extraStore still contains a valid map or handle null in the formatter
             modelProducer.runTransaction {
                 lineSeries { series(emptyList(), emptyList()) }
                 extras { extraStore ->
@@ -357,15 +417,15 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
         ),
         modelProducer = modelProducer,
         scrollState = rememberVicoScrollState(true, Scroll.Absolute.End),
-        zoomState = rememberVicoZoomState(zoomEnabled = true, initialZoom = Zoom.Content),
+        zoomState = rememberVicoZoomState(zoomEnabled = true, initialZoom = Zoom.x(10.0/* Make this a variable that changes when the user selects a different time period*/)),
         modifier = Modifier
             .fillMaxSize()
             .padding(top = 16.dp),
     )
 }
 
-val pointIndicator: (Color) -> Component = { color ->
-    CircleComponent(colour = color, radius = 10f) // Adjust the radius as needed
+private val pointIndicator: (Color) -> Component = { color ->
+    CircleComponent(colour = color, radius = 10f)
 }
 
 // This is how we set the Y axis > than the max val of the Y in out dataset
