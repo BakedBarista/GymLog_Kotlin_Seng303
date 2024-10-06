@@ -1,12 +1,10 @@
 package com.example.seng303_groupb_assignment2.screens
 
 import ExerciseModalViewModel
-import android.content.ClipDescription
+import androidx.compose.runtime.LaunchedEffect
 import android.content.res.Configuration
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,8 +19,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -375,6 +371,10 @@ fun MeasurementSelection(
     var open by rememberSaveable { mutableStateOf(false) }
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
 
+    LaunchedEffect(Unit) {
+        updateOption(options[selectedIndex])
+    }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -421,8 +421,9 @@ fun MeasurementSelection(
                 .heightIn(max = 100.dp)
         ) {
             items(sets.toInt()) { index ->
-                val displayText = context.getString(R.string.measurement_text,
-                    index + 1, options[selectedIndex])
+                val displayText = context.getString(
+                    R.string.measurement_text, index + 1, options[selectedIndex]
+                )
 
                 TextField(
                     value = values[index],
@@ -437,6 +438,7 @@ fun MeasurementSelection(
         }
     }
 }
+
 
 @Composable
 private fun ManageExerciseModal(
@@ -564,7 +566,7 @@ private fun ManageExerciseModal(
                                             values = exerciseModel.measurementValues1.toList().map { it.toFloat() }
                                         )
                                         val measurement2 = Measurement(
-                                            type = exerciseModel.measurementType1,
+                                            type = exerciseModel.measurementType2,
                                             values = exerciseModel.measurementValues2.toList().map { it.toFloat() }
                                         )
 

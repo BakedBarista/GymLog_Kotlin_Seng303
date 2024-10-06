@@ -12,9 +12,9 @@ class FileExportService(private val context: Context) {
     /**
      * Exports the provided data in CSV format to the shared Documents folder.
      *
-     * @param fileName Name of the file to be exported (e.g., "workout.csv").
-     * @param csvData Data to be written into the CSV file.
-     * @return The absolute path of the exported file.
+     * @param fileName Name of the file to be exported
+     * @param csvData Data to be written into the CSV file
+     * @return The absolute path of the exported file
      */
     fun exportToCsv(fileName: String, csvData: String): String? {
         val documentsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
@@ -40,14 +40,13 @@ class FileExportService(private val context: Context) {
     }
 
     /**
-     * Helper function to prepare CSV data from a list of data entries.
-     * Modify this function based on the structure of your data.
+     * Helper function to prepare CSV data
      *
-     * @param headers A list of column headers for the CSV.
-     * @param rows A list of rows where each row is a list of column values.
-     * @return A string in CSV format.
+     * @param headers A list of column headers for the workout
+     * @param rows A list of rows where each row is a list of column values
+     * @return A string in CSV format
      */
-    fun prepareCsvData(headers: List<String>, rows: List<List<String>>): String {
+    fun prepareCsvData(headers: List<String>, rows: List<List<Any>>): String {
         val header = headers.joinToString(",") + "\n"
         val data = rows.joinToString("\n") { it.joinToString(",") }
         return header + data
