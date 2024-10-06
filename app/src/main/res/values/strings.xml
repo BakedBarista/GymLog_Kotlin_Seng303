@@ -48,5 +48,7 @@
 
     <string name="sound">Sound</string>
     <string name="dark_mode">Dark Mode</string>
-    <string name="units">Units (Metric / Imperial)</string>
+    <string name="units">Units</string>
+    <string name="imperial">Imperial</string>
+    <string name="metric">Metric</string>
 </resources>

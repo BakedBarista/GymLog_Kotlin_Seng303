@@ -256,6 +256,9 @@ fun CustomTopAppBar(
     title: String,
     navController: NavController
 ) {
+    val currentBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = currentBackStackEntry?.destination?.route
+
     TopAppBar(
         title = {
             Box(
@@ -269,16 +272,18 @@ fun CustomTopAppBar(
                     modifier = Modifier.align(Alignment.Center)
                 )
 
-                IconButton(
-                    onClick = { navController.navigate("Preferences") },
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .padding(end = 12.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_gear),
-                        contentDescription = "Settings"
-                    )
+                if (currentRoute != "Preferences") {
+                    IconButton(
+                        onClick = { navController.navigate("Preferences") },
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 12.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_gear),
+                            contentDescription = "Settings"
+                        )
+                    }
                 }
             }
         }
