@@ -55,6 +55,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.navigation.NavController
@@ -211,30 +212,33 @@ fun WorkoutItem(
                             contentDescription = stringResource(R.string.start_workout)
                         )
                     }
-                    IconButton(onClick = { showDropdownMenu = true }) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.more_vert),
-                            contentDescription = stringResource(R.string.more_options)
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = showDropdownMenu,
-                        onDismissRequest = { showDropdownMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.edit_workout)) },
-                            onClick = {
-                                showEditDialog = true
-                                showDropdownMenu = false
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.delete_workout)) },
-                            onClick = {
-                                onDeleteWorkout()
-                                showDropdownMenu = false
-                            }
-                        )
+                    Box {
+                        IconButton(onClick = { showDropdownMenu = true }) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.more_vert),
+                                contentDescription = stringResource(R.string.more_options)
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showDropdownMenu,
+                            onDismissRequest = { showDropdownMenu = false },
+                            offset = DpOffset(x = 0.dp, y = 0.dp)
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.edit_workout)) },
+                                onClick = {
+                                    showEditDialog = true
+                                    showDropdownMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.delete_workout)) },
+                                onClick = {
+                                    onDeleteWorkout()
+                                    showDropdownMenu = false
+                                }
+                            )
+                        }
                     }
                 }
                 ScheduleInformation(workoutWithExercises.workout.schedule)
