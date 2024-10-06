@@ -37,8 +37,12 @@ class Converters {
     }
 
     @TypeConverter
-    fun toDayList(value: String?): List<Days>? {
-        return value?.split(",")?.map { Days.valueOf(it) }
+    fun toDayList(value: String?): List<Days> {
+        if (value.isNullOrEmpty()) {
+            return listOf()
+        }
+
+        return value.split(",").map { Days.valueOf(it) }
     }
 
     @TypeConverter
