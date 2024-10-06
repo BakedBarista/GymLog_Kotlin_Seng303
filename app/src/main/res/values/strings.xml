@@ -30,9 +30,18 @@
     <string name="search_exercise">Search for an exercise</string>
     <string name="no_exercises">"No exercises found"</string>
     <string name="no_logs_in_timeframe">No workout logs found for this time period</string>
-    <string name="no_logs_available">No workout logs found for this workout</string>
+    <string name="select_option">Graph options</string>
+    <string name="weight_kg">Weight (kg)</string>
+    <string name="weight_lb">Weight (lbs)</string>
+    <string name="total_volume_kg">Total Volume (kg)</string>
+    <string name="total_volume_lbs">Total Volume (lbs)</string>
+    <string name="distance_km">Distance (km)</string>
+    <string name="total_distance_km"> Total Distance (km)</string>
+    <string name="distance_miles">Distance (miles)</string>
+    <string name="total_distance_miles">Total Distance (miles)</string>
 
     <!-- other -->
+    <string name="graph">Graph:</string>
     <string name="leaderboard">Leaderboard</string>
     <string name="plus">Plus</string>
     <string name="measurement_text">Set %1$d (%2$s)</string>

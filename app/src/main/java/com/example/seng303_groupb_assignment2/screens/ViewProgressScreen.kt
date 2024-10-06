@@ -1,5 +1,7 @@
 package com.example.seng303_groupb_assignment2.screens
 
+import android.content.res.Configuration
+import android.text.Layout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -7,20 +9,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -36,13 +31,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
@@ -51,6 +43,7 @@ import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.entities.ExerciseLog
 import com.example.seng303_groupb_assignment2.enums.ChartOption
 import com.example.seng303_groupb_assignment2.enums.TimeRange
+import com.example.seng303_groupb_assignment2.enums.UnitType
 import com.example.seng303_groupb_assignment2.graphcomponents.CircleComponent
 import com.example.seng303_groupb_assignment2.utils.exerciseSaver
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
@@ -63,8 +56,12 @@ import com.patrykandpatrick.vico.compose.cartesian.marker.rememberDefaultCartesi
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
 import com.patrykandpatrick.vico.compose.cartesian.rememberVicoZoomState
+import com.patrykandpatrick.vico.compose.common.component.rememberShapeComponent
 import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
+import com.patrykandpatrick.vico.compose.common.component.shadow
+import com.patrykandpatrick.vico.compose.common.dimensions
 import com.patrykandpatrick.vico.compose.common.fill
+import com.patrykandpatrick.vico.compose.common.shape.markerCorneredShape
 import com.patrykandpatrick.vico.core.cartesian.Scroll
 import com.patrykandpatrick.vico.core.cartesian.Zoom
 import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
@@ -74,8 +71,12 @@ import com.patrykandpatrick.vico.core.cartesian.data.CartesianLayerRangeProvider
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
+import com.patrykandpatrick.vico.core.cartesian.marker.CartesianMarker
+import com.patrykandpatrick.vico.core.cartesian.marker.DefaultCartesianMarker
 import com.patrykandpatrick.vico.core.common.component.Component
+import com.patrykandpatrick.vico.core.common.component.TextComponent
 import com.patrykandpatrick.vico.core.common.data.ExtraStore
+import com.patrykandpatrick.vico.core.common.shape.Corner
 import org.koin.androidx.compose.getViewModel
 import java.time.Instant
 import java.time.LocalDate
@@ -115,6 +116,7 @@ fun ViewProgress(
 
         ExerciseHeader(
             selectedExercise = selectedExercise,
+            selectedOption = selectedOption,
             onHeaderClick = { showDialog = true },
             onOptionSelected = { selectedOption = it }
         )
@@ -137,7 +139,7 @@ fun ViewProgress(
                     selectedExercise = exercise
                     selectedOption = when (exercise.measurement1.type) {
                         "Reps" -> ChartOption.MaxWeight
-                        "Distance" -> ChartOption.MaxDistance
+                        "Time" -> ChartOption.MaxDistance
                         else -> null
                     }
                     showDialog = false
@@ -147,7 +149,7 @@ fun ViewProgress(
         }
 
         if (selectedExercise != null && filteredExerciseLogs.isNotEmpty() && selectedOption != null) {
-            ExerciseProgressGraph(filteredExerciseLogs, selectedOption)
+            ExerciseProgressGraph(filteredExerciseLogs, selectedOption, UnitType.METRIC /* TODO change this hardcoding to work off preferences */)
         } else if (selectedExercise != null) {
             Text(
                 text = stringResource(R.string.no_logs_in_timeframe),
@@ -155,71 +157,158 @@ fun ViewProgress(
                 modifier = Modifier.padding(top = 16.dp),
                 color = MaterialTheme.colorScheme.onSurface
             )
-        } else {
-            Text(
-                text = stringResource(R.string.no_logs_available),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 16.dp),
-                color = MaterialTheme.colorScheme.onSurface
-            )
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExerciseHeader(
     selectedExercise: Exercise?,
+    selectedOption: ChartOption?,
     onHeaderClick: () -> Unit,
     onOptionSelected: (ChartOption) -> Unit
 ) {
-    var isDropdownExpanded by remember { mutableStateOf(false) }
+    var isModalVisible by remember { mutableStateOf(false) }
 
     val relevantOptions = remember(selectedExercise) {
-        when (selectedExercise?.measurement1?.type) {
-            "Reps" -> listOf(ChartOption.MaxWeight, ChartOption.TotalWorkoutVolume)
-            "Distance" -> listOf(ChartOption.MaxDistance, ChartOption.TotalDistance)
+        when {
+            selectedExercise?.measurement1?.type == "Reps" && selectedExercise.measurement2.type == "Weight" -> {
+                listOf(ChartOption.MaxWeight, ChartOption.TotalWorkoutVolume)
+            }
+            selectedExercise?.measurement1?.type == "Time" && selectedExercise.measurement2.type == "Distance" -> {
+                listOf(ChartOption.MaxDistance, ChartOption.TotalDistance)
+            }
+            selectedExercise?.measurement1?.type == "Time" && selectedExercise.measurement2.type == "Weight" -> {
+                listOf(ChartOption.MaxDistance, ChartOption.TotalDistance)
+            }
+            selectedExercise?.measurement1?.type == "Reps" && selectedExercise.measurement2.type == "Distance" -> {
+                listOf(ChartOption.MaxDistance, ChartOption.TotalDistance)
+            }
             else -> emptyList()
         }
     }
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = selectedExercise?.name ?: stringResource(R.string.tap_select),
-            style = MaterialTheme.typography.headlineSmall,
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    if (isLandscape) {
+        Row(
             modifier = Modifier
-                .clickable { onHeaderClick() },
-            color = MaterialTheme.colorScheme.primary
-        )
-        Box {
-            IconButton(onClick = { isDropdownExpanded = true }) {
-                Icon(
-                    painter = painterResource(id = R.drawable.more_vert),
-                    contentDescription = stringResource(R.string.more_options)
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = selectedExercise?.name ?: stringResource(R.string.tap_select),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier
+                    .clickable { onHeaderClick() },
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            if (relevantOptions.isNotEmpty()) {
+                Text(
+                    text = selectedOption?.label ?: stringResource(id = R.string.select_option),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .clickable { isModalVisible = true }
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
                 )
             }
+        }
+    } else {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = selectedExercise?.name ?: stringResource(R.string.tap_select),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier
+                    .clickable { onHeaderClick() },
+                color = MaterialTheme.colorScheme.primary,
+                overflow = TextOverflow.Ellipsis
+            )
 
-            DropdownMenu(
-                expanded = isDropdownExpanded,
-                onDismissRequest = { isDropdownExpanded = false }
-            ) {
+            if (relevantOptions.isNotEmpty()) {
+                Row (
+                    modifier = Modifier
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.graph),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = selectedOption?.label ?: stringResource(id = R.string.select_option),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .clickable { isModalVisible = true }
+                            .padding(start = 2.dp)
+                    )
+                }
+            }
+        }
+    }
+    if (isModalVisible) {
+        ChartOptionSelectionDialog(
+            selectedOption = selectedOption,
+            relevantOptions = relevantOptions,
+            onOptionSelected = { selected ->
+                onOptionSelected(selected)
+            },
+            onDismissRequest = { isModalVisible = false }
+        )
+    }
+}
+
+@Composable
+fun ChartOptionSelectionDialog(
+    selectedOption: ChartOption?,
+    relevantOptions: List<ChartOption>,
+    onOptionSelected: (ChartOption) -> Unit,
+    onDismissRequest: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismissRequest) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = MaterialTheme.shapes.medium,
+            tonalElevation = 8.dp
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = stringResource(id = R.string.select_option),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
                 relevantOptions.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(option.label) },
-                        onClick = {
-                            onOptionSelected(option)
-                            isDropdownExpanded = false
-                        }
+                    Text(
+                        text = option.label,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = if (option == selectedOption) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onOptionSelected(option)
+                                onDismissRequest()
+                            }
+                            .padding(vertical = 8.dp)
                     )
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun TimeRangeSelector(
@@ -238,15 +327,17 @@ fun TimeRangeSelector(
 
             Box(
                 modifier = Modifier
-                    .padding(2.dp)
+                    .padding(horizontal = 2.dp)
                     .weight(1f)
                     .background(color = backgroundColour, shape = MaterialTheme.shapes.small)
                     .clickable(onClick = { onTimeRangeSelected(timeRange) }),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
+                    modifier = Modifier
+                        .padding(vertical = 4.dp),
                     text = timeRange.label,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyLarge,
                     color = textColour
                 )
             }
@@ -318,7 +409,7 @@ fun ExerciseSelectionDialog(
 }
 
 @Composable
-fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: ChartOption?) {
+fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: ChartOption?, unitType: UnitType) {
     val modelProducer = remember { CartesianChartModelProducer() }
 
     val xToDateMapKey = ExtraStore.Key<Map<Float, Long>>()
@@ -351,7 +442,7 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
                         .toEpochDay()
-                    epochDay.toDouble() to (log.measurement1.values.maxOrNull() ?: 0f) }
+                    epochDay.toDouble() to (log.measurement2.values.maxOrNull() ?: 0f) }
             }
             ChartOption.TotalDistance -> {
                 exerciseLogs.map { log ->
@@ -359,7 +450,7 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
                         .toEpochDay()
-                    epochDay.toDouble() to log.measurement1.values.sum() }
+                    epochDay.toDouble() to log.measurement2.values.sum() }
             }
 
             null -> {
@@ -367,7 +458,6 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
             }
         }
         if (dataSeries.isNotEmpty()) {
-            val xToTimestamps = dataSeries.associate { it.first to it.first.toLong() }
 
             modelProducer.runTransaction {
                 lineSeries {
@@ -387,11 +477,19 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
         }
     }
 
-    val dateTimeFormatter = DateTimeFormatter.ofPattern("d MMM")
+    val dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yy")
 
     val dateValueFormatter = CartesianValueFormatter { _, x, _ ->
         val date = LocalDate.ofEpochDay(x.toLong())
         date.format(dateTimeFormatter)
+    }
+
+    val yAxisLabel = when (selectedOption) {
+        ChartOption.MaxWeight -> if (unitType == UnitType.METRIC) stringResource(id = R.string.weight_kg) else stringResource(id = R.string.weight_lb)
+        ChartOption.TotalWorkoutVolume -> if (unitType == UnitType.METRIC) stringResource(id = R.string.total_volume_kg) else stringResource(id = R.string.total_volume_lbs)
+        ChartOption.MaxDistance -> if (unitType == UnitType.METRIC) stringResource(id = R.string.distance_km) else stringResource(id = R.string.distance_miles)
+        ChartOption.TotalDistance -> if (unitType == UnitType.METRIC) stringResource(id = R.string.total_distance_km) else stringResource(id = R.string.total_distance_miles)
+        else -> ""
     }
 
 
@@ -406,18 +504,22 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
                 ),
                 rangeProvider = rangeProvider
             ),
-            startAxis = VerticalAxis.rememberStart(),
+            startAxis = VerticalAxis.rememberStart(
+                titleComponent = rememberTextComponent(),
+                title = yAxisLabel
+            ),
             bottomAxis = HorizontalAxis.rememberBottom(
                 valueFormatter = dateValueFormatter
             ),
             marker = rememberDefaultCartesianMarker(
                 label = rememberTextComponent(),
-                indicator = pointIndicator
+                indicator = pointIndicator,
+
             )
         ),
         modelProducer = modelProducer,
-        scrollState = rememberVicoScrollState(true, Scroll.Absolute.End),
-        zoomState = rememberVicoZoomState(zoomEnabled = true, initialZoom = Zoom.x(10.0/* Make this a variable that changes when the user selects a different time period*/)),
+        scrollState = rememberVicoScrollState(true, initialScroll = Scroll.Absolute.End),
+        zoomState = rememberVicoZoomState(zoomEnabled = true, initialZoom = Zoom.Content),
         modifier = Modifier
             .fillMaxSize()
             .padding(top = 16.dp),

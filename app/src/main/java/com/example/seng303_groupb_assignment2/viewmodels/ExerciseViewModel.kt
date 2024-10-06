@@ -69,8 +69,8 @@ class ExerciseViewModel(
                     val run = Exercise(
                         name = "Run",
                         sets = 1,
-                        measurement1 = Measurement("Distance", listOf(10f)),
-                        measurement2 = Measurement("Time", listOf(30f)),
+                        measurement1 = Measurement("Time", listOf(10f)),
+                        measurement2 = Measurement("Distance", listOf(30f)),
                         restTime = 0
                     )
 
@@ -116,8 +116,8 @@ class ExerciseViewModel(
                             exerciseId = exerciseIdTwo,
                             timestamp = timestamp,
                             sets = 1,
-                            measurement1 = Measurement("Distance", randomDistance),
-                            measurement2 = Measurement("Time", listOf(10f))
+                            measurement1 = Measurement("Time", listOf(10f)),
+                            measurement2 = Measurement("Distance", randomDistance)
                         )
                         logsRun.add(log)
                     }
