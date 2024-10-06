@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -33,6 +34,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -51,6 +53,7 @@ import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.entities.Measurement
 import com.example.seng303_groupb_assignment2.entities.Workout
 import com.example.seng303_groupb_assignment2.enums.Days
+import com.example.seng303_groupb_assignment2.notifications.NotificationManager
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.ManageWorkoutViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
@@ -63,12 +66,12 @@ fun AddWorkout(
     exerciseViewModel: ExerciseViewModel,
 ) {
     var manageExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
-
-    ManageExerciseModal(
-        modalOpen = manageExerciseModalOpen,
-        closeModal = { manageExerciseModalOpen = false },
-        submitModal = { name, sets, m1, m2, restTime -> manageViewModel.addExercise(name, sets, m1, m2, restTime) }
-    )
+    if (manageExerciseModalOpen) {
+        ManageExerciseModal(
+            closeModal = { manageExerciseModalOpen = false },
+            submitModal = { name, sets, m1, m2, restTime -> manageViewModel.addExercise(name, sets, m1, m2, restTime) }
+        )
+    }
 
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
@@ -95,7 +98,8 @@ fun AddWorkout(
             }
 
             item {
-                AddExerciseRow(openAddExerciseModal = { manageExerciseModalOpen = true })
+                AddExerciseRow(modifier = Modifier.fillMaxWidth(0.8f),
+                        openAddExerciseModal = { manageExerciseModalOpen = true })
                 Spacer(modifier = Modifier.padding(10.dp))
             }
 
@@ -105,7 +109,16 @@ fun AddWorkout(
             }
 
             item {
+                EditableScheduleInformation(
+                    schedule = manageViewModel.schedule,
+                    toggleDay = { day: Days -> manageViewModel.toggleDay(day) }
+                )
+                Spacer(modifier = Modifier.padding(5.dp))
+            }
+
+            item {
                 CancelAndSaveRow(
+                    modifier = Modifier.fillMaxWidth(0.8f),
                     cancel = { navController.navigate("Home") },
                     manageViewModel = manageViewModel,
                     workoutViewModel = workoutViewModel,
@@ -115,7 +128,7 @@ fun AddWorkout(
             }
         }
     } else {
-        Row(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth().fillMaxHeight(0.9f)) {
             Column(
                 Modifier
                     .fillMaxWidth(0.5f)
@@ -130,11 +143,22 @@ fun AddWorkout(
                     updateDescription = { manageViewModel.updateDescription(it) },
                 )
             }
-            Column(Modifier.fillMaxWidth()) {
-                AddExerciseRow(openAddExerciseModal = { manageExerciseModalOpen = true })
+            Column(
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxWidth().fillMaxHeight()
+            ) {
+                AddExerciseRow(modifier = Modifier.fillMaxWidth(),
+                    openAddExerciseModal = { manageExerciseModalOpen = true })
                 Spacer(modifier = Modifier.padding(5.dp))
                 DisplayExerciseList(manageViewModel)
+                Spacer(modifier = Modifier.padding(5.dp))
+                EditableScheduleInformation(
+                    schedule = manageViewModel.schedule,
+                    toggleDay = { day: Days -> manageViewModel.toggleDay(day) }
+                )
+                Spacer(modifier = Modifier.padding(5.dp))
                 CancelAndSaveRow(
+                    modifier = Modifier.fillMaxWidth(0.95f),
                     cancel = { navController.navigate("Home") },
                     manageViewModel = manageViewModel,
                     workoutViewModel = workoutViewModel,
@@ -196,11 +220,12 @@ private fun DescriptionTextBox(
 
 @Composable
 private fun AddExerciseRow (
+    modifier: Modifier,
     openAddExerciseModal: () -> Unit
 ) {
     val context = LocalContext.current
 
-    Row(modifier = Modifier.fillMaxWidth(0.8f),
+    Row(modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceAround
     ) {
@@ -220,14 +245,12 @@ private fun DisplayExerciseList (
 ) {
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
-    val minHeight = if (isPortrait) 270.dp else 0.dp
-    val maxHeightFloat = if (isPortrait) 0.75f else 0.6f
+    val height = if (isPortrait) 210.dp else 180.dp
 
     LazyColumn(
         modifier = Modifier
-            .fillMaxHeight(maxHeightFloat)
             .fillMaxWidth(0.9f)
-            .heightIn(min = minHeight, max = 350.dp),
+            .height(height),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         viewModel.exercises.forEachIndexed { index, exercise ->
@@ -254,12 +277,13 @@ private fun DisplayExerciseCard(
     var manageExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
     val exerciseModel: ExerciseModalViewModel = viewModel()
 
-    ManageExerciseModal(
-        modalOpen = manageExerciseModalOpen,
-        closeModal = { manageExerciseModalOpen = false },
-        submitModal = edit,
-        exerciseModel = exerciseModel
-    )
+    if (manageExerciseModalOpen) {
+        ManageExerciseModal(
+            closeModal = { manageExerciseModalOpen = false },
+            submitModal = edit,
+            exerciseModel = exerciseModel
+        )
+    }
 
     Card {
         Row(modifier = Modifier
@@ -304,6 +328,7 @@ private fun DisplayExerciseCard(
 
 @Composable
 private fun CancelAndSaveRow (
+    modifier: Modifier,
     cancel: () -> Unit,
     manageViewModel: ManageWorkoutViewModel,
     workoutViewModel: WorkoutViewModel,
@@ -313,7 +338,7 @@ private fun CancelAndSaveRow (
     val context = LocalContext.current
 
     Row(
-        modifier = Modifier.fillMaxWidth(0.8f),
+        modifier = modifier,
         horizontalArrangement = Arrangement.End
     ) {
         val buttonColors = ButtonDefaults.buttonColors(
@@ -339,12 +364,21 @@ private fun CancelAndSaveRow (
                     val workout = Workout(
                         name = manageViewModel.name,
                         description = manageViewModel.description,
-                        schedule = listOf(Days.MONDAY, Days.WEDNESDAY)
+                        schedule = manageViewModel.schedule
                     )
                     workoutViewModel.addWorkout(workout) { workoutId ->
                         manageViewModel.exercises.forEach {
                             exerciseViewModel.addExercise(workoutId, it)
                         }
+                    }
+
+                    if (manageViewModel.schedule.isNotEmpty()) {
+                        val notificationHandler = NotificationManager(context)
+                        val nextDayFormatted = getNextDay(manageViewModel.schedule)
+                        notificationHandler.sendNewWorkoutNotification(
+                            nextDayFormatted,
+                            workout.name
+                        )
                     }
 
                     navController.navigate("SelectWorkout")
@@ -439,104 +473,101 @@ fun MeasurementSelection(
     }
 }
 
-
 @Composable
 private fun ManageExerciseModal(
     exerciseModel: ExerciseModalViewModel = viewModel(),
-    modalOpen: Boolean,
     closeModal: () -> Unit,
     submitModal: (String, Int, Measurement, Measurement, Int?) -> Unit
 ) {
     val context = LocalContext.current
 
-    if (modalOpen) {
-        Dialog(onDismissRequest = {
-            closeModal()
-            exerciseModel.clearSavedInfo()
-        }) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White, shape = RectangleShape)
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                LazyColumn(horizontalAlignment = Alignment.CenterHorizontally) {
-                    item {
-                        Text(text = context.getString(R.string.exercises_modal_title),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = Color.Black)
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
+    Dialog(onDismissRequest = {
+        closeModal()
+        exerciseModel.clearSavedInfo()
+    }) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White, shape = RectangleShape)
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            LazyColumn(horizontalAlignment = Alignment.CenterHorizontally) {
+                item {
+                    Text(text = context.getString(R.string.exercises_modal_title),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.Black)
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
 
-                    item {
-                        TextField(
-                            value = exerciseModel.exerciseName,
-                            onValueChange = { exerciseModel.updateExerciseName(it) },
-                            label = { Text(context.getString(R.string.exercise_name_label)) },
-                            isError = !exerciseModel.validExerciseName(),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                    }
+                item {
+                    TextField(
+                        value = exerciseModel.exerciseName,
+                        onValueChange = { exerciseModel.updateExerciseName(it) },
+                        label = { Text(context.getString(R.string.exercise_name_label)) },
+                        isError = !exerciseModel.validExerciseName(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
 
-                    item {
-                        TextField(
-                            value = exerciseModel.sets,
-                            onValueChange = {
-                                if (it.isBlank() || it.toIntOrNull() != null) {
-                                    exerciseModel.updateSets(it)
-                                }
-                            },
-                            label = { Text(context.getString(R.string.sets_label)) },
-                            isError = !exerciseModel.validSetValue(),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-
-                    item {
-                        MeasurementSelection(
-                            options = listOf("Reps", "Time"),
-                            updateOption = { exerciseModel.updateMeasurementType1(it) },
-                            sets = exerciseModel.sets,
-                            values = exerciseModel.measurementValues1,
-                            updateValue = { index, newValue ->
-                                val measurementValues1 = exerciseModel.measurementValues1.toMutableList().apply {
-                                    this[index] = newValue
-                                }
-                                exerciseModel.updateMeasurementValues1(measurementValues1)
+                item {
+                    TextField(
+                        value = exerciseModel.sets,
+                        onValueChange = {
+                            if (it.isBlank() || it.toIntOrNull() != null) {
+                                exerciseModel.updateSets(it)
                             }
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
+                        },
+                        label = { Text(context.getString(R.string.sets_label)) },
+                        isError = !exerciseModel.validSetValue(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
 
-                    item {
-                        MeasurementSelection(
-                            options = listOf("Weight", "Distance"),
-                            updateOption = { exerciseModel.updateMeasurementType2(it) },
-                            sets = exerciseModel.sets,
-                            values = exerciseModel.measurementValues2,
-                            updateValue = { index, newValue ->
-                                val measurementValues2 = exerciseModel.measurementValues2.toMutableList().apply {
-                                    this[index] = newValue
-                                }
-                                exerciseModel.updateMeasurementValues2(measurementValues2)
+                item {
+                    MeasurementSelection(
+                        options = listOf("Reps", "Time"),
+                        updateOption = { exerciseModel.updateMeasurementType1(it) },
+                        sets = exerciseModel.sets,
+                        values = exerciseModel.measurementValues1,
+                        updateValue = { index, newValue ->
+                            val measurementValues1 = exerciseModel.measurementValues1.toMutableList().apply {
+                                this[index] = newValue
                             }
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
+                            exerciseModel.updateMeasurementValues1(measurementValues1)
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
 
-                    item {
-                        TextField(
-                            value = exerciseModel.restTime,
-                            onValueChange = { exerciseModel.updateRestTime(it) },
-                            label = { Text(context.getString(R.string.rest_time_label)) },
-                            isError = !exerciseModel.validRestTime(),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
+                item {
+                    MeasurementSelection(
+                        options = listOf("Weight", "Distance"),
+                        updateOption = { exerciseModel.updateMeasurementType2(it) },
+                        sets = exerciseModel.sets,
+                        values = exerciseModel.measurementValues2,
+                        updateValue = { index, newValue ->
+                            val measurementValues2 = exerciseModel.measurementValues2.toMutableList().apply {
+                                this[index] = newValue
+                            }
+                            exerciseModel.updateMeasurementValues2(measurementValues2)
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                item {
+                    TextField(
+                        value = exerciseModel.restTime,
+                        onValueChange = { exerciseModel.updateRestTime(it) },
+                        label = { Text(context.getString(R.string.rest_time_label)) },
+                        isError = !exerciseModel.validRestTime(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
 
                     item {
                         val buttonColors = ButtonDefaults.buttonColors(
@@ -570,29 +601,88 @@ private fun ManageExerciseModal(
                                             values = exerciseModel.measurementValues2.toList().map { it.toFloat() }
                                         )
 
-                                        var restTime: Int? = null;
-                                        if (exerciseModel.restTime.isNotBlank()) {
-                                            restTime = exerciseModel.restTime.toInt()
-                                        }
-
-                                        submitModal(
-                                            exerciseModel.exerciseName,
-                                            exerciseModel.sets.toInt(),
-                                            measurement1,
-                                            measurement2,
-                                            restTime
-                                        )
-
-                                        closeModal()
-                                        exerciseModel.clearSavedInfo()
+                                    var restTime: Int? = null;
+                                    if (exerciseModel.restTime.isNotBlank()) {
+                                        restTime = exerciseModel.restTime.toInt()
                                     }
-                                }) {
-                                Text(context.getString(R.string.add), style = MaterialTheme.typography.bodyLarge)
-                            }
+
+                                    submitModal(
+                                        exerciseModel.exerciseName,
+                                        exerciseModel.sets.toInt(),
+                                        measurement1,
+                                        measurement2,
+                                        restTime
+                                    )
+
+                                    closeModal()
+                                    exerciseModel.clearSavedInfo()
+//                                    notificationHandler.setupDailyNotifications()
+                                }
+                            }) {
+                            Text(context.getString(R.string.add), style = MaterialTheme.typography.bodyLarge)
                         }
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun EditableScheduleInformation(
+    schedule: List<Days>,
+    toggleDay: (Days) -> Unit
+) {
+    val context = LocalContext.current
+
+    val abbreviationEnumPair: List<Pair<String, Days>> = remember {
+        listOf(
+            Pair(context.getString(R.string.sunday_abbreviation), Days.SUNDAY),
+            Pair(context.getString(R.string.monday_abbreviation), Days.MONDAY),
+            Pair(context.getString(R.string.tuesday_abbreviation), Days.TUESDAY),
+            Pair(context.getString(R.string.wednesday_abbreviation), Days.WEDNESDAY),
+            Pair(context.getString(R.string.thursday_abbreviation), Days.THURSDAY),
+            Pair(context.getString(R.string.friday_abbreviation), Days.FRIDAY),
+            Pair(context.getString(R.string.saturday_abbreviation), Days.SATURDAY)
+        )
+    }
+    val days = Days.entries.toTypedArray()
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        days.forEachIndexed { index, day ->
+            val isScheduled = schedule.contains(day)
+            val backgroundColour = if (isScheduled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
+            val textColour = if (isScheduled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+
+            Box(
+                modifier = Modifier
+                    .padding(2.dp)
+                    .weight(1f)
+                    .aspectRatio(1f)
+                    .background(color = backgroundColour, shape = MaterialTheme.shapes.small)
+                    .clickable(onClick = { toggleDay(abbreviationEnumPair[index].second) }),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = abbreviationEnumPair[index].first,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = textColour
+                )
+            }
+        }
+    }
+}
+
+private fun getNextDay(schedule: List<Days>): String {
+    val currentOrdinal = Days.getCurrentDay().ordinal
+    val nextDays = (currentOrdinal + 1 until Days.entries.size)
+        .map { Days.entries[it % Days.entries.size] }
+        .plus(Days.entries.take(currentOrdinal + 1))
+    return nextDays
+        .firstOrNull { it in schedule }
+        .toString()
+        .lowercase()
+        .replaceFirstChar { it.uppercaseChar() }
 }
