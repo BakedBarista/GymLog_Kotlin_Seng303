@@ -10,6 +10,7 @@ data class Exercise(
     var name: String,
     var sets: Int? = null,
     var reps: List<Int>? = null,
+    var actualReps: Int = 0,
     var measurement1: Measurement,
     var measurement2: Measurement,
     var restTime: Int?

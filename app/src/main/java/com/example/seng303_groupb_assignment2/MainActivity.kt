@@ -11,22 +11,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailDefaults
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -59,7 +52,6 @@ import com.example.seng303_groupb_assignment2.screens.ViewProgress
 import com.example.seng303_groupb_assignment2.ui.theme.SENG303_GroupB_Assignment2Theme
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.seng303_groupb_assignment2.entities.WorkoutWithExercises
 import com.example.seng303_groupb_assignment2.viewmodels.RunWorkoutViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel as koinViewModel
@@ -111,21 +103,16 @@ class MainActivity : ComponentActivity() {
                                 Home(navController = navController)
                             }
                             composable("Run") {
-                                val workoutId = navController.previousBackStackEntry?.savedStateHandle?.get<Int>("workoutId")
+                                val workoutId = navController.previousBackStackEntry?.savedStateHandle?.get<Long>("workoutId")
 
-                                // Use the workoutId to load the WorkoutWithExercises
                                 workoutId?.let { id ->
-                                    // Load the workout data using the ViewModel
                                     runWorkoutViewModel.loadWorkoutWithExercises(id)
                                 }
-
-                                // Observe the workoutWithExercises from the ViewModel
                                 val workoutWithExercises by runWorkoutViewModel.workoutWithExercises.observeAsState()
 
                                 workoutWithExercises?.let {
                                     RunWorkout(navController = navController, workoutWithExercises = it, viewModel = runWorkoutViewModel)
                                 } ?: run {
-                                    // Show a loading indicator or fallback UI while fetching workout data
                                     Text("Loading...")
                                 }
                             }

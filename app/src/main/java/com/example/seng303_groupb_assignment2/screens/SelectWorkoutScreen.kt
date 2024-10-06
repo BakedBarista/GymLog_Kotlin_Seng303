@@ -91,7 +91,7 @@ fun SelectWorkout(
                 WorkoutItem(
                     workoutWithExercises = workoutWithExercises,
                     isPortrait = true,
-                    onStartWorkout = { navController.currentBackStackEntry?.savedStateHandle?.set("workoutWithExercises", workoutWithExercises.workout.id)
+                    onStartWorkout = {  navController.currentBackStackEntry?.savedStateHandle?.set("workoutId", workoutWithExercises.workout.id)
                                         navController.navigate("Run")
                                      },
                     onEditWorkout = { workout ->
