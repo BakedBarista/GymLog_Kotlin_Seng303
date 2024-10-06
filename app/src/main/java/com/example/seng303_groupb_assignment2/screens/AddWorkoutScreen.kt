@@ -97,7 +97,8 @@ fun AddWorkout(
             }
 
             item {
-                AddExerciseRow(openAddExerciseModal = { manageExerciseModalOpen = true })
+                AddExerciseRow(modifier = Modifier.fillMaxWidth(0.8f),
+                        openAddExerciseModal = { manageExerciseModalOpen = true })
                 Spacer(modifier = Modifier.padding(10.dp))
             }
 
@@ -106,16 +107,17 @@ fun AddWorkout(
                 Spacer(modifier = Modifier.padding(10.dp))
             }
 
-            // TODO - add this to landscape AND amke it look a little nicer
             item {
                 EditableScheduleInformation(
                     schedule = manageViewModel.schedule,
                     toggleDay = { day: Days -> manageViewModel.toggleDay(day) }
                 )
+                Spacer(modifier = Modifier.padding(5.dp))
             }
 
             item {
                 CancelAndSaveRow(
+                    modifier = Modifier.fillMaxWidth(0.8f),
                     cancel = { navController.navigate("Home") },
                     manageViewModel = manageViewModel,
                     workoutViewModel = workoutViewModel,
@@ -125,7 +127,7 @@ fun AddWorkout(
             }
         }
     } else {
-        Row(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth().fillMaxHeight(0.9f)) {
             Column(
                 Modifier
                     .fillMaxWidth(0.5f)
@@ -140,11 +142,22 @@ fun AddWorkout(
                     updateDescription = { manageViewModel.updateDescription(it) },
                 )
             }
-            Column(Modifier.fillMaxWidth()) {
-                AddExerciseRow(openAddExerciseModal = { manageExerciseModalOpen = true })
+            Column(
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxWidth().fillMaxHeight()
+            ) {
+                AddExerciseRow(modifier = Modifier.fillMaxWidth(),
+                    openAddExerciseModal = { manageExerciseModalOpen = true })
                 Spacer(modifier = Modifier.padding(5.dp))
                 DisplayExerciseList(manageViewModel)
+                Spacer(modifier = Modifier.padding(5.dp))
+                EditableScheduleInformation(
+                    schedule = manageViewModel.schedule,
+                    toggleDay = { day: Days -> manageViewModel.toggleDay(day) }
+                )
+                Spacer(modifier = Modifier.padding(5.dp))
                 CancelAndSaveRow(
+                    modifier = Modifier.fillMaxWidth(0.95f),
                     cancel = { navController.navigate("Home") },
                     manageViewModel = manageViewModel,
                     workoutViewModel = workoutViewModel,
@@ -206,11 +219,12 @@ private fun DescriptionTextBox(
 
 @Composable
 private fun AddExerciseRow (
+    modifier: Modifier,
     openAddExerciseModal: () -> Unit
 ) {
     val context = LocalContext.current
 
-    Row(modifier = Modifier.fillMaxWidth(0.8f),
+    Row(modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceAround
     ) {
@@ -230,14 +244,12 @@ private fun DisplayExerciseList (
 ) {
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
-    val minHeight = if (isPortrait) 270.dp else 0.dp
-    val maxHeightFloat = if (isPortrait) 0.75f else 0.6f
+    val height = if (isPortrait) 210.dp else 180.dp
 
     LazyColumn(
         modifier = Modifier
-            .fillMaxHeight(maxHeightFloat)
             .fillMaxWidth(0.9f)
-            .heightIn(min = minHeight, max = 220.dp),
+            .height(height),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         viewModel.exercises.forEachIndexed { index, exercise ->
@@ -315,6 +327,7 @@ private fun DisplayExerciseCard(
 
 @Composable
 private fun CancelAndSaveRow (
+    modifier: Modifier,
     cancel: () -> Unit,
     manageViewModel: ManageWorkoutViewModel,
     workoutViewModel: WorkoutViewModel,
@@ -324,7 +337,7 @@ private fun CancelAndSaveRow (
     val context = LocalContext.current
 
     Row(
-        modifier = Modifier.fillMaxWidth(0.8f),
+        modifier = modifier,
         horizontalArrangement = Arrangement.End
     ) {
         val buttonColors = ButtonDefaults.buttonColors(
