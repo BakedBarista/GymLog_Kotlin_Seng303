@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -124,15 +125,15 @@ class MainActivity : ComponentActivity() {
                                 .padding(padding)
                         ) {
                             composable("Home") {
-                                currentTitle = "Home"
+                                currentTitle = stringResource(id = R.string.home)
                                 Home(navController = navController)
                             }
                             composable("SelectWorkout") {
-                                currentTitle = "Select Workout"
+                                currentTitle = stringResource(id = R.string.select_workout)
                                 SelectWorkout()
                             }
                             composable("Add") {
-                                currentTitle = "Workout Builder"
+                                currentTitle = stringResource(id = R.string.workout_builder_title)
                                 val manageWorkoutViewModel: ManageWorkoutViewModel = viewModel()
                                 AddWorkout(
                                     navController = navController,
@@ -142,15 +143,15 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                             composable("Progress") {
-                                currentTitle = "View Progress"
+                                currentTitle = stringResource(id = R.string.progress_title)
                                 ViewProgress(navController = navController)
                             }
                             composable("Leaderboard") {
-                                currentTitle = "Leaderboard"
+                                currentTitle = stringResource(id = R.string.leaderboard)
                                 ViewLeaderboard(navController = navController)
                             }
                             composable("Preferences") {
-                                currentTitle = "Preferences"
+                                currentTitle = stringResource(id = R.string.preferences_title)
                                 ViewPreferences(navController = navController)
                             }
                         }
