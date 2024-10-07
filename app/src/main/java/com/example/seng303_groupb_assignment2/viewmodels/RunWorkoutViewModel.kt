@@ -37,12 +37,14 @@ class RunWorkoutViewModel(
 
     // Initialize workout state
     fun initialize(workoutWithExercises: WorkoutWithExercises) {
-        currentExerciseIndex = 0
-        currentSetIndex = 0
-        currentReps = 0
-        val initialExercise = workoutWithExercises.exercises[currentExerciseIndex]
-        totalReps = initialExercise.measurement1.values.getOrNull(currentSetIndex)?.toInt() ?: 0
-        actualRepsList = initialExercise.getMutableActualReps()
+        if(totalReps == 0) {
+            currentExerciseIndex = 0
+            currentSetIndex = 0
+            currentReps = 0
+            val initialExercise = workoutWithExercises.exercises[currentExerciseIndex]
+            totalReps = initialExercise.measurement1.values.getOrNull(currentSetIndex)?.toInt() ?: 0
+            actualRepsList = initialExercise.getMutableActualReps()
+        }
     }
 
     // Move to the next exercise

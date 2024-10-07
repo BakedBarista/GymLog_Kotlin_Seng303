@@ -1,5 +1,6 @@
 package com.example.seng303_groupb_assignment2.screens
 
+import android.content.res.Configuration
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -34,12 +35,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.sqlite.db.SupportSQLiteOpenHelper
 import com.example.seng303_groupb_assignment2.R
 import com.example.seng303_groupb_assignment2.entities.WorkoutWithExercises
 import com.example.seng303_groupb_assignment2.viewmodels.RunWorkoutViewModel
@@ -71,135 +74,207 @@ fun RunWorkout(
             }
         }
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
-        ) {
-            // Exercise name display
-            Text(
-                text = "Exercise: ${currentExercise.name}",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
+        val configuration = LocalConfiguration.current
+        val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
-            // Header for the table
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround
-            ) {
-                Text(text = "Weight", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-                Text(text = "Rep Goal", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-                Text(text = "Actual", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Exercise details
-            LazyColumn(modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp)) {
-                items(currentExercise.measurement1.values.size) { index ->
-                    val weight = currentExercise.measurement2.values.getOrNull(index) ?: 0
-                    val repGoal = currentExercise.measurement1.values[index]
-                    val actual = viewModel.actualRepsList.getOrNull(index) ?: 0
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceAround
-                    ) {
-                        Text(text = "$weight kg", fontSize = 18.sp)
-                        Text(text = "$repGoal reps", fontSize = 18.sp)
-                        Text(
-                            text = "$actual reps",
-                            fontSize = 18.sp,
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Current rep display
-            Box(
+        if (isLandscape) {
+            // Only show timer and control buttons in landscape mode
+            Column(
                 modifier = Modifier
-                    .size(160.dp)
-                    .clip(CircleShape),
-                contentAlignment = Alignment.Center
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                Image(
-                    painter = painterResource(R.drawable.circle_arrow),
-                    contentDescription = "Circle Background",
-                    modifier = Modifier.fillMaxSize()
-                )
+                // Timer display
+                Box(
+                    modifier = Modifier
+                        .size(160.dp)
+                        .clip(CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.circle_arrow),
+                        contentDescription = "Circle Background",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    // Overlay text for current reps
+                    Text(
+                        text = "${viewModel.currentReps} / ${viewModel.totalReps}",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.Black,
+                        textAlign = TextAlign.Center
+                    )
+                }
 
-                // Overlay text
+                // Control buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    IconButton(onClick = { viewModel.previousSet() }) {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_skip_previous_24),
+                            contentDescription = "Previous"
+                        )
+                    }
+
+                    if (viewModel.isPlaying) {
+                        IconButton(onClick = { viewModel.isPlaying = false }) {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_pause_24),
+                                contentDescription = "Pause"
+                            )
+                        }
+                    } else {
+                        IconButton(onClick = { viewModel.isPlaying = true }) {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_play_arrow_24),
+                                contentDescription = "Play"
+                            )
+                        }
+                    }
+
+                    IconButton(onClick = { viewModel.nextSet() }) {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_skip_next_24),
+                            contentDescription = "Next"
+                        )
+                    }
+                }
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Top
+            ) {
+                // Exercise name display
                 Text(
-                    text = "${viewModel.currentReps} / ${viewModel.totalReps}",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.Black,
-                    textAlign = TextAlign.Center
+                    text = "Exercise: ${currentExercise.name}",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
-            }
 
-            // Control buttons (Start and Pause)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround
-            ) {
-                IconButton(onClick = { viewModel.previousSet() }) {
-                    Icon(
-                        painter = painterResource(R.drawable.baseline_skip_previous_24),
-                        contentDescription = "Previous"
+                // Header for the table
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    Text(text = "Weight", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                    Text(text = "Rep Goal", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                    Text(text = "Actual", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Exercise details
+                LazyColumn(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp)) {
+                    items(currentExercise.measurement1.values.size) { index ->
+                        val weight = currentExercise.measurement2.values.getOrNull(index) ?: 0
+                        val repGoal = currentExercise.measurement1.values[index]
+                        val actual = viewModel.actualRepsList.getOrNull(index) ?: 0
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceAround
+                        ) {
+                            Text(text = "$weight kg", fontSize = 18.sp)
+                            Text(text = "$repGoal reps", fontSize = 18.sp)
+                            Text(
+                                text = "$actual reps",
+                                fontSize = 18.sp,
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Current rep display
+                Box(
+                    modifier = Modifier
+                        .size(160.dp)
+                        .clip(CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.circle_arrow),
+                        contentDescription = "Circle Background",
+                        modifier = Modifier.fillMaxSize()
+                    )
+
+                    // Overlay text
+                    Text(
+                        text = "${viewModel.currentReps} / ${viewModel.totalReps}",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.Black,
+                        textAlign = TextAlign.Center
                     )
                 }
 
-                if (viewModel.isPlaying) {
-                    IconButton(onClick = { viewModel.isPlaying = false }) {
+                // Control buttons (Start and Pause)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    IconButton(onClick = { viewModel.previousSet() }) {
                         Icon(
-                            painter = painterResource(R.drawable.baseline_pause_24),
-                            contentDescription = "Pause"
+                            painter = painterResource(R.drawable.baseline_skip_previous_24),
+                            contentDescription = "Previous"
                         )
                     }
-                } else {
-                    IconButton(onClick = { viewModel.isPlaying = true }) {
+
+                    if (viewModel.isPlaying) {
+                        IconButton(onClick = { viewModel.isPlaying = false }) {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_pause_24),
+                                contentDescription = "Pause"
+                            )
+                        }
+                    } else {
+                        IconButton(onClick = { viewModel.isPlaying = true }) {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_play_arrow_24),
+                                contentDescription = "Play"
+                            )
+                        }
+                    }
+
+                    IconButton(onClick = { viewModel.nextSet() }) {
                         Icon(
-                            painter = painterResource(R.drawable.baseline_play_arrow_24),
-                            contentDescription = "Play"
+                            painter = painterResource(R.drawable.baseline_skip_next_24),
+                            contentDescription = "Next"
                         )
                     }
                 }
 
-                IconButton(onClick = { viewModel.nextSet() }) {
-                    Icon(
-                        painter = painterResource(R.drawable.baseline_skip_next_24),
-                        contentDescription = "Next"
-                    )
-                }
-            }
+                Spacer(modifier = Modifier.height(16.dp))
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Navigation buttons for exercises
-            Row(
-                horizontalArrangement = Arrangement.SpaceAround,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (viewModel.currentExerciseIndex > 0) {
-                    Button(onClick = { viewModel.previousExercise() }) {
-                        Text("Previous Exercise")
+                // Navigation buttons for exercises
+                Row(
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (viewModel.currentExerciseIndex > 0) {
+                        Button(onClick = { viewModel.previousExercise() }) {
+                            Text("Previous Exercise")
+                        }
                     }
-                }
 
-                if (viewModel.currentExerciseIndex < workoutWithExercises.exercises.size - 1) {
-                    Button(onClick = { viewModel.nextExercise() }) {
-                        Text("Next Exercise")
+                    if (viewModel.currentExerciseIndex < workoutWithExercises.exercises.size - 1) {
+                        Button(onClick = { viewModel.nextExercise() }) {
+                            Text("Next Exercise")
+                        }
                     }
                 }
             }
