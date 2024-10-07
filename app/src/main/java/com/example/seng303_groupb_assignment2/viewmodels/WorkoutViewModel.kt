@@ -61,15 +61,12 @@ class WorkoutViewModel(
                     exerciseValues,
                     exerciseType2,
                     exerciseValues2,
-                    restTime.toString() ?: "No rest time"
+                    restTime.toString()
                 )
             }
 
             val csvData = fileExportService.prepareCsvData(headers, rows)
-
-            Log.d("WorkoutExport", "Exported Workout Content:\n$csvData")
-
-            val filePath = fileExportService.exportToCsv("workout_${workoutWithExercises.workout.name}.csv", csvData)
+            val filePath = fileExportService.exportToCsv("${workoutWithExercises.workout.name}.csv", csvData)
 
             if (filePath != null) {
                 onSuccess(filePath)

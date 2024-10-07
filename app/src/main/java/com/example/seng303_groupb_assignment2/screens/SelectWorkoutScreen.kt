@@ -109,10 +109,10 @@ fun SelectWorkout(
                             context = context, // Pass the required context
                             workoutWithExercises = workoutWithExercises,
                             onSuccess = { filePath ->
-                                Toast.makeText(context, "Workout exported to: $filePath", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, context.getString(R.string.workout_exported_toast, filePath), Toast.LENGTH_LONG).show()
                             },
                             onFailure = {
-                                Toast.makeText(context, "Failed to export workout", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, context.getString(R.string.workout_exported_failure_toast), Toast.LENGTH_LONG).show()
                             }
                         )
                     }
@@ -145,10 +145,11 @@ fun SelectWorkout(
                             context = context,
                             workoutWithExercises = workoutWithExercises,
                             onSuccess = { filePath ->
-                                Toast.makeText(context, "Workout exported to: $filePath", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, context.getString(R.string.workout_exported_toast, filePath), Toast.LENGTH_LONG).show()
                             },
                             onFailure = {
-                                Toast.makeText(context, "Failed to export workout", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, context.getString(R.string.workout_exported_failure_toast), Toast.LENGTH_LONG).show()
+
                             }
                         )
                     }
