@@ -4,6 +4,8 @@ import ExerciseModalViewModel
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,9 +18,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -31,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,11 +46,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.seng303_groupb_assignment2.R
@@ -56,6 +66,7 @@ import com.example.seng303_groupb_assignment2.notifications.NotificationManager
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.ManageWorkoutViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
+import kotlin.math.roundToInt
 
 @Composable
 fun AddWorkout(
@@ -127,7 +138,10 @@ fun AddWorkout(
             }
         }
     } else {
-        Row(Modifier.fillMaxWidth().fillMaxHeight(0.9f)) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.9f)) {
             Column(
                 Modifier
                     .fillMaxWidth(0.5f)
@@ -144,7 +158,9 @@ fun AddWorkout(
             }
             Column(
                 verticalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth().fillMaxHeight()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight()
             ) {
                 AddExerciseRow(modifier = Modifier.fillMaxWidth(),
                     openAddExerciseModal = { manageExerciseModalOpen = true })
@@ -255,11 +271,12 @@ private fun DisplayExerciseList (
         viewModel.exercises.forEachIndexed { index, exercise ->
             item {
                 DisplayExerciseCard(
+                    startIndex = index,
+                    viewModel = viewModel,
                     exercise = exercise,
                     edit = { name, sets, m1, m2, restTime -> viewModel.updateExercise(index, name, sets, m1, m2, restTime) },
                     delete = { viewModel.deleteExercise(index) }
                 )
-                Spacer(modifier = Modifier.height(10.dp))
             }
         }
     }
@@ -267,14 +284,17 @@ private fun DisplayExerciseList (
 
 @Composable
 private fun DisplayExerciseCard(
+    startIndex: Int,
+    viewModel: ManageWorkoutViewModel,
     exercise: Exercise,
     edit: (String, Int, Measurement, Measurement, Int?) -> Unit,
-    delete: () -> Unit
+    delete: () -> Unit,
 ) {
     val context = LocalContext.current
-
     var manageExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
     val exerciseModel: ExerciseModalViewModel = viewModel()
+    val itemHeight = 100
+    val spacing = 10
 
     if (manageExerciseModalOpen) {
         ManageExerciseModal(
@@ -284,14 +304,42 @@ private fun DisplayExerciseCard(
         )
     }
 
-    Card {
+    var offsetY by remember { mutableStateOf(0f) }
+    var dragging by remember { mutableStateOf(false) }
+    Card(modifier = Modifier
+        .offset(y = offsetY.dp)
+        .pointerInput(key1 = viewModel.exercises) {
+            detectDragGesturesAfterLongPress(
+                onDragStart = {
+                    dragging = true
+                },
+                onDrag = { change, dragAmount ->
+                    change.consume()
+                    offsetY += dragAmount.y
+                },
+                onDragEnd = {
+                    dragging = false
+                    if (offsetY.roundToInt() != 0) {
+                        val endIndex = (offsetY.roundToInt() / (itemHeight + spacing)).coerceIn(0, viewModel.exercises.size - 1)
+                        viewModel.moveExercise(startIndex, endIndex)
+                    }
+
+                    offsetY = 0f
+                },
+                onDragCancel = {
+                    dragging = false
+                    offsetY = 0f
+                },
+            )
+        }) {
         Row(modifier = Modifier
             .fillMaxWidth(0.9f)
-            .height(100.dp)
-            .padding(24.dp),
+            .fillMaxHeight()
+            .height(itemHeight.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Spacer(modifier = Modifier.width(28.dp))
             Text(text = exercise.name,
                 style = MaterialTheme.typography.bodyLarge)
             Row(modifier = Modifier.fillMaxWidth(),
@@ -302,7 +350,7 @@ private fun DisplayExerciseCard(
                         contentDescription = context.getString(R.string.delete)
                     )
                 }
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(5.dp))
                 IconButton(onClick = {
                     manageExerciseModalOpen = true
                     exerciseModel.updateExerciseName(exercise.name)
@@ -323,6 +371,7 @@ private fun DisplayExerciseCard(
             }
         }
     }
+    Spacer(modifier = Modifier.height(spacing.dp))
 }
 
 @Composable
@@ -610,7 +659,6 @@ private fun ManageExerciseModal(
 
                                     closeModal()
                                     exerciseModel.clearSavedInfo()
-//                                    notificationHandler.setupDailyNotifications()
                                 }
                             }) {
                             Text(context.getString(R.string.add), style = MaterialTheme.typography.bodyLarge)
