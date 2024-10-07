@@ -23,9 +23,9 @@ class RunWorkoutViewModel(
     var currentReps by mutableStateOf(0)
     var totalReps by mutableStateOf(0)
     var isPlaying by mutableStateOf(false)
-    var actualReps by mutableStateOf(0)
     private val _workoutWithExercises = MutableLiveData<WorkoutWithExercises?>()
     val workoutWithExercises: LiveData<WorkoutWithExercises?> = _workoutWithExercises
+    var actualRepsList = mutableListOf<Int>()
 
     // Load workout with exercises
     fun loadWorkoutWithExercises(workoutId: Long) {
@@ -41,43 +41,60 @@ class RunWorkoutViewModel(
         currentSetIndex = 0
         currentReps = 0
         val initialExercise = workoutWithExercises.exercises[currentExerciseIndex]
-        totalReps = initialExercise.measurement2.values.getOrNull(currentSetIndex)?.toInt() ?: 0
+        totalReps = initialExercise.measurement1.values.getOrNull(currentSetIndex)?.toInt() ?: 0
+        actualRepsList = initialExercise.getMutableActualReps()
     }
 
     // Move to the next exercise
     fun nextExercise() {
         if (currentExerciseIndex < (workoutWithExercises.value?.exercises?.size ?: (0 - 1))) {
+            // Save actual reps for the previous exercise
+            workoutWithExercises.value?.exercises?.get(currentExerciseIndex)?.actualReps = actualRepsList.toList()
+
             currentExerciseIndex++
             currentSetIndex = 0
             currentReps = 0
-            actualReps = 0
+            isPlaying = false
+
+            val nextExercise = workoutWithExercises.value?.exercises?.get(currentExerciseIndex)
+            totalReps = nextExercise?.measurement1?.values?.getOrNull(currentSetIndex)?.toInt() ?: 0
+            actualRepsList = nextExercise?.getMutableActualReps() ?: mutableListOf()
         }
     }
 
     // Move to the previous exercise
     fun previousExercise() {
         if (currentExerciseIndex > 0) {
+            // Save actual reps for the previous exercise
+            workoutWithExercises.value?.exercises?.get(currentExerciseIndex)?.actualReps = actualRepsList.toList()
+
             currentExerciseIndex--
             currentSetIndex = 0
             currentReps = 0
+            isPlaying = false
+
+            val previousExercise = workoutWithExercises.value?.exercises?.get(currentExerciseIndex)
+            totalReps = previousExercise?.measurement1?.values?.getOrNull(currentSetIndex)?.toInt() ?: 0
+            actualRepsList = previousExercise?.getMutableActualReps() ?: mutableListOf()
         }
     }
-
 
     // Increment actual reps for the current exercise and set
     fun incrementReps() {
         if (currentReps < totalReps) {
             currentReps++
-            workoutWithExercises.value?.exercises?.get(currentExerciseIndex)?.actualReps = currentReps
+            actualRepsList[currentSetIndex] = currentReps
+            workoutWithExercises.value?.exercises?.get(currentExerciseIndex)?.actualReps = actualRepsList.toList()
         }
     }
 
     // Move to the next set for the current exercise
     fun nextSet() {
-        if (currentSetIndex < workoutWithExercises.value?.exercises?.get(currentExerciseIndex)?.sets!!) {
+        val exercise = workoutWithExercises.value?.exercises?.get(currentExerciseIndex)
+        if (currentSetIndex < (exercise?.sets ?: 0) - 1) {
             currentSetIndex++
-            currentReps = 0
-            totalReps = workoutWithExercises.value?.exercises?.get(currentExerciseIndex)?.measurement2?.values?.getOrNull(currentSetIndex)?.toInt() ?: 0
+            currentReps = actualRepsList.getOrNull(currentSetIndex) ?: 0
+            totalReps = exercise?.measurement1?.values?.getOrNull(currentSetIndex)?.toInt() ?: 0
         }
     }
 
@@ -85,14 +102,9 @@ class RunWorkoutViewModel(
     fun previousSet() {
         if (currentSetIndex > 0) {
             currentSetIndex--
-            currentReps = 0
-            totalReps = workoutWithExercises.value?.exercises?.get(currentExerciseIndex)?.measurement2?.values?.getOrNull(currentSetIndex)?.toInt() ?: 0
+            val exercise = workoutWithExercises.value?.exercises?.get(currentExerciseIndex)
+            currentReps = actualRepsList.getOrNull(currentSetIndex) ?: 0
+            totalReps = exercise?.measurement1?.values?.getOrNull(currentSetIndex)?.toInt() ?: 0
         }
-    }
-
-    // Update actual reps for a specific set
-    fun updateActualReps(value: Int) {
-        actualReps = value
-        Log.d("RunWorkoutViewModel", "Actual Reps Updated: $actualReps")
     }
 }

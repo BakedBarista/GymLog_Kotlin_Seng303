@@ -10,8 +10,12 @@ data class Exercise(
     var name: String,
     var sets: Int? = null,
     var reps: List<Int>? = null,
-    var actualReps: Int = 0,
+    var actualReps: List<Int>? = null,
     var measurement1: Measurement,
     var measurement2: Measurement,
     var restTime: Int?
-)
+) {
+    fun getMutableActualReps(): MutableList<Int> {
+        return actualReps?.toMutableList() ?: MutableList(sets ?: 0) { 0 }
+    }
+}
