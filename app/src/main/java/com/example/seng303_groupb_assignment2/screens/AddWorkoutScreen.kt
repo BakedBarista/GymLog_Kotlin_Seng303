@@ -308,30 +308,7 @@ private fun DisplayExerciseCard(
     var dragging by remember { mutableStateOf(false) }
     Card(modifier = Modifier
         .offset(y = offsetY.dp)
-        .pointerInput(key1 = viewModel.exercises) {
-            detectDragGesturesAfterLongPress(
-                onDragStart = {
-                    dragging = true
-                },
-                onDrag = { change, dragAmount ->
-                    change.consume()
-                    offsetY += dragAmount.y
-                },
-                onDragEnd = {
-                    dragging = false
-                    if (offsetY.roundToInt() != 0) {
-                        val endIndex = (offsetY.roundToInt() / (itemHeight + spacing)).coerceIn(0, viewModel.exercises.size - 1)
-                        viewModel.moveExercise(startIndex, endIndex)
-                    }
-
-                    offsetY = 0f
-                },
-                onDragCancel = {
-                    dragging = false
-                    offsetY = 0f
-                },
-            )
-        }) {
+    ) {
         Row(modifier = Modifier
             .fillMaxWidth(0.9f)
             .fillMaxHeight()
@@ -343,6 +320,7 @@ private fun DisplayExerciseCard(
             Text(text = exercise.name,
                 style = MaterialTheme.typography.bodyLarge)
             Row(modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.End) {
                 IconButton(onClick = { delete() }) {
                     Icon(
@@ -350,7 +328,6 @@ private fun DisplayExerciseCard(
                         contentDescription = context.getString(R.string.delete)
                     )
                 }
-                Spacer(modifier = Modifier.width(5.dp))
                 IconButton(onClick = {
                     manageExerciseModalOpen = true
                     exerciseModel.updateExerciseName(exercise.name)
@@ -368,6 +345,39 @@ private fun DisplayExerciseCard(
                         contentDescription = context.getString(R.string.edit)
                     )
                 }
+                Spacer(modifier = Modifier.width(25.dp))
+                Icon(
+                    modifier = Modifier.pointerInput(key1 = viewModel.exercises) {
+                        detectDragGestures (
+                            onDragStart = {
+                                dragging = true
+                            },
+                            onDrag = { change, dragAmount ->
+                                change.consume()
+                                offsetY += dragAmount.y * 0.3f
+                            },
+                            onDragEnd = {
+                                dragging = false
+                                if (offsetY.roundToInt() != 0) {
+                                    println(offsetY.roundToInt())
+                                    println(itemHeight + spacing)
+                                    val endIndex = (startIndex + (offsetY.roundToInt() / (itemHeight + spacing)))
+                                        .coerceIn(0, viewModel.exercises.size - 1)
+                                    viewModel.moveExercise(startIndex, endIndex)
+                                }
+
+                                offsetY = 0f
+                            },
+                            onDragCancel = {
+                                dragging = false
+                                offsetY = 0f
+                            },
+                        )
+                    },
+                    painter = painterResource(id = R.drawable.reorder),
+                    contentDescription = context.getString(R.string.reorder)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
             }
         }
     }
