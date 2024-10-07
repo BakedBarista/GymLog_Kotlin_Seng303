@@ -15,7 +15,7 @@ import com.example.seng303_groupb_assignment2.entities.ExerciseLog
 import com.example.seng303_groupb_assignment2.entities.Workout
 import com.example.seng303_groupb_assignment2.entities.WorkoutExerciseCrossRef
 
-@Database(entities = [Workout::class, Exercise::class, ExerciseLog::class, WorkoutExerciseCrossRef::class], version = 2)
+@Database(entities = [Workout::class, Exercise::class, ExerciseLog::class, WorkoutExerciseCrossRef::class], version = 1)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun workoutDao(): WorkoutDao
@@ -25,20 +25,13 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
-        private val MIGRATION_1_2 = object : Migration(1, 2) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE exercise ADD COLUMN actualReps INTEGER DEFAULT 0 NOT NULL")
-            }
-        }
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "gym_database"
-                )
-                    .addMigrations(MIGRATION_1_2)
-                    .build()
+                ).build()
                 INSTANCE = instance
                 instance
             }

@@ -7,15 +7,22 @@
     <string name="cancel">Cancel</string>
     <string name="edit">Edit</string>
     <string name="delete">Delete</string>
+    <string name="previous">Previous</string>
+    <string name="pause">Pause</string>
+    <string name="play">Play</string>
+    <string name="next">Next</string>
+    <string name="next_exercise">Next Exercise</string>
+    <string name="previous_exercise">Previous Exercise</string>
 
     <!-- titles -->
     <string name="exercises_modal_title">Add Exercise</string>
     <string name="exercises_title">Exercises</string>
+    <string name="exercise_name">Exercise %s</string>
 
     <!-- form labels -->
     <string name="workout_name_label">Workout name</string>
     <string name="description_label">Description</string>
-    <string name="exercise_name_label">Exercise name</string>
+    <string name="exercise_name_label">Exercise</string>
     <string name="sets_label">Sets</string>
     <string name="rest_time_label">Rest time</string>
 
@@ -44,4 +51,11 @@
     <string name="friday_abbreviation">F</string>
     <string name="saturday_abbreviation">S</string>
     <string name="sunday_abbreviation">S</string>
+    <string name="circle_background">Circle Background</string>
+    <string name="weight">Weight %s</string>
+    <string name="rep_goal">Rep Goal %s</string>
+    <string name="actual">Actual %s</string>
+    <string name="measurement1_label">%s kg</string>>
+    <string name="measurement2_label">%s reps</string>
+
 </resources>

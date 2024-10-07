@@ -12,6 +12,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.seng303_groupb_assignment2.daos.ExerciseDao
 import com.example.seng303_groupb_assignment2.daos.WorkoutDao
 import com.example.seng303_groupb_assignment2.entities.WorkoutWithExercises
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class RunWorkoutViewModel(
@@ -23,10 +24,16 @@ class RunWorkoutViewModel(
     var currentReps by mutableStateOf(0)
     var totalReps by mutableStateOf(0)
     var isPlaying by mutableStateOf(false)
+    var timerSeconds by mutableStateOf(0)
+    var totalTime by mutableStateOf(0)
     private val _workoutWithExercises = MutableLiveData<WorkoutWithExercises?>()
     val workoutWithExercises: LiveData<WorkoutWithExercises?> = _workoutWithExercises
     var actualRepsList = mutableListOf<Int>()
 
+    private fun calculateTotalTime() {
+        totalTime = totalReps * 5 //Assuming each rep takes 5 secs, this should be an option for user to enter
+        timerSeconds = totalTime
+    }
     // Load workout with exercises
     fun loadWorkoutWithExercises(workoutId: Long) {
         viewModelScope.launch {
@@ -37,16 +44,33 @@ class RunWorkoutViewModel(
 
     // Initialize workout state
     fun initialize(workoutWithExercises: WorkoutWithExercises) {
-        if(totalReps == 0) {
-            currentExerciseIndex = 0
-            currentSetIndex = 0
-            currentReps = 0
-            val initialExercise = workoutWithExercises.exercises[currentExerciseIndex]
-            totalReps = initialExercise.measurement1.values.getOrNull(currentSetIndex)?.toInt() ?: 0
-            actualRepsList = initialExercise.getMutableActualReps()
-        }
+        Log.d("RunWorkoutViewModel", "Initializing with workout: ${workoutWithExercises.workout.name}")
+        currentExerciseIndex = 0
+        currentSetIndex = 0
+        currentReps = 0
+        val initialExercise = workoutWithExercises.exercises[currentExerciseIndex]
+        totalReps = initialExercise.measurement1.values.getOrNull(currentSetIndex)?.toInt() ?: 0
+        actualRepsList = initialExercise.getMutableActualReps()
+        calculateTotalTime()
+
     }
 
+    fun startTimer() {
+        isPlaying = true
+        viewModelScope.launch {
+            while (isPlaying && timerSeconds > 0 && currentReps < totalReps) {
+                delay(1000L)
+                timerSeconds--
+
+                if (timerSeconds % 5 == 0) {
+                    incrementReps()
+                }
+            }
+            if (currentReps >= totalReps || timerSeconds <= 0) {
+                isPlaying = false
+            }
+        }
+    }
     // Move to the next exercise
     fun nextExercise() {
         if (currentExerciseIndex < (workoutWithExercises.value?.exercises?.size ?: (0 - 1))) {
@@ -61,6 +85,7 @@ class RunWorkoutViewModel(
             val nextExercise = workoutWithExercises.value?.exercises?.get(currentExerciseIndex)
             totalReps = nextExercise?.measurement1?.values?.getOrNull(currentSetIndex)?.toInt() ?: 0
             actualRepsList = nextExercise?.getMutableActualReps() ?: mutableListOf()
+            calculateTotalTime()
         }
     }
 
@@ -78,6 +103,7 @@ class RunWorkoutViewModel(
             val previousExercise = workoutWithExercises.value?.exercises?.get(currentExerciseIndex)
             totalReps = previousExercise?.measurement1?.values?.getOrNull(currentSetIndex)?.toInt() ?: 0
             actualRepsList = previousExercise?.getMutableActualReps() ?: mutableListOf()
+            calculateTotalTime()
         }
     }
 
@@ -97,7 +123,9 @@ class RunWorkoutViewModel(
             currentSetIndex++
             currentReps = actualRepsList.getOrNull(currentSetIndex) ?: 0
             totalReps = exercise?.measurement1?.values?.getOrNull(currentSetIndex)?.toInt() ?: 0
+            calculateTotalTime()
         }
+
     }
 
     // Move to the previous set for the current exercise
@@ -107,6 +135,7 @@ class RunWorkoutViewModel(
             val exercise = workoutWithExercises.value?.exercises?.get(currentExerciseIndex)
             currentReps = actualRepsList.getOrNull(currentSetIndex) ?: 0
             totalReps = exercise?.measurement1?.values?.getOrNull(currentSetIndex)?.toInt() ?: 0
+            calculateTotalTime()
         }
     }
 }
