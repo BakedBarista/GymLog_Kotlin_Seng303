@@ -359,8 +359,6 @@ private fun DisplayExerciseCard(
                             onDragEnd = {
                                 dragging = false
                                 if (offsetY.roundToInt() != 0) {
-                                    println(offsetY.roundToInt())
-                                    println(itemHeight + spacing)
                                     val endIndex = (startIndex + (offsetY.roundToInt() / (itemHeight + spacing)))
                                         .coerceIn(0, viewModel.exercises.size - 1)
                                     viewModel.moveExercise(startIndex, endIndex)
