@@ -11,6 +11,10 @@
     <!-- titles -->
     <string name="exercises_modal_title">Add Exercise</string>
     <string name="exercises_title">Exercises</string>
+    <string name="preferences_title">Preferences</string>
+    <string name="progress_title">Progress</string>
+    <string name="workout_builder_title">Workout Builder</string>
+    <string name="home">Home</string>
 
     <!-- form labels -->
     <string name="workout_name_label">Workout name</string>
@@ -24,6 +28,8 @@
     <string name="notification_schedule_content">Reminder: Your workout \"%1$s\" has been scheduled for today!</string>
     <string name="notification_new_workout_title">Workout Added</string>
     <string name="notification_new_workout_content">Be ready on %1$s for your newly scheduled workout \"%2$s!\"</string>
+    <string name="workout_exported_toast">Workout exported to: %1$s</string>
+    <string name="workout_exported_failure_toast">Failed to export workout</string>
 
     <!-- informational -->
     <string name="tap_select">Tap to select an exercise</string>
@@ -49,6 +55,8 @@
     <string name="edit_workout">Edit Workout</string>
     <string name="edit_exercise">Edit Exercise</string>
     <string name="delete_workout">Delete Workout</string>
+    <string name="select_workout">Select Workout</string>
+    <string name="export_workout">Export Workout</string>
     <string name="delete_exercise">Delete Exercise</string>
     <string name="collapse">Collapse</string>
     <string name="expand">Expand</string>
@@ -66,4 +74,10 @@
     <string name="friday_abbreviation">F</string>
     <string name="saturday_abbreviation">S</string>
     <string name="sunday_abbreviation">S</string>
+
+    <string name="sound">Sound</string>
+    <string name="dark_mode">Dark Mode</string>
+    <string name="units">Units</string>
+    <string name="imperial">Imperial</string>
+    <string name="metric">Metric</string>
 </resources>

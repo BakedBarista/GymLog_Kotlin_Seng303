@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
@@ -28,7 +29,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -37,7 +40,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -48,18 +54,21 @@ import com.example.seng303_groupb_assignment2.screens.AddWorkout
 import com.example.seng303_groupb_assignment2.screens.Home
 import com.example.seng303_groupb_assignment2.screens.SelectWorkout
 import com.example.seng303_groupb_assignment2.screens.ViewLeaderboard
+import com.example.seng303_groupb_assignment2.screens.ViewPreferences
 import com.example.seng303_groupb_assignment2.screens.ViewProgress
 import com.example.seng303_groupb_assignment2.ui.theme.SENG303_GroupB_Assignment2Theme
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.seng303_groupb_assignment2.enums.Days
 import com.example.seng303_groupb_assignment2.notifications.NotificationManager
+import com.example.seng303_groupb_assignment2.viewmodels.PreferenceViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel as koinViewModel
 
 class MainActivity : ComponentActivity() {
     private val exerciseViewModel: ExerciseViewModel by koinViewModel()
     private val workoutViewModel: WorkoutViewModel by koinViewModel()
+    private val preferenceViewModel: PreferenceViewModel by koinViewModel()
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -80,7 +89,10 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            SENG303_GroupB_Assignment2Theme {
+            val preferences = preferenceViewModel.preferences.observeAsState()
+            val isDarkMode = preferences.value?.darkMode ?: false
+
+            SENG303_GroupB_Assignment2Theme(darkTheme = isDarkMode) {
                 val navController = rememberNavController()
                 val configuration = LocalConfiguration.current
                 val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
@@ -91,7 +103,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     topBar = {
                         if (isPortrait) {
-                            CustomTopAppBar(title = currentTitle)
+                            CustomTopAppBar(title = currentTitle, navController)
                         }
                     },
                     bottomBar = {
@@ -114,15 +126,15 @@ class MainActivity : ComponentActivity() {
                                 .fillMaxHeight()
                         ) {
                             composable("Home") {
-                                currentTitle = "Home"
+                                currentTitle = stringResource(id = R.string.home)
                                 Home(navController = navController)
                             }
                             composable("SelectWorkout") {
-                                currentTitle = "Select Workout"
-                                SelectWorkout()
+                                currentTitle = stringResource(id = R.string.select_workout)
+                                SelectWorkout(navController = navController)
                             }
                             composable("Add") {
-                                currentTitle = "Workout Builder"
+                                currentTitle = stringResource(id = R.string.workout_builder_title)
                                 val manageWorkoutViewModel: ManageWorkoutViewModel = viewModel()
                                 AddWorkout(
                                     navController = navController,
@@ -132,12 +144,16 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                             composable("Progress") {
-                                currentTitle = "View Progress"
+                                currentTitle = stringResource(id = R.string.progress_title)
                                 ViewProgress(navController = navController)
                             }
                             composable("Leaderboard") {
-                                currentTitle = "Leaderboard"
+                                currentTitle = stringResource(id = R.string.leaderboard)
                                 ViewLeaderboard(navController = navController)
+                            }
+                            composable("Preferences") {
+                                currentTitle = stringResource(id = R.string.preferences_title)
+                                ViewPreferences(navController = navController)
                             }
                         }
                         if (!isPortrait) {
@@ -255,14 +271,39 @@ fun AppBarIconButton(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomTopAppBar(
-    title: String
+    title: String,
+    navController: NavController
 ) {
-    // TODO possibly update this to center the text and maybe make the text larger.
+    val currentBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = currentBackStackEntry?.destination?.route
+
     TopAppBar(
         title = {
-            Text(
-                text = title,
-            )
+            Box(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = title,
+                    style = androidx.compose.ui.text.TextStyle(
+                        fontSize = 30.sp
+                    ),
+                    modifier = Modifier.align(Alignment.Center)
+                )
+
+                if (currentRoute != "Preferences") {
+                    IconButton(
+                        onClick = { navController.navigate("Preferences") },
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 12.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_gear),
+                            contentDescription = "Settings"
+                        )
+                    }
+                }
+            }
         }
     )
 }
