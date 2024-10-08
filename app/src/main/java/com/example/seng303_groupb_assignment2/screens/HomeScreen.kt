@@ -32,4 +32,5 @@ fun Home(
         }
         notificationHandler.setupDailyNotifications()
     }
+
 }
