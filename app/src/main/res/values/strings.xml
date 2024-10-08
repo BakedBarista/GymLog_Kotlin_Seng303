@@ -31,7 +31,9 @@
     <string name="notification_new_workout_title">Workout Added</string>
     <string name="notification_new_workout_content">Be ready on %1$s for your newly scheduled workout \"%2$s!\"</string>
     <string name="workout_exported_toast">Workout exported to: %1$s</string>
+    <string name="workout_logs_exported_toast">Workout logs exported to: %1$s</string>
     <string name="workout_exported_failure_toast">Failed to export workout</string>
+    <string name="workout_log_exported_failure_toast">Failed to export workout logs</string>
 
     <!-- informational -->
     <string name="tap_select">Tap to select an exercise</string>
@@ -59,6 +61,7 @@
     <string name="delete_workout">Delete Workout</string>
     <string name="select_workout">Select Workout</string>
     <string name="export_workout">Export Workout</string>
+    <string name="export_workout_log">Export Workout Log</string>
     <string name="delete_exercise">Delete Exercise</string>
     <string name="collapse">Collapse</string>
     <string name="expand">Expand</string>
