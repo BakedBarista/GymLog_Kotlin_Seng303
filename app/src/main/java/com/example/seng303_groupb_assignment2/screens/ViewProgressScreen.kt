@@ -1,7 +1,6 @@
 package com.example.seng303_groupb_assignment2.screens
 
 import android.content.res.Configuration
-import android.text.Layout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,8 +44,11 @@ import com.example.seng303_groupb_assignment2.enums.ChartOption
 import com.example.seng303_groupb_assignment2.enums.TimeRange
 import com.example.seng303_groupb_assignment2.enums.UnitType
 import com.example.seng303_groupb_assignment2.graphcomponents.CircleComponent
+import com.example.seng303_groupb_assignment2.models.UserPreferences
+import com.example.seng303_groupb_assignment2.services.MeasurementConverter
 import com.example.seng303_groupb_assignment2.utils.exerciseSaver
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
+import com.example.seng303_groupb_assignment2.viewmodels.PreferenceViewModel
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
@@ -56,12 +58,8 @@ import com.patrykandpatrick.vico.compose.cartesian.marker.rememberDefaultCartesi
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
 import com.patrykandpatrick.vico.compose.cartesian.rememberVicoZoomState
-import com.patrykandpatrick.vico.compose.common.component.rememberShapeComponent
 import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
-import com.patrykandpatrick.vico.compose.common.component.shadow
-import com.patrykandpatrick.vico.compose.common.dimensions
 import com.patrykandpatrick.vico.compose.common.fill
-import com.patrykandpatrick.vico.compose.common.shape.markerCorneredShape
 import com.patrykandpatrick.vico.core.cartesian.Scroll
 import com.patrykandpatrick.vico.core.cartesian.Zoom
 import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
@@ -71,13 +69,10 @@ import com.patrykandpatrick.vico.core.cartesian.data.CartesianLayerRangeProvider
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
-import com.patrykandpatrick.vico.core.cartesian.marker.CartesianMarker
-import com.patrykandpatrick.vico.core.cartesian.marker.DefaultCartesianMarker
 import com.patrykandpatrick.vico.core.common.component.Component
-import com.patrykandpatrick.vico.core.common.component.TextComponent
 import com.patrykandpatrick.vico.core.common.data.ExtraStore
-import com.patrykandpatrick.vico.core.common.shape.Corner
 import org.koin.androidx.compose.getViewModel
+import org.koin.androidx.compose.koinViewModel
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -87,10 +82,13 @@ import kotlin.math.ceil
 @Composable
 fun ViewProgress(
     navController: NavController,
-    viewModel: ExerciseViewModel = getViewModel()
+    viewModel: ExerciseViewModel = getViewModel(),
+    preferenceViewModel: PreferenceViewModel = getViewModel()
 ) {
     // TODO Remove this when we don't need sample data anymore
     viewModel.createSampleExerciseAndLogs()
+    val userPreferences by preferenceViewModel.preferences.observeAsState(UserPreferences())
+    val unitType = if (userPreferences.metricUnits) UnitType.METRIC else UnitType.IMPERIAL
     var selectedExercise by rememberSaveable(stateSaver = exerciseSaver) { mutableStateOf<Exercise?>(null) }
     var showDialog by rememberSaveable { mutableStateOf(false) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
@@ -149,7 +147,7 @@ fun ViewProgress(
         }
 
         if (selectedExercise != null && filteredExerciseLogs.isNotEmpty() && selectedOption != null) {
-            ExerciseProgressGraph(filteredExerciseLogs, selectedOption, UnitType.METRIC /* TODO change this hardcoding to work off preferences */)
+            ExerciseProgressGraph(filteredExerciseLogs, selectedOption, unitType)
         } else if (selectedExercise != null) {
             Text(
                 text = stringResource(R.string.no_logs_in_timeframe),
@@ -409,7 +407,15 @@ fun ExerciseSelectionDialog(
 }
 
 @Composable
-fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: ChartOption?, unitType: UnitType) {
+fun ExerciseProgressGraph(
+    exerciseLogs: List<ExerciseLog>,
+    selectedOption: ChartOption?,
+    unitType: UnitType,
+    preferenceViewModel: PreferenceViewModel = koinViewModel()
+) {
+    val preferences = preferenceViewModel.preferences.observeAsState(null).value
+    val metricUnits = preferences?.metricUnits ?: false
+    val measurementConverter = MeasurementConverter(metricUnits)
     val modelProducer = remember { CartesianChartModelProducer() }
 
     val xToDateMapKey = ExtraStore.Key<Map<Float, Long>>()
@@ -422,7 +428,9 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
                         .toEpochDay()
-                    epochDay.toDouble() to (log.measurement2.values.maxOrNull() ?: 0f)
+                    epochDay.toDouble() to (log.measurement2.values.maxOrNull()
+                        ?.let { measurementConverter.convertToImperial(it, log.measurement2.type) }
+                        ?: 0f)
                 }
             }
             ChartOption.TotalWorkoutVolume -> {
@@ -433,7 +441,7 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
                         .toEpochDay()
                     val totalVolume = log.measurement1.values.zip(log.measurement2.values)
                         .sumOf { (reps, weight) -> reps * weight.toDouble() }
-                    epochDay.toDouble() to totalVolume.toFloat()
+                    epochDay.toDouble() to measurementConverter.convertToImperial(totalVolume.toFloat(), log.measurement2.type)
                 }
             }
             ChartOption.MaxDistance -> {
@@ -442,7 +450,9 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
                         .toEpochDay()
-                    epochDay.toDouble() to (log.measurement2.values.maxOrNull() ?: 0f) }
+                    epochDay.toDouble() to (log.measurement2.values.maxOrNull()
+                        ?.let { measurementConverter.convertToImperial(it, log.measurement2.type) }
+                        ?: 0f) }
             }
             ChartOption.TotalDistance -> {
                 exerciseLogs.map { log ->
@@ -450,7 +460,7 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
                         .toEpochDay()
-                    epochDay.toDouble() to log.measurement2.values.sum() }
+                    epochDay.toDouble() to measurementConverter.convertToImperial(log.measurement2.values.sum(), log.measurement2.type) }
             }
 
             null -> {

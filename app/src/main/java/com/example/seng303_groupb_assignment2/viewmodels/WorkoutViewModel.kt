@@ -12,16 +12,21 @@ import com.example.seng303_groupb_assignment2.services.FileExportService
 import kotlinx.coroutines.launch
 import android.util.Log
 import com.example.seng303_groupb_assignment2.daos.ExerciseLogDao
+import com.example.seng303_groupb_assignment2.datastore.PreferencePersistentStorage
 import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.entities.ExerciseLog
+import com.example.seng303_groupb_assignment2.models.UserPreferences
+import com.example.seng303_groupb_assignment2.services.MeasurementConverter
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
+import org.koin.androidx.compose.getViewModel
+import org.koin.androidx.compose.koinViewModel
 
 
 class WorkoutViewModel(
     private val workoutDao: WorkoutDao,
-    private val exerciseLogDao: ExerciseLogDao
+    private val exerciseLogDao: ExerciseLogDao,
 ) : ViewModel() {
     val allWorkouts: LiveData<List<WorkoutWithExercises>> = workoutDao.getAllWorkoutsWithExercises().asLiveData()
 
@@ -45,8 +50,10 @@ class WorkoutViewModel(
     }
 
     // Export workout to CSV
-    fun exportWorkout(context: Context, workoutWithExercises: WorkoutWithExercises, onSuccess: (String) -> Unit, onFailure: () -> Unit) {
+    fun exportWorkout(context: Context, workoutWithExercises: WorkoutWithExercises, onSuccess: (String) -> Unit, onFailure: () -> Unit, isMetric: Boolean) {
         viewModelScope.launch {
+            val measurementConverter = MeasurementConverter(isMetric)
+
             val fileExportService = FileExportService(context)
             val headers = listOf("Workout Name", "Description", "Rest Time", "Exercise Name")
             val rows = workoutWithExercises.exercises.map { exercise ->
@@ -55,9 +62,14 @@ class WorkoutViewModel(
                 val restTime = exercise.restTime
                 val exerciseName = exercise.name
                 val exerciseType = exercise.measurement1.type
-                val exerciseValues = exercise.measurement1.values.joinToString(separator = ",") { it.toString() }
+                val exerciseValues = exercise.measurement1.values
+                    .map { measurementConverter?.convertToImperial(it, exerciseType) }
+                    .joinToString(separator = ",") { it.toString() }
+
                 val exerciseType2 = exercise.measurement2.type
-                val exerciseValues2 = exercise.measurement2.values.joinToString(separator = ",") { it.toString() }
+                val exerciseValues2 = exercise.measurement2.values
+                    .map { measurementConverter?.convertToImperial(it, exerciseType2) }
+                    .joinToString(separator = ",") { it.toString() }
 
                 listOf(
                     workoutName,
@@ -73,6 +85,7 @@ class WorkoutViewModel(
             }
 
             val csvData = fileExportService.prepareCsvData(headers, rows)
+            Log.d("Data", csvData)
             val filePath = fileExportService.exportToCsv("${workoutWithExercises.workout.name}.csv", csvData)
 
             if (filePath != null) {
@@ -83,8 +96,9 @@ class WorkoutViewModel(
         }
     }
 
-    fun exportWorkoutLog(context: Context, workoutWithExercises: WorkoutWithExercises, onSuccess: (String) -> Unit, onFailure: () -> Unit) {
+    fun exportWorkoutLog(context: Context, workoutWithExercises: WorkoutWithExercises, onSuccess: (String) -> Unit, onFailure: () -> Unit, isMetric: Boolean) {
         viewModelScope.launch {
+            val measurementConverter = MeasurementConverter(isMetric)
             val exercises: List<Exercise> = workoutWithExercises.exercises
             val headers = listOf("Exercise Name", "Timestamp", "Sets")
             val allExerciseLogRows = mutableListOf<List<String>>()
@@ -97,9 +111,14 @@ class WorkoutViewModel(
                         val logTimestamp = log.timestamp
                         val logSets = log.sets
                         val logMeasurement1 = log.measurement1.type
-                        val logMeasurement1Vals = log.measurement1.values.joinToString(separator = ",") { it.toString() }
+                        val logMeasurement1Vals = log.measurement1.values
+                            .map { measurementConverter?.convertToImperial(it, logMeasurement1) }
+                            .joinToString(separator = ",")
+
                         val logMeasurement2 = log.measurement2.type
-                        val logMeasurement2Vals = log.measurement2.values.joinToString(separator = ",") { it.toString() }
+                        val logMeasurement2Vals = log.measurement2.values
+                            .map { measurementConverter?.convertToImperial(it, logMeasurement2) }
+                            .joinToString(separator = ",")
 
                         listOf(
                             exerciseName,

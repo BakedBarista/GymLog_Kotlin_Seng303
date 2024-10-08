@@ -62,6 +62,9 @@ import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
 import org.koin.androidx.compose.getViewModel
 import androidx.compose.ui.platform.LocalContext
+import com.example.seng303_groupb_assignment2.enums.UnitType
+import com.example.seng303_groupb_assignment2.models.UserPreferences
+import com.example.seng303_groupb_assignment2.viewmodels.PreferenceViewModel
 
 
 @Composable
@@ -69,7 +72,10 @@ fun SelectWorkout(
     navController: NavController,
     workoutViewModel: WorkoutViewModel = getViewModel(),
     exerciseViewModel: ExerciseViewModel = getViewModel(),
+    preferenceViewModel: PreferenceViewModel = getViewModel()
 ) {
+    val userPreferences by preferenceViewModel.preferences.observeAsState(UserPreferences())
+    val isMetric = userPreferences.metricUnits
     val workouts by workoutViewModel.allWorkouts.observeAsState(initial = emptyList())
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
@@ -107,7 +113,8 @@ fun SelectWorkout(
                             },
                             onFailure = {
                                 Toast.makeText(context, context.getString(R.string.workout_exported_failure_toast), Toast.LENGTH_LONG).show()
-                            }
+                            },
+                            isMetric = isMetric
                         )
                     },
                     onExportWorkoutLog = {
@@ -119,7 +126,8 @@ fun SelectWorkout(
                             },
                             onFailure = {
                                 Toast.makeText(context, context.getString(R.string.workout_log_exported_failure_toast), Toast.LENGTH_LONG).show()
-                            }
+                            },
+                            isMetric = isMetric
                         )
                     }
                 )
@@ -155,8 +163,8 @@ fun SelectWorkout(
                             },
                             onFailure = {
                                 Toast.makeText(context, context.getString(R.string.workout_exported_failure_toast), Toast.LENGTH_LONG).show()
-
-                            }
+                            },
+                            isMetric = isMetric
                         )
                     },
                     onExportWorkoutLog = {
@@ -168,7 +176,8 @@ fun SelectWorkout(
                             },
                             onFailure = {
                                 Toast.makeText(context, context.getString(R.string.workout_log_exported_failure_toast), Toast.LENGTH_LONG).show()
-                            }
+                            },
+                            isMetric = isMetric
                         )
                     }
                 )

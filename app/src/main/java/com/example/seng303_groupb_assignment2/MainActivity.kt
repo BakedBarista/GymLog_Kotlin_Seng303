@@ -3,6 +3,7 @@ package com.example.seng303_groupb_assignment2
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -92,6 +93,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             val preferences = preferenceViewModel.preferences.observeAsState()
             val isDarkMode = preferences.value?.darkMode ?: false
+            Log.d("DEFINITELY PREFS", preferences.value?.metricUnits.toString())
+            Log.d("DEFINITELY PREFS", preferences.value?.darkMode.toString())
+            Log.d("DEFINITELY PREFS", preferences.value?.soundOn.toString())
 
             SENG303_GroupB_Assignment2Theme(darkTheme = isDarkMode) {
                 val navController = rememberNavController()
