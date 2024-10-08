@@ -4,39 +4,36 @@ import android.content.res.Configuration
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-
 import androidx.compose.material3.TextField
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -45,7 +42,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.sqlite.db.SupportSQLiteOpenHelper
 import com.example.seng303_groupb_assignment2.R
 import com.example.seng303_groupb_assignment2.entities.WorkoutWithExercises
 import com.example.seng303_groupb_assignment2.viewmodels.RunWorkoutViewModel
@@ -70,6 +66,12 @@ fun RunWorkout(
         LaunchedEffect(viewModel.currentSetIndex) {
             listState.animateScrollToItem(viewModel.currentSetIndex)
         }
+
+        val buttonColors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+
         if (isLandscape) {
             // Only show timer and control buttons in landscape mode
             Column(
@@ -106,30 +108,17 @@ fun RunWorkout(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
-                    IconButton(onClick = { viewModel.previousSet() }) {
+                    val previousExerciseAvailable = viewModel.currentExerciseIndex > 0
+                    IconButton(onClick = { viewModel.previousSet(previousExerciseAvailable) },
+                        enabled = (previousExerciseAvailable || viewModel.canGoPrevious()) && !viewModel.isResting ) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_skip_previous_24),
                             contentDescription = stringResource(R.string.previous)
                         )
                     }
-
-                    if (viewModel.isPlaying) {
-                        IconButton(onClick = { viewModel.isPlaying = false }) {
-                            Icon(
-                                painter = painterResource(R.drawable.baseline_pause_24),
-                                contentDescription = stringResource(R.string.pause)
-                            )
-                        }
-                    } else {
-                        IconButton(onClick = { viewModel.startTimer() }) {
-                            Icon(
-                                painter = painterResource(R.drawable.baseline_play_arrow_24),
-                                contentDescription = stringResource(R.string.play)
-                            )
-                        }
-                    }
-
-                    IconButton(onClick = { viewModel.nextSet() }) {
+                    val nextExerciseAvailable = viewModel.currentExerciseIndex < workoutWithExercises.exercises.size - 1
+                    IconButton(onClick = { viewModel.nextSet(nextExerciseAvailable) },
+                        enabled = (nextExerciseAvailable || viewModel.canGoNext()) && !viewModel.isResting) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_skip_next_24),
                             contentDescription = stringResource(R.string.next)
@@ -147,10 +136,10 @@ fun RunWorkout(
             ) {
                 // Exercise name display
                 Text(
-                    text = stringResource(R.string.exercise_name, currentExercise.name),
+                    text = currentExercise.name,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    modifier = Modifier.padding(bottom = 20.dp)
                 )
 
                 // Header for the table
@@ -163,14 +152,12 @@ fun RunWorkout(
                     Text(text = stringResource(R.string.actual,""), fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
-
                 // Exercise details
                 LazyColumn(state = listState,
                     modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .padding(vertical = 16.dp)) {
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .padding(vertical = 16.dp)) {
                     items(currentExercise.measurement1.values.size) { index ->
                         val weight = currentExercise.measurement2.values.getOrNull(index) ?: 0
                         val repGoal = currentExercise.measurement1.values[index]
@@ -179,11 +166,12 @@ fun RunWorkout(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 16.dp)
+                                .padding(vertical = 8.dp)
                                 .background(
-                                    color = if (isCurrentSet) Color.Yellow else Color.Transparent,
+                                    color = if (isCurrentSet) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
                                     shape = RoundedCornerShape(8.dp)
-                                ),
+                                )
+                                .padding(vertical = 8.dp),
                             horizontalArrangement = Arrangement.SpaceAround
                         ) {
                             Text(text = stringResource(R.string.measurement1_label, "$weight"), fontSize = 18.sp)
@@ -197,95 +185,96 @@ fun RunWorkout(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Current rep display
+                // Rest display
                 Box(
-                    modifier = Modifier
-                        .size(160.dp)
-                        .clip(CircleShape),
+                    modifier = Modifier.fillMaxHeight(0.5f),
                     contentAlignment = Alignment.Center
                 ) {
-                    Image(
-                        painter = painterResource(R.drawable.circle_arrow),
-                        contentDescription = stringResource(R.string.circle_background),
-                        modifier = Modifier.fillMaxSize()
-                    )
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        // Timer text
-                        Text(
-                            text = String.format(Locale.getDefault(), ":%02d", viewModel.timerSeconds),
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black,
-                            modifier = Modifier.padding(bottom = 8.dp)
+                    if (viewModel.isResting) {
+                        Box (modifier = Modifier
+                            .size(160.dp)
+                            .clip(CircleShape),
+                            contentAlignment = Alignment.Center
                         )
-
-                        // Reps count text
-                        Text(
-                            text = "${viewModel.currentReps} / ${viewModel.totalReps}",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.Black,
-                            textAlign = TextAlign.Center
-                        )
+                        {
+                            Image(
+                                painter = painterResource(R.drawable.circle_arrow),
+                                contentDescription = stringResource(R.string.circle_background),
+                                modifier = Modifier.fillMaxSize()
+                            )
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                // Timer text
+                                val minutes = viewModel.timerSeconds / 60
+                                val seconds = viewModel.timerSeconds % 60
+                                Text(
+                                    text = String.format(Locale.getDefault(), "%d:%02d", minutes, seconds),
+                                    fontSize = 32.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Black,
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                )
+                            }
+                        }
                     }
                 }
 
                 // Control buttons (Start and Pause)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment = Alignment.Bottom
                 ) {
-                    IconButton(onClick = { viewModel.previousSet() }) {
+                    val previousExerciseAvailable = viewModel.currentExerciseIndex > 0
+                    IconButton(onClick = { viewModel.previousSet(previousExerciseAvailable) },
+                        enabled = (previousExerciseAvailable || viewModel.canGoPrevious()) && !viewModel.isResting) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_skip_previous_24),
                             contentDescription = stringResource(R.string.previous)
                         )
                     }
-
-                    if (viewModel.isPlaying) {
-                        IconButton(onClick = { viewModel.isPlaying = false }) {
-                            Icon(
-                                painter = painterResource(R.drawable.baseline_pause_24),
-                                contentDescription = stringResource(R.string.pause)
-                            )
+                    if (viewModel.isResting) {
+                        Button(onClick = { viewModel.endRestEarly() },
+                            colors = buttonColors,
+                            shape = RectangleShape) {
+                            Text(text = stringResource(R.string.finish_rest_early))
                         }
                     } else {
-                        IconButton(onClick = { viewModel.startTimer() }) {
-                            Icon(
-                                painter = painterResource(R.drawable.baseline_play_arrow_24),
-                                contentDescription = stringResource(R.string.play)
-                            )
-                        }
+                        val label = stringResource(R.string.input_actual_reps_label)
+                        TextField(
+                            value = viewModel.actualRepsList[viewModel.currentSetIndex].toString(),
+                            onValueChange = {
+                                if (it.toIntOrNull() != null) {
+                                    viewModel.actualRepsList[viewModel.currentSetIndex] = it.toInt()
+                                }
+                            },
+                            textStyle = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .background(MaterialTheme.colorScheme.primaryContainer)
+                                .fillMaxWidth(0.5f),
+                            label = { Text(label) },
+                        )
                     }
-
-                    IconButton(onClick = { viewModel.nextSet() }) {
+                    val nextExerciseAvailable = viewModel.currentExerciseIndex < workoutWithExercises.exercises.size - 1
+                    IconButton(onClick = { viewModel.nextSet(nextExerciseAvailable) },
+                        enabled = (nextExerciseAvailable || viewModel.canGoNext()) && !viewModel.isResting) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_skip_next_24),
                             contentDescription = stringResource(R.string.next)
                         )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Navigation buttons for exercises
-                Row(
-                    horizontalArrangement = Arrangement.SpaceAround,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    if (viewModel.currentExerciseIndex > 0) {
-                        Button(onClick = { viewModel.previousExercise() }) {
-                            Text(stringResource(R.string.previous_exercise))
-                        }
-                    }
-
-                    if (viewModel.currentExerciseIndex < workoutWithExercises.exercises.size - 1) {
-                        Button(onClick = { viewModel.nextExercise() }) {
-                            Text(stringResource(R.string.next_exercise))
-                        }
+                Spacer(modifier = Modifier.height(8.dp))
+                val nextExerciseAvailable = viewModel.currentExerciseIndex < workoutWithExercises.exercises.size - 1
+                if (!viewModel.canGoNext() && !nextExerciseAvailable) {
+                    Button(onClick = { /*TODO*/ },
+                        colors = buttonColors,
+                        shape = RectangleShape
+                    ) {
+                        Text(text = stringResource(R.string.finish_workout))
                     }
                 }
             }

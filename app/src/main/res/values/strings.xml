@@ -11,8 +11,8 @@
     <string name="pause">Pause</string>
     <string name="play">Play</string>
     <string name="next">Next</string>
-    <string name="next_exercise">Next Exercise</string>
-    <string name="previous_exercise">Previous Exercise</string>
+    <string name="finish_workout">Finish Workout!</string>
+    <string name="finish_rest_early">End Rest Early</string>
 
     <!-- titles -->
     <string name="exercises_modal_title">Add Exercise</string>
@@ -25,6 +25,7 @@
     <string name="exercise_name_label">Exercise</string>
     <string name="sets_label">Sets</string>
     <string name="rest_time_label">Rest time</string>
+    <string name="input_actual_reps_label">Actual reps</string>
 
     <!-- other -->
     <string name="leaderboard">Leaderboard</string>
