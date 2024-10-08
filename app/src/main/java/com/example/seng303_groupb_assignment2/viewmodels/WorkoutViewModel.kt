@@ -12,10 +12,19 @@ import com.example.seng303_groupb_assignment2.entities.WorkoutWithExercises
 import com.example.seng303_groupb_assignment2.services.FileExportService
 import kotlinx.coroutines.launch
 import android.util.Log
+import com.example.seng303_groupb_assignment2.daos.ExerciseLogDao
+import com.example.seng303_groupb_assignment2.entities.Exercise
+import com.example.seng303_groupb_assignment2.entities.ExerciseLog
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.first
+
 
 class WorkoutViewModel(
     private val workoutDao: WorkoutDao,
-    private val exerciseDao: ExerciseDao
+    private val exerciseLogDao: ExerciseLogDao
 ) : ViewModel() {
     val allWorkouts: LiveData<List<WorkoutWithExercises>> = workoutDao.getAllWorkoutsWithExercises().asLiveData()
 
@@ -42,26 +51,27 @@ class WorkoutViewModel(
     fun exportWorkout(context: Context, workoutWithExercises: WorkoutWithExercises, onSuccess: (String) -> Unit, onFailure: () -> Unit) {
         viewModelScope.launch {
             val fileExportService = FileExportService(context)
-            val headers = listOf("Workout Name", "Description", "Exercise Name", "Measurement1 Type", "Measurement1 Values", "Measurement2 Type", "Measurement2 Values", "Rest Time")
+            val headers = listOf("Workout Name", "Description", "Rest Time", "Exercise Name")
             val rows = workoutWithExercises.exercises.map { exercise ->
                 val workoutName = workoutWithExercises.workout.name
                 val workoutDescription = workoutWithExercises.workout.description
+                val restTime = exercise.restTime
                 val exerciseName = exercise.name
                 val exerciseType = exercise.measurement1.type
-                val exerciseValues = exercise.measurement1.values.joinToString(separator = "/") { it.toString() }
+                val exerciseValues = exercise.measurement1.values.joinToString(separator = ",") { it.toString() }
                 val exerciseType2 = exercise.measurement2.type
-                val exerciseValues2 = exercise.measurement2.values.joinToString(separator = "/") { it.toString() }
-                val restTime = exercise.restTime
+                val exerciseValues2 = exercise.measurement2.values.joinToString(separator = ",") { it.toString() }
 
                 listOf(
                     workoutName,
                     workoutDescription,
+                    restTime.toString(),
                     exerciseName,
                     exerciseType,
                     exerciseValues,
                     exerciseType2,
-                    exerciseValues2,
-                    restTime.toString()
+                    exerciseValues2
+
                 )
             }
 
@@ -75,6 +85,54 @@ class WorkoutViewModel(
             }
         }
     }
+
+    fun exportWorkoutLog(context: Context, workoutWithExercises: WorkoutWithExercises, onSuccess: (String) -> Unit, onFailure: () -> Unit) {
+        viewModelScope.launch {
+            val exercises: List<Exercise> = workoutWithExercises.exercises
+            val headers = listOf("Exercise Name", "Timestamp", "Sets")
+            val allExerciseLogRows = mutableListOf<List<String>>()
+
+            val deferredLogs = exercises.map { exercise ->
+                async {
+                    val logs = exerciseLogDao.getExerciseLogsByExerciseId(exercise.id).first()
+                    logs.map { log : ExerciseLog ->
+                        val exerciseName = exercise.name
+                        val logTimestamp = log.timestamp
+                        val logSets = log.sets
+                        val logMeasurement1 = log.measurement1.type
+                        val logMeasurement1Vals = log.measurement1.values.joinToString(separator = ",") { it.toString() }
+                        val logMeasurement2 = log.measurement2.type
+                        val logMeasurement2Vals = log.measurement2.values.joinToString(separator = ",") { it.toString() }
+
+                        listOf(
+                            exerciseName,
+                            logTimestamp.toString(),
+                            logSets.toString(),
+                            logMeasurement1,
+                            logMeasurement1Vals,
+                            logMeasurement2,
+                            logMeasurement2Vals
+                        )
+                    }
+                }
+            }
+
+            val allLogs = deferredLogs.awaitAll().flatten()
+            allExerciseLogRows.addAll(allLogs)
+
+            val fileExportService = FileExportService(context)
+            val csvData = fileExportService.prepareCsvData(headers, allExerciseLogRows)
+            Log.d("exported exercise logs", csvData)
+            val filePath = fileExportService.exportToCsv("${workoutWithExercises.workout.name}_log.csv", csvData)
+
+            if (filePath != null) {
+                onSuccess(filePath)
+            } else {
+                onFailure()
+            }
+        }
+    }
+
 
 
 }

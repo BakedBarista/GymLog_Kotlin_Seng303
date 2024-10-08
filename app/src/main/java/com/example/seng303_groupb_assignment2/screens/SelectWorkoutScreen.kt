@@ -68,13 +68,14 @@ import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
 import org.koin.androidx.compose.getViewModel
 import androidx.compose.ui.platform.LocalContext
+import com.example.seng303_groupb_assignment2.entities.ExerciseLog
 
 
 @Composable
 fun SelectWorkout(
     navController: NavController,
     workoutViewModel: WorkoutViewModel = getViewModel(),
-    exerciseViewModel: ExerciseViewModel = getViewModel()
+    exerciseViewModel: ExerciseViewModel = getViewModel(),
 ) {
     val workouts by workoutViewModel.allWorkouts.observeAsState(initial = emptyList())
     val configuration = LocalConfiguration.current
@@ -115,6 +116,18 @@ fun SelectWorkout(
                                 Toast.makeText(context, context.getString(R.string.workout_exported_failure_toast), Toast.LENGTH_LONG).show()
                             }
                         )
+                    },
+                    onExportWorkoutLog = {
+                        workoutViewModel.exportWorkoutLog(
+                            context = context,
+                            workoutWithExercises = workoutWithExercises,
+                            onSuccess = { filePath ->
+                                Toast.makeText(context, context.getString(R.string.workout_logs_exported_toast, filePath), Toast.LENGTH_LONG).show()
+                            },
+                            onFailure = {
+                                Toast.makeText(context, context.getString(R.string.workout_log_exported_failure_toast), Toast.LENGTH_LONG).show()
+                            }
+                        )
                     }
                 )
             }
@@ -152,6 +165,18 @@ fun SelectWorkout(
 
                             }
                         )
+                    },
+                    onExportWorkoutLog = {
+                        workoutViewModel.exportWorkoutLog(
+                            context = context,
+                            workoutWithExercises = workoutWithExercises,
+                            onSuccess = { filePath ->
+                                Toast.makeText(context, context.getString(R.string.workout_logs_exported_toast, filePath), Toast.LENGTH_LONG).show()
+                            },
+                            onFailure = {
+                                Toast.makeText(context, context.getString(R.string.workout_log_exported_failure_toast), Toast.LENGTH_LONG).show()
+                            }
+                        )
                     }
                 )
             }
@@ -168,7 +193,8 @@ fun WorkoutItem(
     onDeleteWorkout: () -> Unit,
     onEditExercise: (Exercise) -> Unit,
     onDeleteExercise: (Exercise) -> Unit,
-    onExportWorkout: () -> Unit
+    onExportWorkout: () -> Unit,
+    onExportWorkoutLog: () -> Unit
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     var showEditDialog by rememberSaveable { mutableStateOf(false) }
@@ -252,6 +278,18 @@ fun WorkoutItem(
                         onDismissRequest = { showDropdownMenu = false }
                     ) {
                         DropdownMenuItem(
+                            text = { Text(stringResource(id = R.string.export_workout))},
+                            onClick = {
+                                onExportWorkout()
+                                showDropdownMenu = false }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(id = R.string.export_workout_log))},
+                            onClick = {
+                                onExportWorkoutLog()
+                                showDropdownMenu = false }
+                        )
+                        DropdownMenuItem(
                             text = { Text(stringResource(R.string.edit_workout)) },
                             onClick = {
                                 showEditDialog = true
@@ -265,11 +303,6 @@ fun WorkoutItem(
                                 showDropdownMenu = false
                             }
                         )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(id = R.string.export_workout))},
-                            onClick = {
-                                onExportWorkout()
-                                showDropdownMenu = false })
                     }
                 }
                 ScheduleInformation(workoutWithExercises.workout.schedule)

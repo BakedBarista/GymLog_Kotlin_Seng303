@@ -19,7 +19,6 @@ val dataAccessModule = module {
     single { get<AppDatabase>().exerciseLogDao() }
 
     viewModel { ExerciseViewModel(get<ExerciseDao>(), get<WorkoutDao>(), get<ExerciseLogDao>()) }
-    viewModel { WorkoutViewModel(get<WorkoutDao>(), get<ExerciseDao>()) }
+    viewModel { WorkoutViewModel(get<WorkoutDao>(), get<ExerciseLogDao>()) }
     viewModel { PreferenceViewModel(get<PreferencePersistentStorage<UserPreferences>>()) }
-
 }
