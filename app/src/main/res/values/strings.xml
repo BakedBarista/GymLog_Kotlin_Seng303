@@ -17,6 +17,7 @@
     <string name="workout_builder_title">Workout Builder</string>
     <string name="home">Home</string>
     <string name="help">Help</string>
+    <string name="qr_scanner_title">Scan QR Code</string>
 
     <!-- form labels -->
     <string name="workout_name_label">Workout name</string>
