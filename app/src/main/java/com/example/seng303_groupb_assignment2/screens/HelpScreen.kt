@@ -35,21 +35,53 @@ fun Help(
     navController: NavController
 ) {
     val context = LocalContext.current
-    Column {
-        Text(text = "Push-Up", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-        Text(text = "A basic bodyweight exercise targeting chest, shoulders, and triceps. Start in a plank position, lower your body until your chest nearly touches the floor, and then push back up.", fontSize = 16.sp)
-        VideoGuide(context = context, link = getString(context,R.string.push_up))
-        Spacer(modifier = Modifier.height(8.dp))
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        item {
+            Text(
+                text = "Push-Up",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "A basic bodyweight exercise targeting chest, shoulders, and triceps. Start in a plank position, lower your body until your chest nearly touches the floor, and then push back up.",
+                fontSize = 16.sp
+            )
+            VideoGuide(context = context, link = getString(context,R.string.push_up))
+            Spacer(modifier = Modifier.height(10.dp))
+        }
 
-        Text(text = "Bench Press", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-        Text(text = "An upper body exercise that targets the chest, shoulders, and triceps. Lie back on a bench, hold a barbell with hands shoulder-width apart, lower it to your chest, then press it back up.", fontSize = 16.sp)
-        VideoGuide(context = context, link = getString(context,R.string.bench_press))
-        Spacer(modifier = Modifier.height(8.dp))
+        item {
+            Text(
+                text = "Bench Press",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "An upper body exercise that targets the chest, shoulders, and triceps. Lie back on a bench, hold a barbell with hands shoulder-width apart, lower it to your chest, then press it back up.",
+                fontSize = 16.sp
+            )
+            VideoGuide(context = context, link = getString(context,R.string.bench_press))
+            Spacer(modifier = Modifier.height(10.dp))
+        }
 
-        Text(text = "Squat", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-        Text(text = "A compound movement focusing on the legs and glutes. Stand with feet shoulder-width apart, lower your hips back and down as if sitting in a chair, and return to standing.", fontSize = 16.sp)
-        VideoGuide(context = context, link = getString(context,R.string.squat))
+        item {
+            Text(
+                text = "Squat",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "A compound movement focusing on the legs and glutes. Stand with feet shoulder-width apart, lower your hips back and down as if sitting in a chair, and return to standing.",
+                fontSize = 16.sp
+            )
+            VideoGuide(context = context, link = getString(context,R.string.squat))
+        }
     }
+
 }
 
 @Composable
