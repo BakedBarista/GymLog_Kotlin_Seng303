@@ -1,6 +1,7 @@
 package com.example.seng303_groupb_assignment2.screens
 
 import ExerciseModalViewModel
+import androidx.compose.runtime.LaunchedEffect
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -404,6 +405,10 @@ fun MeasurementSelection(
     var open by rememberSaveable { mutableStateOf(false) }
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
 
+    LaunchedEffect(Unit) {
+        updateOption(options[selectedIndex])
+    }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -450,8 +455,9 @@ fun MeasurementSelection(
                 .heightIn(max = 100.dp)
         ) {
             items(sets.toInt()) { index ->
-                val displayText = context.getString(R.string.measurement_text,
-                    index + 1, options[selectedIndex])
+                val displayText = context.getString(
+                    R.string.measurement_text, index + 1, options[selectedIndex]
+                )
 
                 TextField(
                     value = values[index],
@@ -563,37 +569,37 @@ private fun ManageExerciseModal(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                item {
-                    val buttonColors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                    Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth(0.9f)) {
-                        Button(
-                            modifier = Modifier.padding(paddingValues = PaddingValues(horizontal = 8.dp)),
-                            colors = buttonColors,
-                            shape = RectangleShape,
-                            onClick = {
-                                closeModal()
-                                exerciseModel.clearSavedInfo()
-                            }
-                        ) { Text(context.getString(R.string.cancel), style = MaterialTheme.typography.bodyLarge) }
-                        Button(
-                            colors = buttonColors,
-                            shape = RectangleShape,
-                            onClick =
-                            {
-                                if (exerciseModel.validMeasurementValues()
-                                    && exerciseModel.validSetValue()
-                                    && exerciseModel.validRestTime()) {
-                                    val measurement1 = Measurement(
-                                        type = exerciseModel.measurementType1,
-                                        values = exerciseModel.measurementValues1.toList().map { it.toFloat() }
-                                    )
-                                    val measurement2 = Measurement(
-                                        type = exerciseModel.measurementType1,
-                                        values = exerciseModel.measurementValues2.toList().map { it.toFloat() }
-                                    )
+                    item {
+                        val buttonColors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth(0.9f)) {
+                            Button(
+                                modifier = Modifier.padding(paddingValues = PaddingValues(horizontal = 8.dp)),
+                                colors = buttonColors,
+                                shape = RectangleShape,
+                                onClick = {
+                                    closeModal()
+                                    exerciseModel.clearSavedInfo()
+                                }
+                            ) { Text(context.getString(R.string.cancel), style = MaterialTheme.typography.bodyLarge) }
+                            Button(
+                                colors = buttonColors,
+                                shape = RectangleShape,
+                                onClick =
+                                {
+                                    if (exerciseModel.validMeasurementValues()
+                                        && exerciseModel.validSetValue()
+                                        && exerciseModel.validRestTime()) {
+                                        val measurement1 = Measurement(
+                                            type = exerciseModel.measurementType1,
+                                            values = exerciseModel.measurementValues1.toList().map { it.toFloat() }
+                                        )
+                                        val measurement2 = Measurement(
+                                            type = exerciseModel.measurementType2,
+                                            values = exerciseModel.measurementValues2.toList().map { it.toFloat() }
+                                        )
 
                                     var restTime: Int? = null;
                                     if (exerciseModel.restTime.isNotBlank()) {

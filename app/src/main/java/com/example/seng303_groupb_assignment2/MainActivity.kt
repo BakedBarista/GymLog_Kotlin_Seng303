@@ -110,7 +110,8 @@ class MainActivity : ComponentActivity() {
                         if (isPortrait) {
                             CustomBottomAppBar(navController)
                         }
-                    }
+                    },
+
                 ) { padding ->
                     Row(
                         modifier = Modifier
@@ -130,7 +131,7 @@ class MainActivity : ComponentActivity() {
                             }
                             composable("SelectWorkout") {
                                 currentTitle = stringResource(id = R.string.select_workout)
-                                SelectWorkout()
+                                SelectWorkout(navController = navController)
                             }
                             composable("Add") {
                                 currentTitle = stringResource(id = R.string.workout_builder_title)
