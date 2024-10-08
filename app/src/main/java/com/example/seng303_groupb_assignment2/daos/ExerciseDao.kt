@@ -20,4 +20,11 @@ interface ExerciseDao {
     @Transaction
     @Query("SELECT * FROM Exercise ORDER BY name ASC")
     fun getAllExercises(): Flow<List<Exercise>>
+
+    @Query("SELECT * FROM Exercise WHERE name LIKE :name")
+    fun getAllExercisesByName(name: String): Flow<List<Exercise>>
+
+    @Query("SELECT COUNT(*) FROM Exercise")
+    suspend fun getExerciseCount(): Int
+
 }
