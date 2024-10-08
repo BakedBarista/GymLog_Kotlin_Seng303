@@ -531,7 +531,7 @@ fun MeasurementSelection(
 }
 
 @Composable
-private fun ManageExerciseModal(
+fun ManageExerciseModal(
     exerciseModel: ExerciseModalViewModel = viewModel(),
     closeModal: () -> Unit,
     submitModal: (String, Int, Measurement, Measurement, Int?) -> Unit

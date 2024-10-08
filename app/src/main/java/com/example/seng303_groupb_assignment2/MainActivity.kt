@@ -1,5 +1,6 @@
 package com.example.seng303_groupb_assignment2
 
+import ExerciseModalViewModel
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle

@@ -1,5 +1,6 @@
 package com.example.seng303_groupb_assignment2.screens
 
+import ExerciseModalViewModel
 import android.content.res.Configuration
 import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
@@ -68,6 +69,8 @@ import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
 import org.koin.androidx.compose.getViewModel
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.seng303_groupb_assignment2.entities.Measurement
 
 
 @Composable
@@ -80,6 +83,29 @@ fun SelectWorkout(
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
     val context = LocalContext.current
+
+    val modalViewModel: ExerciseModalViewModel = viewModel()
+    var currentExerciseId: Long? by rememberSaveable { mutableStateOf(null) }
+    var manageExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
+    if (manageExerciseModalOpen) {
+        ManageExerciseModal(
+            exerciseModel = modalViewModel,
+            closeModal = { manageExerciseModalOpen = false },
+            submitModal = { name, sets, m1, m2, restTime ->
+                if (currentExerciseId != null) {
+                    val currentExercise = Exercise(
+                        id = currentExerciseId!!,
+                        name = name,
+                        sets = sets,
+                        measurement1 = m1,
+                        measurement2 = m2,
+                        restTime = restTime
+                    )
+                    exerciseViewModel.editExercise(currentExercise)
+                    currentExerciseId = null
+                }
+            })
+    }
 
     if (isPortrait) {
         // Vertical scroll in portrait mode
@@ -101,9 +127,13 @@ fun SelectWorkout(
                     },
                     onDeleteWorkout = { workoutViewModel.deleteWorkout(workoutWithExercises.workout) },
                     onEditExercise = { exercise ->
-                        exerciseViewModel.editExercise(exercise)
+                        modalViewModel.setupFromExercise(exercise)
+                        currentExerciseId = exercise.id
+                        manageExerciseModalOpen = true
                     },
-                    onDeleteExercise = { /* TODO - implement this */ },
+                    onDeleteExercise = { exercise ->
+                        exerciseViewModel.deleteExercise(exercise)
+                    },
                     onExportWorkout = {
                         workoutViewModel.exportWorkout(
                             context = context, // Pass the required context
@@ -137,9 +167,12 @@ fun SelectWorkout(
                     },
                     onDeleteWorkout = { workoutViewModel.deleteWorkout(workoutWithExercises.workout) },
                     onEditExercise = { exercise ->
-                        exerciseViewModel.editExercise(exercise)
+                        modalViewModel.setupFromExercise(exercise)
+                        currentExerciseId = exercise.id
+                        manageExerciseModalOpen = true
                     },
-                    onDeleteExercise = { /* TODO - implement this */ },
+                    onDeleteExercise = { exercise ->
+                        exerciseViewModel.deleteExercise(exercise) },
                     onExportWorkout = {
                         workoutViewModel.exportWorkout(
                             context = context,
