@@ -1,6 +1,11 @@
 package com.example.seng303_groupb_assignment2.screens
 
+import android.content.Context
 import android.content.res.Configuration
+import android.graphics.Bitmap
+import android.graphics.Color
+import android.os.Environment
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -68,6 +73,15 @@ import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
 import org.koin.androidx.compose.getViewModel
 import androidx.compose.ui.platform.LocalContext
+import com.google.gson.Gson
+import com.google.mlkit.vision.barcode.BarcodeScanner
+import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.common.InputImage
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.qrcode.QRCodeWriter
+import java.io.File
+import java.io.FileOutputStream
 
 
 @Composable
@@ -105,16 +119,17 @@ fun SelectWorkout(
                     },
                     onDeleteExercise = { /* TODO - implement this */ },
                     onExportWorkout = {
-                        workoutViewModel.exportWorkout(
-                            context = context, // Pass the required context
-                            workoutWithExercises = workoutWithExercises,
-                            onSuccess = { filePath ->
-                                Toast.makeText(context, context.getString(R.string.workout_exported_toast, filePath), Toast.LENGTH_LONG).show()
-                            },
-                            onFailure = {
-                                Toast.makeText(context, context.getString(R.string.workout_exported_failure_toast), Toast.LENGTH_LONG).show()
-                            }
-                        )
+                        val workoutJson = convertWorkoutToJson(workoutWithExercises)
+
+                        val qrCodeBitmap = generateQRCode(workoutJson)
+
+                        val filePath = saveQRCodeToFile(qrCodeBitmap, context)
+
+                        if (filePath != null) {
+                            Toast.makeText(context, context.getString(R.string.workout_exported_toast, filePath), Toast.LENGTH_LONG).show()
+                        } else {
+                            Toast.makeText(context, context.getString(R.string.workout_exported_failure_toast), Toast.LENGTH_LONG).show()
+                        }
                     }
                 )
             }
@@ -141,17 +156,18 @@ fun SelectWorkout(
                     },
                     onDeleteExercise = { /* TODO - implement this */ },
                     onExportWorkout = {
-                        workoutViewModel.exportWorkout(
-                            context = context,
-                            workoutWithExercises = workoutWithExercises,
-                            onSuccess = { filePath ->
-                                Toast.makeText(context, context.getString(R.string.workout_exported_toast, filePath), Toast.LENGTH_LONG).show()
-                            },
-                            onFailure = {
-                                Toast.makeText(context, context.getString(R.string.workout_exported_failure_toast), Toast.LENGTH_LONG).show()
 
-                            }
-                        )
+                        val workoutJson = convertWorkoutToJson(workoutWithExercises)
+
+                        val qrCodeBitmap = generateQRCode(workoutJson)
+
+                        val filePath = saveQRCodeToFile(qrCodeBitmap, context)
+
+                        if (filePath != null) {
+                            Toast.makeText(context, context.getString(R.string.workout_exported_toast, filePath), Toast.LENGTH_LONG).show()
+                        } else {
+                            Toast.makeText(context, context.getString(R.string.workout_exported_failure_toast), Toast.LENGTH_LONG).show()
+                        }
                     }
                 )
             }
@@ -488,3 +504,42 @@ fun ExerciseItem(
         }
     }
 }
+
+fun convertWorkoutToJson(workoutWithExercises: WorkoutWithExercises): String {
+    val gson = Gson()
+    return gson.toJson(workoutWithExercises)
+}
+
+fun generateQRCode(data: String): Bitmap? {
+    try {
+        val writer = QRCodeWriter()
+        val bitMatrix = writer.encode(data, BarcodeFormat.QR_CODE, 200, 200)
+        val width = bitMatrix.width
+        val height = bitMatrix.height
+        val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+
+        for (x in 0 until width) {
+            for (y in 0 until height) {
+                bmp.setPixel(x, y, if (bitMatrix[x, y]) Color.BLACK else Color.WHITE)
+            }
+        }
+        return bmp
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+    return null
+}
+
+fun saveQRCodeToFile(bitmap: Bitmap?, context: Context): String? {
+    return try {
+        val file = File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES), "workout_qr_code.png")
+        FileOutputStream(file).use { out ->
+            bitmap?.compress(Bitmap.CompressFormat.PNG, 100, out)
+        }
+        file.absolutePath
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+}
+
