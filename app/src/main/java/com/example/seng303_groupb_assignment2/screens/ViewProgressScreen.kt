@@ -477,7 +477,7 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
         }
     }
 
-    val dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yy")
+    val dateTimeFormatter = DateTimeFormatter.ofPattern("d-MMM")
 
     val dateValueFormatter = CartesianValueFormatter { _, x, _ ->
         val date = LocalDate.ofEpochDay(x.toLong())
@@ -505,11 +505,19 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
                 rangeProvider = rangeProvider
             ),
             startAxis = VerticalAxis.rememberStart(
-                titleComponent = rememberTextComponent(),
-                title = yAxisLabel
+                titleComponent = rememberTextComponent(
+                    color = MaterialTheme.colorScheme.onSurface
+                ),
+                title = yAxisLabel,
+                label = rememberTextComponent(
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             ),
             bottomAxis = HorizontalAxis.rememberBottom(
-                valueFormatter = dateValueFormatter
+                valueFormatter = dateValueFormatter,
+                label = rememberTextComponent(
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             ),
             marker = rememberDefaultCartesianMarker(
                 label = rememberTextComponent(),
