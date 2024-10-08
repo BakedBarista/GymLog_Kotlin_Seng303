@@ -83,6 +83,7 @@
     <string name="units">Units</string>
     <string name="imperial">Imperial</string>
     <string name="metric">Metric</string>
+    <string name="qr_code">QR Code</string>
 
     <!--Links-->
     <string name="push_up">https://www.youtube.com/watch?v=_l3ySVKYVJ8</string>
