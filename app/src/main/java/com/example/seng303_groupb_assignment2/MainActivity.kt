@@ -61,6 +61,7 @@ import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.seng303_groupb_assignment2.enums.Days
 import com.example.seng303_groupb_assignment2.notifications.NotificationManager
+import com.example.seng303_groupb_assignment2.screens.Help
 import com.example.seng303_groupb_assignment2.viewmodels.PreferenceViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel as koinViewModel
@@ -147,9 +148,9 @@ class MainActivity : ComponentActivity() {
                                 currentTitle = stringResource(id = R.string.progress_title)
                                 ViewProgress(navController = navController)
                             }
-                            composable("Leaderboard") {
-                                currentTitle = stringResource(id = R.string.leaderboard)
-                                ViewLeaderboard(navController = navController)
+                            composable("Help") {
+                                currentTitle = stringResource(id = R.string.help)
+                                Help(navController = navController)
                             }
                             composable("Preferences") {
                                 currentTitle = stringResource(id = R.string.preferences_title)
@@ -184,7 +185,7 @@ fun CustomBottomAppBar(
             AppBarIconButton(navController, "Add", R.drawable.add, "Add", currentDestination == "Add")
             AppBarIconButton(navController, "Home", R.drawable.home, "Home", currentDestination == "Home")
             AppBarIconButton(navController, "Progress", R.drawable.progress, "Progress", currentDestination == "Progress")
-            AppBarIconButton(navController, "Leaderboard", R.drawable.leaderboard, "Leaderboard", currentDestination == "Leaderboard")
+            AppBarIconButton(navController, "Help", R.drawable.question_mark, "Help", currentDestination == "Help")
         }
     }
 }
@@ -212,7 +213,7 @@ fun CustomSideBar(
                 AppBarNavigationRailItem(navController, "Add", R.drawable.add, "Add", currentDestination == "Add")
                 AppBarNavigationRailItem(navController, "Home", R.drawable.home, "Home", currentDestination == "Home")
                 AppBarNavigationRailItem(navController, "Progress", R.drawable.progress, "Progress", currentDestination == "Progress")
-                AppBarNavigationRailItem(navController, "Leaderboard", R.drawable.leaderboard, "Leaderboard", currentDestination == "Leaderboard")
+                AppBarNavigationRailItem(navController, "Help", R.drawable.question_mark, "Help", currentDestination == "Help")
             }
         }
     }

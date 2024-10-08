@@ -16,6 +16,7 @@
     <string name="progress_title">Progress</string>
     <string name="workout_builder_title">Workout Builder</string>
     <string name="home">Home</string>
+    <string name="help">Help</string>
 
     <!-- form labels -->
     <string name="workout_name_label">Workout name</string>
