@@ -76,4 +76,8 @@ class ManageWorkoutViewModel(): ViewModel() {
     fun validName(): Boolean {
         return name.isNotBlank()
     }
+
+    fun moveExercise(start: Int, end: Int) {
+        exercises.add(end, exercises.removeAt(start))
+    }
 }
