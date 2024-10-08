@@ -16,6 +16,7 @@
     <string name="progress_title">Progress</string>
     <string name="workout_builder_title">Workout Builder</string>
     <string name="home">Home</string>
+    <string name="help">Help</string>
 
     <!-- form labels -->
     <string name="workout_name_label">Workout name</string>
@@ -81,4 +82,9 @@
     <string name="units">Units</string>
     <string name="imperial">Imperial</string>
     <string name="metric">Metric</string>
+
+    <!--Links-->
+    <string name="push_up">https://www.youtube.com/watch?v=_l3ySVKYVJ8</string>
+    <string name="bench_press">https://www.youtube.com/watch?v=XSza8hVTlmM</string>
+    <string name="squat">https://www.youtube.com/watch?v=C_VtOYc6j5c</string>
 </resources>
