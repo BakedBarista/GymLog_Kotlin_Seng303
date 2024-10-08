@@ -116,6 +116,7 @@ class MainActivity : ComponentActivity() {
                     Row(
                         modifier = Modifier
                             .fillMaxSize()
+                            .padding(padding)
                     ) {
                         NavHost(
                             navController = navController,
@@ -123,7 +124,6 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight()
-                                .padding(padding)
                         ) {
                             composable("Home") {
                                 currentTitle = stringResource(id = R.string.home)

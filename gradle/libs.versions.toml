@@ -3,6 +3,7 @@ accompanistPermissions = "0.31.1-alpha"
 accompanistPermissionsVersion = "0.36.0"
 agp = "8.5.2"
 gson = "2.10.1"
+compose = "2.0.0-beta.1"
 koinAndroid = "3.4.0"
 koinAndroidxCompose = "3.4.0"
 kotlin = "1.9.22"
@@ -10,6 +11,7 @@ coreKtx = "1.13.1"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
+kotlinxSerializationJsonVersion = "1.5.0"
 lifecycleRuntimeKtx = "2.8.6"
 activityCompose = "1.9.2"
 composeBom = "2024.09.02"
@@ -32,6 +34,11 @@ androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "
 androidx-room-rxjava2 = { module = "androidx.room:room-rxjava2", version.ref = "roomCompiler" }
 androidx-room-rxjava3 = { module = "androidx.room:room-rxjava3", version.ref = "roomCompiler" }
 androidx-room-testing = { module = "androidx.room:room-testing", version.ref = "roomCompiler" }
+compose = { module = "com.patrykandpatrick.vico:compose", version.ref = "compose" }
+compose-m2 = { module = "com.patrykandpatrick.vico:compose-m2", version.ref = "compose" }
+compose-m3 = { module = "com.patrykandpatrick.vico:compose-m3", version.ref = "compose" }
+core = { module = "com.patrykandpatrick.vico:core", version.ref = "compose" }
+jetbrains-kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJsonVersion" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
@@ -53,6 +60,7 @@ koin-android = { module = "io.insert-koin:koin-android", version.ref = "koinAndr
 koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koinAndroidxCompose" }
 androidx-datastore-core-android = { group = "androidx.datastore", name = "datastore-core-android", version.ref = "datastoreCoreAndroid" }
 androidx-datastore-preferences-core-jvm = { group = "androidx.datastore", name = "datastore-preferences-core-jvm", version.ref = "datastorePreferencesCoreJvm" }
+views = { module = "com.patrykandpatrick.vico:views", version.ref = "compose" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
