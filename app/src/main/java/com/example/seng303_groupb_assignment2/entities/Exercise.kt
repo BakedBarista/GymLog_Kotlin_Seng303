@@ -18,4 +18,14 @@ data class Exercise(
     fun getMutableActualReps(): MutableList<Int> {
         return actualReps?.toMutableList() ?: MutableList(sets ?: 0) { 0 }
     }
+
+    fun toExerciseLog(): ExerciseLog {
+        return ExerciseLog(
+            exerciseId = this.id,
+            timestamp = System.currentTimeMillis(),
+            sets = this.sets!!,
+            measurement1 = this.measurement1,
+            measurement2 = this.measurement2
+        )
+    }
 }

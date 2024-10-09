@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.seng303_groupb_assignment2.daos.ExerciseDao
 import com.example.seng303_groupb_assignment2.daos.WorkoutDao
+import com.example.seng303_groupb_assignment2.entities.ExerciseLog
 import com.example.seng303_groupb_assignment2.entities.WorkoutWithExercises
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -28,6 +29,24 @@ class RunWorkoutViewModel(
     private val _workoutWithExercises = MutableLiveData<WorkoutWithExercises?>()
     val workoutWithExercises: LiveData<WorkoutWithExercises?> = _workoutWithExercises
     var actualRepsList = mutableListOf<Int>()
+    var logsList = mutableListOf<ExerciseLog>()
+    var currentActualRepsInput by mutableStateOf("")
+
+    fun updateCurrentActualRepsInput(newValue: String) {
+        currentActualRepsInput = newValue
+    }
+
+    fun getActualValue(index: Int): Int {
+        return logsList[currentExerciseIndex].measurement1.values[index].toInt()
+    }
+
+    fun updateExerciseLog() {
+        if (currentActualRepsInput.isNotBlank()) {
+            val values = logsList[currentExerciseIndex].measurement1.values.toMutableList()
+            values[currentSetIndex] = currentActualRepsInput.toFloat()
+            logsList[currentExerciseIndex].measurement1.values = values
+        }
+    }
 
     // Load workout with exercises
     fun loadWorkoutWithExercises(workoutId: Long) {
@@ -47,9 +66,13 @@ class RunWorkoutViewModel(
         timerSeconds = initialExercise.restTime ?: 0
         totalReps = initialExercise.measurement1.values.getOrNull(currentSetIndex)?.toInt() ?: 0
         actualRepsList = initialExercise.getMutableActualReps()
+        isResting = false
+
+        logsList.addAll(workoutWithExercises.exercises.map { exercise -> exercise.toExerciseLog() })
+        currentActualRepsInput = logsList[currentExerciseIndex].measurement1.values[currentSetIndex].toInt().toString()
     }
 
-    fun startTimer() {
+    fun startTimer(callback: () -> Unit) {
         isResting = true
         val exercise = workoutWithExercises.value?.exercises?.get(currentExerciseIndex)!!
         if (exercise.restTime != null) {
@@ -60,9 +83,11 @@ class RunWorkoutViewModel(
                     timerSeconds--
                 }
                 isResting = false
+                callback()
             }
         }
     }
+
     // Move to the next exercise
     fun nextExercise() {
         if (currentExerciseIndex < (workoutWithExercises.value?.exercises?.size ?: (0 - 1))) {
@@ -97,39 +122,37 @@ class RunWorkoutViewModel(
         }
     }
 
-    // Increment actual reps for the current exercise and set
-    fun incrementReps() {
-        if (currentReps < totalReps) {
-            currentReps++
-            actualRepsList[currentSetIndex] = currentReps
-            workoutWithExercises.value?.exercises?.get(currentExerciseIndex)?.actualReps = actualRepsList.toList()
-        }
-    }
-
     // Move to the next set for the current exercise
     fun nextSet(nextExerciseAvailable: Boolean) {
-        startTimer()
-
-        val exercise = workoutWithExercises.value?.exercises?.get(currentExerciseIndex)
-        if (canGoNext()) {
-            currentSetIndex++
-            currentReps = actualRepsList.getOrNull(currentSetIndex) ?: 0
-            totalReps = exercise?.measurement1?.values?.getOrNull(currentSetIndex)?.toInt() ?: 0
-        } else if (nextExerciseAvailable){
-            nextExercise()
+        startTimer() {
+            val exercise = workoutWithExercises.value?.exercises?.get(currentExerciseIndex)
+            if (canGoNext()) {
+                updateExerciseLog()
+                currentSetIndex++
+                currentReps = actualRepsList.getOrNull(currentSetIndex) ?: 0
+                totalReps = exercise?.measurement1?.values?.getOrNull(currentSetIndex)?.toInt() ?: 0
+            } else if (nextExerciseAvailable){
+                updateExerciseLog()
+                nextExercise()
+            }
+            currentActualRepsInput = logsList[currentExerciseIndex].measurement1.values[currentSetIndex].toInt().toString()
         }
     }
 
     // Move to the previous set for the current exercise
     fun previousSet(previousExerciseAvailable: Boolean) {
+
         if (canGoPrevious()) {
+            updateExerciseLog()
             currentSetIndex--
             val exercise = workoutWithExercises.value?.exercises?.get(currentExerciseIndex)
             currentReps = actualRepsList.getOrNull(currentSetIndex) ?: 0
             totalReps = exercise?.measurement1?.values?.getOrNull(currentSetIndex)?.toInt() ?: 0
         } else if (previousExerciseAvailable) {
+            updateExerciseLog()
             previousExercise()
         }
+        currentActualRepsInput = logsList[currentExerciseIndex].measurement1.values[currentSetIndex].toInt().toString()
     }
 
     fun canGoPrevious(): Boolean {

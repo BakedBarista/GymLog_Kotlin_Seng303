@@ -24,8 +24,6 @@ data class ExerciseLog(
     val exerciseId: Long,
     val timestamp: Long,
     val sets: Int,
-    val reps: List<Int>?,
-    val weight: List<Float>?,
-    val distance: Float?,
-    val time: Float?
+    val measurement1: Measurement,
+    val measurement2: Measurement
 )

@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -495,7 +496,8 @@ private fun ManageExerciseModal(
 
                     item {
                         MeasurementSelection(
-                            options = listOf("Reps", "Time"),
+                            options = listOf(stringResource(R.string.reps_measurement),
+                                stringResource(R.string.time_measurement)),
                             updateOption = { exerciseModel.updateMeasurementType1(it) },
                             sets = exerciseModel.sets,
                             values = exerciseModel.measurementValues1,
@@ -511,7 +513,8 @@ private fun ManageExerciseModal(
 
                     item {
                         MeasurementSelection(
-                            options = listOf("Weight", "Distance"),
+                            options = listOf(stringResource(R.string.weight_measurement),
+                                stringResource(R.string.distance_measurement)),
                             updateOption = { exerciseModel.updateMeasurementType2(it) },
                             sets = exerciseModel.sets,
                             values = exerciseModel.measurementValues2,
@@ -559,12 +562,21 @@ private fun ManageExerciseModal(
                                     if (exerciseModel.validMeasurementValues()
                                         && exerciseModel.validSetValue()
                                         && exerciseModel.validRestTime()) {
+
+                                        var measurementType1 = exerciseModel.measurementType1
+                                        if (exerciseModel.measurementType1.isBlank()) {
+                                            measurementType1 = context.getString(R.string.weight_measurement)
+                                        }
+                                        var measurementType2 = exerciseModel.measurementType2
+                                        if (exerciseModel.measurementType2.isBlank()) {
+                                            measurementType2 = context.getString(R.string.weight_measurement)
+                                        }
                                         val measurement1 = Measurement(
-                                            type = exerciseModel.measurementType1,
+                                            type = measurementType1,
                                             values = exerciseModel.measurementValues1.toList().map { it.toFloat() }
                                         )
                                         val measurement2 = Measurement(
-                                            type = exerciseModel.measurementType1,
+                                            type = measurementType2,
                                             values = exerciseModel.measurementValues2.toList().map { it.toFloat() }
                                         )
 

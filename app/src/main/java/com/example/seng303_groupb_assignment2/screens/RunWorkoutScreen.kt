@@ -147,8 +147,8 @@ fun RunWorkout(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
-                    Text(text = stringResource(R.string.weight,""), fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-                    Text(text = stringResource(R.string.rep_goal,""), fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                    Text(text = currentExercise.measurement2.type, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                    Text(text = currentExercise.measurement1.type, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
                     Text(text = stringResource(R.string.actual,""), fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
                 }
 
@@ -161,7 +161,7 @@ fun RunWorkout(
                     items(currentExercise.measurement1.values.size) { index ->
                         val weight = currentExercise.measurement2.values.getOrNull(index) ?: 0
                         val repGoal = currentExercise.measurement1.values[index]
-                        val actual = viewModel.actualRepsList.getOrNull(index) ?: 0
+                        val actual = viewModel.getActualValue(index)
                         val isCurrentSet = index == viewModel.currentSetIndex
                         Row(
                             modifier = Modifier
@@ -244,10 +244,10 @@ fun RunWorkout(
                     } else {
                         val label = stringResource(R.string.input_actual_reps_label)
                         TextField(
-                            value = viewModel.actualRepsList[viewModel.currentSetIndex].toString(),
+                            value = viewModel.currentActualRepsInput,
                             onValueChange = {
-                                if (it.toIntOrNull() != null) {
-                                    viewModel.actualRepsList[viewModel.currentSetIndex] = it.toInt()
+                                if (it.toIntOrNull() != null || it.isBlank()) {
+                                    viewModel.updateCurrentActualRepsInput(it)
                                 }
                             },
                             textStyle = MaterialTheme.typography.bodyLarge,

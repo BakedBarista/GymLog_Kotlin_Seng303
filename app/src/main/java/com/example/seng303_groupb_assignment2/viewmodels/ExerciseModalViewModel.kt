@@ -1,9 +1,12 @@
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.example.seng303_groupb_assignment2.R
 import kotlinx.coroutines.launch
 
 class ExerciseModalViewModel(
