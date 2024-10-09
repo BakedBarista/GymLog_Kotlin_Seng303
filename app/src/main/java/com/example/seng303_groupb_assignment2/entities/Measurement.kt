@@ -5,5 +5,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Measurement (
     var type: String,
-    val values: List<Float>,
+    var values: List<Float>,
 )

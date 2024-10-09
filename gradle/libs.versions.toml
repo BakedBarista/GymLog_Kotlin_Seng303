@@ -1,5 +1,4 @@
 [versions]
-accompanistPermissions = "0.31.1-alpha"
 accompanistPermissionsVersion = "0.36.0"
 agp = "8.5.2"
 core = "3.4.1"
@@ -29,7 +28,6 @@ zxingAndroidEmbedded = "4.3.0"
 playServicesMlkitBarcodeScanning = "18.3.1"
 
 [libraries]
-accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
 accompanist-permissions-v0360 = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissionsVersion" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomCompiler" }

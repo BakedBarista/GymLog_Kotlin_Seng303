@@ -8,6 +8,18 @@
     <string name="reorder">Reorder</string>
     <string name="edit">Edit</string>
     <string name="delete">Delete</string>
+    <string name="previous">Previous</string>
+    <string name="pause">Pause</string>
+    <string name="play">Play</string>
+    <string name="next">Next</string>
+    <string name="finish_workout">Finish Workout!</string>
+    <string name="finish_rest_early">Skip Rest</string>
+
+    <!-- measurements -->
+    <string name="weight_measurement">Weight</string>
+    <string name="distance_measurement">Distance</string>
+    <string name="reps_measurement">Reps</string>
+    <string name="time_measurement">Time</string>
 
     <!-- measurements -->
     <string name="weight_measurement">Weight</string>
@@ -34,6 +46,7 @@
     <string name="exercise_name_label">Exercise name</string>
     <string name="sets_label">Sets</string>
     <string name="rest_time_label">Rest time</string>
+    <string name="input_actual_reps_label">Actual Reps</string>
 
     <!-- notifications -->
     <string name="notification_schedule_title">Workout Scheduled</string>
@@ -45,6 +58,8 @@
     <string name="workout_logs_exported_toast">Workout logs exported to: %1$s</string>
     <string name="workout_exported_failure_toast">Failed to export workout</string>
     <string name="workout_log_exported_failure_toast">Failed to export workout logs</string>
+    <string name="workout_log_saved_toast">A log of your workout has been saved</string>
+    <string name="no_exercises_toast">Add some exercise to workout first</string>
 
     <!-- informational -->
     <string name="tap_select">Tap to select an exercise</string>
@@ -70,7 +85,7 @@
     <string name="edit_workout">Edit Workout</string>
     <string name="edit_exercise">Edit Exercise</string>
     <string name="delete_workout">Delete Workout</string>
-    <string name="select_workout">Select Workout</string>
+    <string name="workout">Workout</string>
     <string name="export_workout">Export Workout</string>
     <string name="export_workout_log">Export Workout Log</string>
     <string name="delete_exercise">Delete Exercise</string>
@@ -90,6 +105,13 @@
     <string name="friday_abbreviation">F</string>
     <string name="saturday_abbreviation">S</string>
     <string name="sunday_abbreviation">S</string>
+    <string name="circle_background">Circle Background</string>
+    <string name="weight">Weight %s</string>
+    <string name="rep_goal">Rep Goal %s</string>
+    <string name="actual">Actual %s</string>
+    <string name="measurement1_label">%s kg</string>>
+    <string name="measurement2_label">%s reps</string>
+
 
     <string name="sound">Sound</string>
     <string name="dark_mode">Dark Mode</string>

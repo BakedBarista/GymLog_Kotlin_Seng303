@@ -156,7 +156,12 @@ fun SelectWorkout(
                 WorkoutItem(
                     workoutWithExercises = workoutWithExercises,
                     isPortrait = true,
-                    onStartWorkout = { /* TODO - add a function to navigate to the run workout screen */ },
+                    onStartWorkout = {  if(workoutWithExercises.exercises.isNotEmpty())
+                                        {navController.currentBackStackEntry?.savedStateHandle?.set("workoutId", workoutWithExercises.workout.id)
+                                        navController.navigate("Run")} else {
+                                            Toast.makeText(context, context.getString(R.string.no_exercises_toast), Toast.LENGTH_LONG).show()
+                    }
+                                     },
                     onEditWorkout = { workout ->
                         workoutViewModel.editWorkout(workout)
                     },
@@ -215,7 +220,11 @@ fun SelectWorkout(
                 WorkoutItem(
                     workoutWithExercises = workoutWithExercises,
                     isPortrait = false,
-                    onStartWorkout = { /* TODO - add a function to navigate to the run workout screen */ },
+                    onStartWorkout = { if(workoutWithExercises.exercises.isNotEmpty())
+                    {navController.currentBackStackEntry?.savedStateHandle?.set("workoutId", workoutWithExercises.workout.id)
+                        navController.navigate("Run")} else {
+                        Toast.makeText(context, context.getString(R.string.no_exercises_toast), Toast.LENGTH_LONG).show()
+                    }},
                     onEditWorkout = { workout ->
                         workoutViewModel.editWorkout(workout)
                     },
