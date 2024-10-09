@@ -29,7 +29,6 @@ class RunWorkoutViewModel(
     var timerSeconds by mutableStateOf(0)
     private val _workoutWithExercises = MutableLiveData<WorkoutWithExercises?>()
     val workoutWithExercises: LiveData<WorkoutWithExercises?> = _workoutWithExercises
-    var actualRepsList = mutableListOf<Int>()
     var logsList = mutableListOf<ExerciseLog>()
     var currentActualRepsInput by mutableStateOf("")
 
@@ -66,9 +65,9 @@ class RunWorkoutViewModel(
         val initialExercise = workoutWithExercises.exercises[currentExerciseIndex]
         timerSeconds = initialExercise.restTime ?: 0
         totalReps = initialExercise.measurement1.values.getOrNull(currentSetIndex)?.toInt() ?: 0
-        actualRepsList = initialExercise.getMutableActualReps()
         isResting = false
 
+        logsList.clear()
         logsList.addAll(workoutWithExercises.exercises.map { exercise -> exercise.toExerciseLog() })
         currentActualRepsInput = logsList[currentExerciseIndex].measurement1.values[currentSetIndex].toInt().toString()
     }
@@ -95,7 +94,6 @@ class RunWorkoutViewModel(
     fun nextExercise() {
         if (currentExerciseIndex < (workoutWithExercises.value?.exercises?.size ?: (0 - 1))) {
             // Save actual reps for the previous exercise
-            workoutWithExercises.value?.exercises?.get(currentExerciseIndex)?.actualReps = actualRepsList.toList()
 
             currentExerciseIndex++
             currentSetIndex = 0
@@ -104,7 +102,6 @@ class RunWorkoutViewModel(
 
             val nextExercise = workoutWithExercises.value?.exercises?.get(currentExerciseIndex)
             totalReps = nextExercise?.measurement1?.values?.getOrNull(currentSetIndex)?.toInt() ?: 0
-            actualRepsList = nextExercise?.getMutableActualReps() ?: mutableListOf()
         }
     }
 
@@ -112,7 +109,6 @@ class RunWorkoutViewModel(
     fun previousExercise() {
         if (currentExerciseIndex > 0) {
             // Save actual reps for the previous exercise
-            workoutWithExercises.value?.exercises?.get(currentExerciseIndex)?.actualReps = actualRepsList.toList()
 
             currentExerciseIndex--
             currentSetIndex = 0
@@ -121,7 +117,6 @@ class RunWorkoutViewModel(
 
             val previousExercise = workoutWithExercises.value?.exercises?.get(currentExerciseIndex)
             totalReps = previousExercise?.measurement1?.values?.getOrNull(currentSetIndex)?.toInt() ?: 0
-            actualRepsList = previousExercise?.getMutableActualReps() ?: mutableListOf()
         }
     }
 
@@ -132,7 +127,6 @@ class RunWorkoutViewModel(
             if (canGoNext()) {
                 updateExerciseLog()
                 currentSetIndex++
-                currentReps = actualRepsList.getOrNull(currentSetIndex) ?: 0
                 totalReps = exercise?.measurement1?.values?.getOrNull(currentSetIndex)?.toInt() ?: 0
             } else if (nextExerciseAvailable){
                 updateExerciseLog()
@@ -149,7 +143,6 @@ class RunWorkoutViewModel(
             updateExerciseLog()
             currentSetIndex--
             val exercise = workoutWithExercises.value?.exercises?.get(currentExerciseIndex)
-            currentReps = actualRepsList.getOrNull(currentSetIndex) ?: 0
             totalReps = exercise?.measurement1?.values?.getOrNull(currentSetIndex)?.toInt() ?: 0
         } else if (previousExerciseAvailable) {
             updateExerciseLog()

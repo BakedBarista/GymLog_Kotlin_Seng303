@@ -73,7 +73,7 @@
     <string name="edit_workout">Edit Workout</string>
     <string name="edit_exercise">Edit Exercise</string>
     <string name="delete_workout">Delete Workout</string>
-    <string name="select_workout">Select Workout</string>
+    <string name="workout">Workout</string>
     <string name="export_workout">Export Workout</string>
     <string name="export_workout_log">Export Workout Log</string>
     <string name="delete_exercise">Delete Exercise</string>

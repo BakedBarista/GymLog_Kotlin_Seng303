@@ -153,7 +153,7 @@ class MainActivity : ComponentActivity() {
                             }
 
                             composable("SelectWorkout") {
-                                currentTitle = stringResource(id = R.string.select_workout)
+                                currentTitle = stringResource(id = R.string.workout)
                                 SelectWorkout(navController = navController)
                             }
                             composable("Add") {
