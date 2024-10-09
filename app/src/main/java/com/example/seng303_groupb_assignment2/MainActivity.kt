@@ -1,5 +1,6 @@
 package com.example.seng303_groupb_assignment2
 
+import ExerciseModalViewModel
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
@@ -13,16 +14,22 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailDefaults
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -54,6 +61,7 @@ import com.example.seng303_groupb_assignment2.screens.AddWorkout
 import com.example.seng303_groupb_assignment2.screens.BenchPressHelpScreen
 import com.example.seng303_groupb_assignment2.screens.Help
 import com.example.seng303_groupb_assignment2.screens.Home
+import com.example.seng303_groupb_assignment2.screens.RunWorkout
 import com.example.seng303_groupb_assignment2.screens.PushUpHelpScreen
 import com.example.seng303_groupb_assignment2.screens.QRScannerScreen
 import com.example.seng303_groupb_assignment2.screens.SelectWorkout
@@ -64,12 +72,14 @@ import com.example.seng303_groupb_assignment2.ui.theme.SENG303_GroupB_Assignment
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.ManageWorkoutViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.PreferenceViewModel
+import com.example.seng303_groupb_assignment2.viewmodels.RunWorkoutViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel as koinViewModel
 
 class MainActivity : ComponentActivity() {
     private val exerciseViewModel: ExerciseViewModel by koinViewModel()
     private val workoutViewModel: WorkoutViewModel by koinViewModel()
+    private val runWorkoutViewModel: RunWorkoutViewModel by koinViewModel()
     private val preferenceViewModel: PreferenceViewModel by koinViewModel()
     private var startDestination = "Home"
 
@@ -132,8 +142,23 @@ class MainActivity : ComponentActivity() {
                                 currentTitle = stringResource(id = R.string.home)
                                 Home(navController = navController)
                             }
+                            composable("Run") {
+                                val workoutId = navController.previousBackStackEntry?.savedStateHandle?.get<Long>("workoutId")
+
+                                workoutId?.let { id ->
+                                    runWorkoutViewModel.loadWorkoutWithExercises(id)
+                                }
+                                val workoutWithExercises by runWorkoutViewModel.workoutWithExercises.observeAsState()
+
+                                workoutWithExercises?.let {
+                                    RunWorkout(navController = navController, workoutWithExercises = it, viewModel = runWorkoutViewModel)
+                                } ?: run {
+                                    Text("Loading...")
+                                }
+                            }
+
                             composable("SelectWorkout") {
-                                currentTitle = stringResource(id = R.string.select_workout)
+                                currentTitle = stringResource(id = R.string.workout)
                                 SelectWorkout(navController = navController)
                             }
                             composable("Add") {
@@ -203,8 +228,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
-
 }
 
 @Composable

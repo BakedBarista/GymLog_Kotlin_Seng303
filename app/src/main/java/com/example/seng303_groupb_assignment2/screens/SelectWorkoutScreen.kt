@@ -1,5 +1,6 @@
 package com.example.seng303_groupb_assignment2.screens
 
+import ExerciseModalViewModel
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -67,6 +69,7 @@ import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
 import org.koin.androidx.compose.getViewModel
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.core.content.FileProvider
 import com.google.gson.Gson
 import com.google.zxing.BarcodeFormat
@@ -87,6 +90,58 @@ fun SelectWorkout(
     val context = LocalContext.current
     var qrCodeBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
+    val modalViewModel: ExerciseModalViewModel = viewModel()
+    var currentExerciseId: Long? by rememberSaveable { mutableStateOf(null) }
+    var editExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
+    if (editExerciseModalOpen) {
+        ManageExerciseModal(
+            exerciseModel = modalViewModel,
+            closeModal = { editExerciseModalOpen = false },
+            submitModal = { name, sets, m1, m2, restTime ->
+                if (currentExerciseId != null) {
+                    if (m1.type.isBlank()) {
+                        m1.type = context.getString(R.string.weight_measurement)
+                    }
+
+                    if (m2.type.isBlank()) {
+                        m2.type = context.getString(R.string.reps_measurement)
+                    }
+
+                    val currentExercise = Exercise(
+                        id = currentExerciseId!!,
+                        name = name,
+                        sets = sets,
+                        measurement1 = m1,
+                        measurement2 = m2,
+                        restTime = restTime
+                    )
+                    exerciseViewModel.editExercise(currentExercise)
+                    currentExerciseId = null
+                }
+            })
+    }
+
+    var currentWorkoutId: Long? by rememberSaveable { mutableStateOf(null) }
+    var addExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
+    if (addExerciseModalOpen) {
+        ManageExerciseModal(
+            exerciseModel = modalViewModel,
+            closeModal = { addExerciseModalOpen = false },
+            submitModal = { name, sets, m1, m2, restTime ->
+                if (currentWorkoutId != null) {
+                    val newExercise = Exercise(
+                        name = name,
+                        sets = sets,
+                        measurement1 = m1,
+                        measurement2 = m2,
+                        restTime = restTime
+                    )
+                    exerciseViewModel.addExercise(currentWorkoutId!!, newExercise)
+                    currentWorkoutId = null
+                }
+            })
+    }
+
     if (isPortrait) {
         // Vertical scroll in portrait mode
         LazyVerticalGrid(
@@ -101,15 +156,29 @@ fun SelectWorkout(
                 WorkoutItem(
                     workoutWithExercises = workoutWithExercises,
                     isPortrait = true,
-                    onStartWorkout = { /* TODO - add a function to navigate to the run workout screen */ },
+                    onStartWorkout = {  if(workoutWithExercises.exercises.isNotEmpty())
+                                        {navController.currentBackStackEntry?.savedStateHandle?.set("workoutId", workoutWithExercises.workout.id)
+                                        navController.navigate("Run")} else {
+                                            Toast.makeText(context, context.getString(R.string.no_exercises_toast), Toast.LENGTH_LONG).show()
+                    }
+                                     },
                     onEditWorkout = { workout ->
                         workoutViewModel.editWorkout(workout)
                     },
                     onDeleteWorkout = { workoutViewModel.deleteWorkout(workoutWithExercises.workout) },
-                    onEditExercise = { exercise ->
-                        exerciseViewModel.editExercise(exercise)
+                    onAddExercise = {
+                        currentWorkoutId = workoutWithExercises.workout.id
+                        modalViewModel.clear()
+                        addExerciseModalOpen = true
                     },
-                    onDeleteExercise = { /* TODO - implement this */ },
+                    onEditExercise = { exercise ->
+                        modalViewModel.setupFromExercise(exercise)
+                        currentExerciseId = exercise.id
+                        editExerciseModalOpen = true
+                    },
+                    onDeleteExercise = { exercise ->
+                        exerciseViewModel.deleteExercise(exercise)
+                    },
                     onExportWorkout = {
                         exportWorkout(
                             context = context,
@@ -151,15 +220,27 @@ fun SelectWorkout(
                 WorkoutItem(
                     workoutWithExercises = workoutWithExercises,
                     isPortrait = false,
-                    onStartWorkout = { /* TODO - add a function to navigate to the run workout screen */ },
+                    onStartWorkout = { if(workoutWithExercises.exercises.isNotEmpty())
+                    {navController.currentBackStackEntry?.savedStateHandle?.set("workoutId", workoutWithExercises.workout.id)
+                        navController.navigate("Run")} else {
+                        Toast.makeText(context, context.getString(R.string.no_exercises_toast), Toast.LENGTH_LONG).show()
+                    }},
                     onEditWorkout = { workout ->
                         workoutViewModel.editWorkout(workout)
                     },
                     onDeleteWorkout = { workoutViewModel.deleteWorkout(workoutWithExercises.workout) },
                     onEditExercise = { exercise ->
-                        exerciseViewModel.editExercise(exercise)
+                        modalViewModel.setupFromExercise(exercise)
+                        currentExerciseId = exercise.id
+                        editExerciseModalOpen = true
                     },
-                    onDeleteExercise = { /* TODO - implement this */ },
+                    onAddExercise = {
+                        currentWorkoutId = workoutWithExercises.workout.id
+                        modalViewModel.clear()
+                        addExerciseModalOpen = true
+                    },
+                    onDeleteExercise = { exercise ->
+                        exerciseViewModel.deleteExercise(exercise) },
                     onExportWorkout = {
 
                         exportWorkout(
@@ -207,6 +288,7 @@ fun WorkoutItem(
     onStartWorkout: () -> Unit,
     onEditWorkout: (Workout) -> Unit,
     onDeleteWorkout: () -> Unit,
+    onAddExercise: () -> Unit,
     onEditExercise: (Exercise) -> Unit,
     onDeleteExercise: (Exercise) -> Unit,
     onExportWorkout: () -> Unit,
@@ -358,11 +440,22 @@ fun WorkoutItem(
             ) {
                 if (expandedState) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = workoutWithExercises.workout.description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    )
+                    Row(modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(
+                            text = workoutWithExercises.workout.description,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        )
+                        IconButton(onClick = onAddExercise) {
+                            Icon(
+                                modifier = Modifier.size(24.dp),
+                                painter = painterResource(id = R.drawable.plus),
+                                contentDescription = stringResource(R.string.add)
+                            )
+                        }
+                    }
                     workoutWithExercises.exercises.forEach { exercise ->
                         ExerciseItem(
                             exercise = exercise,

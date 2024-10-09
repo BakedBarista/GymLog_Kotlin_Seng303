@@ -71,6 +71,7 @@ dependencies {
     implementation(libs.androidx.camera.view)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.camera2)
+    implementation(libs.play.services.mlkit.barcode.scanning)
 
     // To use Kotlin Symbol Processing (KSP)
     ksp(libs.androidx.room.compiler)

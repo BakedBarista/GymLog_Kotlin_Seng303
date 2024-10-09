@@ -6,6 +6,7 @@ import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +23,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -34,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,17 +47,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.seng303_groupb_assignment2.R
 import com.example.seng303_groupb_assignment2.entities.Exercise
+import com.example.seng303_groupb_assignment2.entities.Measurement
 import com.example.seng303_groupb_assignment2.entities.Workout
 import com.example.seng303_groupb_assignment2.enums.Days
 import com.example.seng303_groupb_assignment2.enums.Measurement
@@ -299,7 +308,7 @@ private fun DisplayExerciseCard(
         )
     }
 
-    var offsetY by remember { mutableStateOf(0f) }
+    var offsetY by remember { mutableFloatStateOf(0f) }
     var dragging by remember { mutableStateOf(false) }
     Card(modifier = Modifier
         .offset(y = offsetY.dp)
@@ -521,7 +530,7 @@ fun MeasurementSelection(
 }
 
 @Composable
-private fun ManageExerciseModal(
+fun ManageExerciseModal(
     exerciseModel: ExerciseModalViewModel = viewModel(),
     closeModal: () -> Unit,
     submitModal: (String, Int?, Measurement) -> Unit

@@ -119,7 +119,4 @@ class WorkoutViewModel(
             }
         }
     }
-
-
-
 }
