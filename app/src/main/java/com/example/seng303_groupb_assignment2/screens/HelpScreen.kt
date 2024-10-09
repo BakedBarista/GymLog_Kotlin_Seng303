@@ -40,11 +40,11 @@ import androidx.compose.ui.graphics.Color
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Help(navController: NavController) {
-    Scaffold { paddingValues -> // Accept the padding values provided by Scaffold
+    Scaffold { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues) // Apply padding to avoid overlap
+                .padding(paddingValues)
         ) {
             item {
                 ExerciseCard(
@@ -102,9 +102,6 @@ fun ExerciseCard(title: String, onClick: () -> Unit) {
     }
 }
 
-
-
-
 @Composable
 fun VideoGuide(context: Context, link: String) {
     Button(onClick = {
@@ -119,7 +116,6 @@ fun openVideoGuide(context: Context, url: String) {
     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
     context.startActivity(intent)
 }
-
 
 @Composable
 fun PushUpHelpScreen() {
