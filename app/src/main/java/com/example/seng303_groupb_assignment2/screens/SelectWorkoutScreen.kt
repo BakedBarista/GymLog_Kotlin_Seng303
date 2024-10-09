@@ -137,6 +137,18 @@ fun SelectWorkout(
                                 Toast.makeText(context, context.getString(R.string.workout_exported_failure_toast), Toast.LENGTH_LONG).show()
                             }
                         )
+                    },
+                    onExportWorkoutLog = {
+                        workoutViewModel.exportWorkoutLog(
+                            context = context,
+                            workoutWithExercises = workoutWithExercises,
+                            onSuccess = { filePath ->
+                                Toast.makeText(context, context.getString(R.string.workout_logs_exported_toast, filePath), Toast.LENGTH_LONG).show()
+                            },
+                            onFailure = {
+                                Toast.makeText(context, context.getString(R.string.workout_log_exported_failure_toast), Toast.LENGTH_LONG).show()
+                            }
+                        )
                     }
                 )
             }
@@ -174,6 +186,19 @@ fun SelectWorkout(
                             },
                             onFailure = {
                                 Toast.makeText(context, context.getString(R.string.workout_exported_failure_toast), Toast.LENGTH_LONG).show()
+
+                            }
+                        )
+                    },
+                    onExportWorkoutLog = {
+                        workoutViewModel.exportWorkoutLog(
+                            context = context,
+                            workoutWithExercises = workoutWithExercises,
+                            onSuccess = { filePath ->
+                                Toast.makeText(context, context.getString(R.string.workout_logs_exported_toast, filePath), Toast.LENGTH_LONG).show()
+                            },
+                            onFailure = {
+                                Toast.makeText(context, context.getString(R.string.workout_log_exported_failure_toast), Toast.LENGTH_LONG).show()
                             }
                         )
                     }
@@ -198,7 +223,8 @@ fun WorkoutItem(
     onDeleteWorkout: () -> Unit,
     onEditExercise: (Exercise) -> Unit,
     onDeleteExercise: (Exercise) -> Unit,
-    onExportWorkout: () -> Unit
+    onExportWorkout: () -> Unit,
+    onExportWorkoutLog: () -> Unit
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     var showEditDialog by rememberSaveable { mutableStateOf(false) }
@@ -271,35 +297,46 @@ fun WorkoutItem(
                             contentDescription = stringResource(R.string.start_workout)
                         )
                     }
-                    IconButton(onClick = { showDropdownMenu = true }) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.more_vert),
-                            contentDescription = stringResource(R.string.more_options)
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = showDropdownMenu,
-                        onDismissRequest = { showDropdownMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.edit_workout)) },
-                            onClick = {
-                                showEditDialog = true
-                                showDropdownMenu = false
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.delete_workout)) },
-                            onClick = {
-                                onDeleteWorkout()
-                                showDropdownMenu = false
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(id = R.string.export_workout))},
-                            onClick = {
-                                onExportWorkout()
-                                showDropdownMenu = false })
+                    Box {
+                        IconButton(onClick = { showDropdownMenu = true }) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.more_vert),
+                                contentDescription = stringResource(R.string.more_options)
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showDropdownMenu,
+                            onDismissRequest = { showDropdownMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(id = R.string.export_workout)) },
+                                onClick = {
+                                    onExportWorkout()
+                                    showDropdownMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(id = R.string.export_workout_log)) },
+                                onClick = {
+                                    onExportWorkoutLog()
+                                    showDropdownMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.edit_workout)) },
+                                onClick = {
+                                    showEditDialog = true
+                                    showDropdownMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.delete_workout)) },
+                                onClick = {
+                                    onDeleteWorkout()
+                                    showDropdownMenu = false
+                                }
+                            )
+                        }
                     }
                 }
                 ScheduleInformation(workoutWithExercises.workout.schedule)
