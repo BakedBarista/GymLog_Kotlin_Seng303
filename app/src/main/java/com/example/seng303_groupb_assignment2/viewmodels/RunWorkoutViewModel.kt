@@ -10,6 +10,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.seng303_groupb_assignment2.daos.ExerciseDao
+import com.example.seng303_groupb_assignment2.daos.ExerciseLogDao
 import com.example.seng303_groupb_assignment2.daos.WorkoutDao
 import com.example.seng303_groupb_assignment2.entities.ExerciseLog
 import com.example.seng303_groupb_assignment2.entities.WorkoutWithExercises
@@ -18,7 +19,7 @@ import kotlinx.coroutines.launch
 
 class RunWorkoutViewModel(
     private val workoutDao: WorkoutDao,
-    private val exerciseDao: ExerciseDao
+    private val exerciseLogDao: ExerciseLogDao,
 ) : ViewModel() {
     var currentExerciseIndex by mutableStateOf(0)
     var currentSetIndex by mutableStateOf(0)
@@ -73,9 +74,9 @@ class RunWorkoutViewModel(
     }
 
     fun startTimer(callback: () -> Unit) {
-        isResting = true
         val exercise = workoutWithExercises.value?.exercises?.get(currentExerciseIndex)!!
         if (exercise.restTime != null) {
+            isResting = true
             timerSeconds = exercise.restTime!!
             viewModelScope.launch {
                 while (isResting && timerSeconds > 0) {
@@ -85,6 +86,8 @@ class RunWorkoutViewModel(
                 isResting = false
                 callback()
             }
+        } else {
+            callback()
         }
     }
 
@@ -166,5 +169,11 @@ class RunWorkoutViewModel(
 
     fun endRestEarly() {
         timerSeconds = 0
+    }
+
+    fun saveLogs() {
+        logsList.forEach {
+
+        }
     }
 }

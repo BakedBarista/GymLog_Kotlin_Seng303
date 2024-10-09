@@ -565,7 +565,7 @@ private fun ManageExerciseModal(
 
                                         var measurementType1 = exerciseModel.measurementType1
                                         if (exerciseModel.measurementType1.isBlank()) {
-                                            measurementType1 = context.getString(R.string.weight_measurement)
+                                            measurementType1 = context.getString(R.string.reps_measurement)
                                         }
                                         var measurementType2 = exerciseModel.measurementType2
                                         if (exerciseModel.measurementType2.isBlank()) {

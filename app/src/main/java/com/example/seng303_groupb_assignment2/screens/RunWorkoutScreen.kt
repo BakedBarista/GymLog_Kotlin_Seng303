@@ -270,7 +270,12 @@ fun RunWorkout(
                 Spacer(modifier = Modifier.height(8.dp))
                 val nextExerciseAvailable = viewModel.currentExerciseIndex < workoutWithExercises.exercises.size - 1
                 if (!viewModel.canGoNext() && !nextExerciseAvailable) {
-                    Button(onClick = { /*TODO*/ },
+                    Button(onClick = {
+                        viewModel.updateExerciseLog()
+                        viewModel.saveLogs()
+                        // TODO - bring up toast that info is saved
+                        navController.navigate("Home")
+                    },
                         colors = buttonColors,
                         shape = RectangleShape
                     ) {
