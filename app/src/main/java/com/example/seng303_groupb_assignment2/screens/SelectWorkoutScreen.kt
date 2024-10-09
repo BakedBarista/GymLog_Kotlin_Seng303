@@ -71,6 +71,7 @@ import org.koin.androidx.compose.getViewModel
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.core.content.FileProvider
+import com.example.seng303_groupb_assignment2.enums.Measurement
 import com.google.gson.Gson
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
@@ -97,23 +98,13 @@ fun SelectWorkout(
         ManageExerciseModal(
             exerciseModel = modalViewModel,
             closeModal = { editExerciseModalOpen = false },
-            submitModal = { name, sets, m1, m2, restTime ->
+            submitModal = { name, restTime, measurement ->
                 if (currentExerciseId != null) {
-                    if (m1.type.isBlank()) {
-                        m1.type = context.getString(R.string.weight_measurement)
-                    }
-
-                    if (m2.type.isBlank()) {
-                        m2.type = context.getString(R.string.reps_measurement)
-                    }
-
                     val currentExercise = Exercise(
                         id = currentExerciseId!!,
                         name = name,
-                        sets = sets,
-                        measurement1 = m1,
-                        measurement2 = m2,
-                        restTime = restTime
+                        restTime = restTime,
+                        measurement = measurement
                     )
                     exerciseViewModel.editExercise(currentExercise)
                     currentExerciseId = null
@@ -127,14 +118,12 @@ fun SelectWorkout(
         ManageExerciseModal(
             exerciseModel = modalViewModel,
             closeModal = { addExerciseModalOpen = false },
-            submitModal = { name, sets, m1, m2, restTime ->
+            submitModal = { name, restTime, measurement ->
                 if (currentWorkoutId != null) {
                     val newExercise = Exercise(
                         name = name,
-                        sets = sets,
-                        measurement1 = m1,
-                        measurement2 = m2,
-                        restTime = restTime
+                        restTime = restTime,
+                        measurement = measurement
                     )
                     exerciseViewModel.addExercise(currentWorkoutId!!, newExercise)
                     currentWorkoutId = null
@@ -168,11 +157,15 @@ fun SelectWorkout(
                     onDeleteWorkout = { workoutViewModel.deleteWorkout(workoutWithExercises.workout) },
                     onAddExercise = {
                         currentWorkoutId = workoutWithExercises.workout.id
-                        modalViewModel.clear()
+                        modalViewModel.updateExerciseName("")
+                        modalViewModel.updateMeasurement(Measurement.REPS_WEIGHT)
+                        modalViewModel.updateRestTime("")
                         addExerciseModalOpen = true
                     },
                     onEditExercise = { exercise ->
-                        modalViewModel.setupFromExercise(exercise)
+                        modalViewModel.updateExerciseName(exercise.name)
+                        modalViewModel.updateRestTime(exercise.restTime.toString())
+                        modalViewModel.updateMeasurement(exercise.measurement)
                         currentExerciseId = exercise.id
                         editExerciseModalOpen = true
                     },
@@ -230,13 +223,17 @@ fun SelectWorkout(
                     },
                     onDeleteWorkout = { workoutViewModel.deleteWorkout(workoutWithExercises.workout) },
                     onEditExercise = { exercise ->
-                        modalViewModel.setupFromExercise(exercise)
+                        modalViewModel.updateExerciseName(exercise.name)
+                        modalViewModel.updateRestTime(exercise.restTime.toString())
+                        modalViewModel.updateMeasurement(exercise.measurement)
                         currentExerciseId = exercise.id
                         editExerciseModalOpen = true
                     },
                     onAddExercise = {
                         currentWorkoutId = workoutWithExercises.workout.id
-                        modalViewModel.clear()
+                        modalViewModel.updateExerciseName("")
+                        modalViewModel.updateRestTime("")
+                        modalViewModel.updateMeasurement(Measurement.REPS_WEIGHT)
                         addExerciseModalOpen = true
                     },
                     onDeleteExercise = { exercise ->

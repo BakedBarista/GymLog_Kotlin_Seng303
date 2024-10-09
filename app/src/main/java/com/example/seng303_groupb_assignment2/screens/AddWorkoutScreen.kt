@@ -54,6 +54,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
@@ -61,9 +62,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.seng303_groupb_assignment2.R
 import com.example.seng303_groupb_assignment2.entities.Exercise
-import com.example.seng303_groupb_assignment2.entities.Measurement
 import com.example.seng303_groupb_assignment2.entities.Workout
 import com.example.seng303_groupb_assignment2.enums.Days
+import com.example.seng303_groupb_assignment2.enums.Measurement
 import com.example.seng303_groupb_assignment2.notifications.NotificationManager
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.ManageWorkoutViewModel
@@ -81,7 +82,7 @@ fun AddWorkout(
     if (manageExerciseModalOpen) {
         ManageExerciseModal(
             closeModal = { manageExerciseModalOpen = false },
-            submitModal = { name, sets, m1, m2, restTime -> manageViewModel.addExercise(name, sets, m1, m2, restTime) }
+            submitModal = { name, restTime, measurement -> manageViewModel.addExercise(name, restTime, measurement) }
         )
     }
 
@@ -276,7 +277,7 @@ private fun DisplayExerciseList (
                     startIndex = index,
                     viewModel = viewModel,
                     exercise = exercise,
-                    edit = { name, sets, m1, m2, restTime -> viewModel.updateExercise(index, name, sets, m1, m2, restTime) },
+                    edit = { name, restTime, measurement -> viewModel.updateExercise(index, name, restTime, measurement) },
                     delete = { viewModel.deleteExercise(index) }
                 )
             }
@@ -289,20 +290,20 @@ private fun DisplayExerciseCard(
     startIndex: Int,
     viewModel: ManageWorkoutViewModel,
     exercise: Exercise,
-    edit: (String, Int, Measurement, Measurement, Int?) -> Unit,
+    edit: (String, Int?, Measurement) -> Unit,
     delete: () -> Unit,
 ) {
     val context = LocalContext.current
+    var manageExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
+    val exerciseModel: ExerciseModalViewModel = viewModel()
     val itemHeight = 100
     val spacing = 10
 
-    val exerciseModel: ExerciseModalViewModel = viewModel()
-    var manageExerciseModalOpen: Boolean by rememberSaveable { mutableStateOf(false) }
     if (manageExerciseModalOpen) {
         ManageExerciseModal(
-            exerciseModel = exerciseModel,
             closeModal = { manageExerciseModalOpen = false },
-            submitModal = edit
+            submitModal = edit,
+            exerciseModel = exerciseModel
         )
     }
 
@@ -332,7 +333,11 @@ private fun DisplayExerciseCard(
                 }
                 IconButton(onClick = {
                     manageExerciseModalOpen = true
-                    exerciseModel.setupFromExercise(exercise)
+                    exerciseModel.updateExerciseName(exercise.name)
+                    if (exercise.restTime != null) {
+                        exerciseModel.updateRestTime(exercise.restTime.toString())
+                    }
+                    exerciseModel.updateMeasurement(exercise.measurement)
                 }) {
                     Icon(
                         painter = painterResource(id = R.drawable.edit),
@@ -527,9 +532,16 @@ fun MeasurementSelection(
 fun ManageExerciseModal(
     exerciseModel: ExerciseModalViewModel = viewModel(),
     closeModal: () -> Unit,
-    submitModal: (String, Int, Measurement, Measurement, Int?) -> Unit
+    submitModal: (String, Int?, Measurement) -> Unit
 ) {
+    val measurements = Measurement.entries.toTypedArray()
     val context = LocalContext.current
+    var open by rememberSaveable { mutableStateOf(false) }
+    var selectedMeasurement by rememberSaveable {
+        mutableStateOf(Measurement.REPS_WEIGHT)
+    }
+    var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
+
 
     Dialog(onDismissRequest = {
         closeModal()
@@ -563,124 +575,95 @@ fun ManageExerciseModal(
 
                 item {
                     TextField(
-                        value = exerciseModel.sets,
-                        onValueChange = {
-                            if (it.isBlank() || it.toIntOrNull() != null) {
-                                exerciseModel.updateSets(it)
-                            }
-                        },
-                        label = { Text(context.getString(R.string.sets_label)) },
-                        isError = !exerciseModel.validSetValue(),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
-                item {
-                    MeasurementSelection(
-                        options = listOf(stringResource(R.string.reps_measurement),
-                            stringResource(R.string.time_measurement)),
-                        updateOption = { exerciseModel.updateMeasurementType1(it) },
-                        sets = exerciseModel.sets,
-                        values = exerciseModel.measurementValues1,
-                        updateValue = { index, newValue ->
-                            val measurementValues1 = exerciseModel.measurementValues1.toMutableList().apply {
-                                this[index] = newValue
-                            }
-                            exerciseModel.updateMeasurementValues1(measurementValues1)
-                        }
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
-                item {
-                    MeasurementSelection(
-                        options = listOf(stringResource(R.string.weight_measurement),
-                            stringResource(R.string.distance_measurement)),                        updateOption = { exerciseModel.updateMeasurementType2(it) },
-                        sets = exerciseModel.sets,
-                        values = exerciseModel.measurementValues2,
-                        updateValue = { index, newValue ->
-                            val measurementValues2 = exerciseModel.measurementValues2.toMutableList().apply {
-                                this[index] = newValue
-                            }
-                            exerciseModel.updateMeasurementValues2(measurementValues2)
-                        }
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
-                item {
-                    TextField(
                         value = exerciseModel.restTime,
                         onValueChange = { exerciseModel.updateRestTime(it) },
                         label = { Text(context.getString(R.string.rest_time_label)) },
                         isError = !exerciseModel.validRestTime(),
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                 }
 
-                    item {
-                        val buttonColors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth(0.9f)) {
-                            Button(
-                                modifier = Modifier.padding(paddingValues = PaddingValues(horizontal = 8.dp)),
-                                colors = buttonColors,
-                                shape = RectangleShape,
-                                onClick = {
-                                    closeModal()
-                                    exerciseModel.clearSavedInfo()
+                item {
+                    Box (
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.inverseOnSurface, shape = MaterialTheme.shapes.small)
+                            .clickable { open = true }
+                            .padding(16.dp)
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = measurements[selectedIndex].label,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Icon(
+                                painter = painterResource(id = R.drawable.dropdown),
+                                contentDescription = "Measurements"
+                            )
+                        }
+                            DropdownMenu(
+                                expanded = open,
+                                onDismissRequest = { open = false }
+                            ) {
+                                measurements.forEachIndexed { index, measurement ->
+                                    DropdownMenuItem(
+                                        text = { Text(measurement.label) },
+                                        onClick = {
+                                            selectedIndex = index
+                                            open = false
+                                            exerciseModel.updateMeasurement(measurement)
+                                        }
+                                    )
                                 }
-                            ) { Text(context.getString(R.string.cancel), style = MaterialTheme.typography.bodyLarge) }
-                            Button(
-                                colors = buttonColors,
-                                shape = RectangleShape,
-                                onClick =
-                                {
-                                    if (exerciseModel.validMeasurementValues()
-                                        && exerciseModel.validSetValue()
-                                        && exerciseModel.validRestTime()) {
+                            }
+                        }
+                    }
 
-                                        var measurementType1 = exerciseModel.measurementType1
-                                        if (exerciseModel.measurementType1.isBlank()) {
-                                            measurementType1 = context.getString(R.string.reps_measurement)
-                                        }
-                                        var measurementType2 = exerciseModel.measurementType2
-                                        if (exerciseModel.measurementType2.isBlank()) {
-                                            measurementType2 = context.getString(R.string.weight_measurement)
-                                        }
-                                        val measurement1 = Measurement(
-                                            type = measurementType1,
-                                            values = exerciseModel.measurementValues1.toList().map { it.toFloat() }
-                                        )
-                                        val measurement2 = Measurement(
-                                            type = measurementType2,
-                                            values = exerciseModel.measurementValues2.toList().map { it.toFloat() }
-                                        )
 
+                item {
+                    val buttonColors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth(0.9f)) {
+                        Button(
+                            modifier = Modifier.padding(paddingValues = PaddingValues(horizontal = 8.dp)),
+                            colors = buttonColors,
+                            shape = RectangleShape,
+                            onClick = {
+                                closeModal()
+                                exerciseModel.clearSavedInfo()
+                            }
+                        ) { Text(context.getString(R.string.cancel), style = MaterialTheme.typography.bodyLarge) }
+                        Button(
+                            colors = buttonColors,
+                            shape = RectangleShape,
+                            onClick =
+                            {
+                                if (exerciseModel.validRestTime() && exerciseModel.validExerciseName()) {
                                     var restTime: Int? = null;
                                     if (exerciseModel.restTime.isNotBlank()) {
                                         restTime = exerciseModel.restTime.toInt()
                                     }
 
-                                    submitModal(
-                                        exerciseModel.exerciseName,
-                                        exerciseModel.sets.toInt(),
-                                        measurement1,
-                                        measurement2,
-                                        restTime
-                                    )
+                                submitModal(
+                                    exerciseModel.exerciseName,
+                                    restTime,
+                                    exerciseModel.measurement
+                                )
 
-                                    closeModal()
-                                    exerciseModel.clearSavedInfo()
-                                }
-                            }) {
-                            Text(context.getString(R.string.add), style = MaterialTheme.typography.bodyLarge)
-                        }
+                                closeModal()
+                                exerciseModel.clearSavedInfo()
+                            }
+                        }) {
+                        Text(context.getString(R.string.add), style = MaterialTheme.typography.bodyLarge)
                     }
+                }
                 }
             }
         }

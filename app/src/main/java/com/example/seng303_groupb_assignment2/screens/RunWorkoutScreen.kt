@@ -1,418 +1,485 @@
 package com.example.seng303_groupb_assignment2.screens
 
-import android.content.res.Configuration
-import android.util.Log
-import android.widget.Toast
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PointMode
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.seng303_groupb_assignment2.R
-import com.example.seng303_groupb_assignment2.entities.WorkoutWithExercises
+import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.viewmodels.RunWorkoutViewModel
-import java.util.Locale
+import kotlinx.coroutines.delay
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 @Composable
 fun RunWorkout(
-    navController: NavController,
-    workoutWithExercises: WorkoutWithExercises,
-    viewModel: RunWorkoutViewModel
+    viewModel: RunWorkoutViewModel,
+    navController: NavController
 ) {
-    val context = LocalContext.current
+    val buttonColors = ButtonDefaults.buttonColors(
+        containerColor = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+    )
 
-    workoutWithExercises.let { workout ->
-        LaunchedEffect(workout) {
-            viewModel.initialize(workout)
+    val workoutWithExercises = viewModel.workoutWithExercises.value
+    val exercises = workoutWithExercises?.exercises
+    val currentExerciseIndex = viewModel.currentExerciseIndex
+
+    // Retrieve current exercise and rest time
+    val currentExercise = exercises?.getOrNull(currentExerciseIndex)
+    val unit1Text = currentExercise?.measurement?.unit1
+    val unit2Text = currentExercise?.measurement?.unit2
+    val restTime = currentExercise?.restTime ?: 0
+
+    var isTimerRunning by rememberSaveable { mutableStateOf(false) }
+    var currentTime by rememberSaveable { mutableLongStateOf(restTime * 1000L) }
+    var restartTimer by rememberSaveable { mutableStateOf(false) }
+    val sets = viewModel.getSetsForCurrentExercise()
+
+    val isPreviousEnabled = currentExerciseIndex > 0
+    val isNextEnabled = currentExerciseIndex < (exercises?.size ?: 0) - 1
+
+    fun onSaveSet(unit1: Float, unit2: Float) {
+        viewModel.addSetToCurrentExercise(unit1, unit2)
+        currentTime = restTime * 1000L
+        restartTimer = true
+        isTimerRunning = true
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            Header(viewModel, onSave = {
+                isTimerRunning = true
+            }, onSaveSet = ::onSaveSet)
         }
 
-        val currentExercise = workoutWithExercises.exercises[viewModel.currentExerciseIndex]
-        Log.d("RunWorkout", "Current Exercise: $currentExercise")
-        val listState = rememberLazyListState()
-        val configuration = LocalConfiguration.current
-        val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-        LaunchedEffect(viewModel.currentSetIndex) {
-            listState.animateScrollToItem(viewModel.currentSetIndex)
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
         }
 
-        val buttonColors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-        )
-
-        if (isLandscape) {
+        item {
             Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceAround,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                // Left column for exercise list
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .padding(end = 16.dp),
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.Top
+                IconButton(onClick = {
+                    viewModel.previousExercise()
+                    isTimerRunning = false
+                },
+                    enabled = isPreviousEnabled
                 ) {
-                    // Exercise name display
-                    Text(
-                        text = currentExercise.name,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 20.dp)
+                    Icon(
+                        painter = painterResource(id = R.drawable.baseline_skip_previous_24),
+                        contentDescription = stringResource(id = R.string.next)
                     )
-
-                    // Header for the table
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceAround
-                    ) {
-                        Text(text = currentExercise.measurement2.type, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-                        Text(text = currentExercise.measurement1.type, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-                        Text(text = stringResource(R.string.actual,""), fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-                    }
-
-                    // Exercise details list
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .padding(vertical = 16.dp)
-                    ) {
-                        items(currentExercise.measurement1.values.size) { index ->
-                            val weight = currentExercise.measurement2.values.getOrNull(index) ?: 0
-                            val repGoal = currentExercise.measurement1.values[index]
-                            val actual = viewModel.getActualValue(index)
-                            val isCurrentSet = index == viewModel.currentSetIndex
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 8.dp)
-                                    .background(
-                                        color = if (isCurrentSet) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
-                                        shape = RoundedCornerShape(8.dp)
-                                    )
-                                    .padding(vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceAround
-                            ) {
-                                Text(text = "$weight", fontSize = 18.sp)
-                                Text(text = "$repGoal", fontSize = 18.sp)
-                                Text(text = "$actual", fontSize = 18.sp)
-                            }
-                        }
-                    }
                 }
-
-                // Right column for timer and controls
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                Timer(
+                    totalTime = restTime * 1000L,
+                    currentTime = currentTime,
+                    isTimerRunning = isTimerRunning,
+                    restartTimer = restartTimer,
+                    onRestartHandled = { restartTimer = false },
+                    handleColor = Color.Green,
+                    inactiveBarColor = Color.DarkGray,
+                    activeBarColor = Color(0xFF37B900),
+                    modifier = Modifier.size(100.dp),
+                    timerSize = 100.dp
+                )
+                IconButton(
+                    onClick = {
+                        viewModel.nextExercise()
+                        isTimerRunning = false
+                    },
+                    enabled = isNextEnabled
                 ) {
-                    // Timer display
-                    Box(
-                        modifier = Modifier.fillMaxHeight(0.5f),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (viewModel.isResting) {
-                            Box (modifier = Modifier
-                                .size(160.dp)
-                                .clip(CircleShape),
-                                contentAlignment = Alignment.Center
-                            )
-                            {
-                                Image(
-                                    painter = painterResource(R.drawable.circle_arrow),
-                                    contentDescription = stringResource(R.string.circle_background),
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    // Timer text
-                                    val minutes = viewModel.timerSeconds / 60
-                                    val seconds = viewModel.timerSeconds % 60
-                                    Text(
-                                        text = String.format(Locale.getDefault(), "%d:%02d", minutes, seconds),
-                                        fontSize = 32.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.Black,
-                                        modifier = Modifier.padding(bottom = 8.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Control buttons
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        val previousExerciseAvailable = viewModel.currentExerciseIndex > 0
-                        IconButton(onClick = { viewModel.previousSet(previousExerciseAvailable) },
-                            enabled = (previousExerciseAvailable || viewModel.canGoPrevious()) && !viewModel.isResting ) {
-                            Icon(
-                                painter = painterResource(R.drawable.baseline_skip_previous_24),
-                                contentDescription = stringResource(R.string.previous)
-                            )
-                        }
-
-                        if (viewModel.isResting) {
-                            Button(onClick = { viewModel.endRestEarly() },
-                                colors = buttonColors,
-                                shape = RectangleShape) {
-                                Text(text = stringResource(R.string.finish_rest_early))
-                            }
-                        } else {
-                            val label = stringResource(R.string.input_actual_reps_label)
-                            TextField(
-                                value = viewModel.currentActualRepsInput,
-                                onValueChange = {
-                                    if (it.toIntOrNull() != null || it.isBlank()) {
-                                        viewModel.updateCurrentActualRepsInput(it)
-                                    }
-                                },
-                                textStyle = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier
-                                    .padding(16.dp)
-                                    .background(MaterialTheme.colorScheme.primaryContainer)
-                                    .fillMaxWidth(0.5f),
-                                label = { Text(label) },
-                            )
-                        }
-
-                        val nextExerciseAvailable = viewModel.currentExerciseIndex < workoutWithExercises.exercises.size - 1
-                        IconButton(onClick = { viewModel.nextSet(nextExerciseAvailable) },
-                            enabled = (nextExerciseAvailable || viewModel.canGoNext()) && !viewModel.isResting) {
-                            Icon(
-                                painter = painterResource(R.drawable.baseline_skip_next_24),
-                                contentDescription = stringResource(R.string.next)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-                    val nextExerciseAvailable = viewModel.currentExerciseIndex < workoutWithExercises.exercises.size - 1
-                    if (!viewModel.canGoNext() && !nextExerciseAvailable) {
-                        Button(onClick = {
-                            viewModel.updateExerciseLog()
-                            viewModel.saveLogs()
-                            navController.navigate("Home")
-                            Toast.makeText(context, context.getString(R.string.workout_log_saved_toast), Toast.LENGTH_LONG).show()
-                        },
-                            colors = buttonColors,
-                            shape = RectangleShape,
-                            modifier = Modifier.fillMaxWidth(0.5f)
-
-                        ) {
-                            Text(text = stringResource(R.string.finish_workout))
-                        }
-                    }
+                    Icon(
+                        painter = painterResource(id = R.drawable.baseline_skip_next_24),
+                        contentDescription = stringResource(id = R.string.next)
+                    )
                 }
             }
         }
-        else {
-            Column(
+
+        itemsIndexed(sets) { index, set ->
+            SetContainer(
+                label1 = unit1Text ?: "Reps",
+                label2 = unit2Text ?: "Weight",
+                unit1 = set.first,
+                unit2 = set.second,
+                onDelete = {
+                    viewModel.removeSetFromCurrentExercise(index)
+                }
+            )
+        }
+
+        item {
+            Button(
+                onClick = {
+                    viewModel.saveLogs()
+                    viewModel.clearWorkoutData()
+                    navController.navigate("SelectWorkout")
+                },
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                colors = buttonColors,
+                shape = RectangleShape
             ) {
-                // Exercise name display
-                Text(
-                    text = currentExercise.name,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 20.dp)
-                )
-
-                // Header for the table
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround
-                ) {
-                    Text(text = currentExercise.measurement2.type, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-                    Text(text = currentExercise.measurement1.type, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-                    Text(text = stringResource(R.string.actual,""), fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-                }
-
-                // Exercise details
-                LazyColumn(state = listState,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .padding(vertical = 16.dp)) {
-                    items(currentExercise.measurement1.values.size) { index ->
-                        val weight = currentExercise.measurement2.values.getOrNull(index) ?: 0
-                        val repGoal = currentExercise.measurement1.values[index]
-                        val actual = viewModel.getActualValue(index)
-                        val isCurrentSet = index == viewModel.currentSetIndex
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp)
-                                .background(
-                                    color = if (isCurrentSet) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                                .padding(vertical = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceAround
-                        ) {
-                            Text(text = stringResource(R.string.measurement1_label, "$weight"), fontSize = 18.sp)
-                            Text(text = stringResource(R.string.measurement2_label, "$repGoal"), fontSize = 18.sp)
-                            Text(
-                                text = stringResource(R.string.measurement2_label, "$actual"), fontSize = 18.sp,
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Rest display
-                Box(
-                    modifier = Modifier.fillMaxHeight(0.5f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (viewModel.isResting) {
-                        Box (modifier = Modifier
-                            .size(160.dp)
-                            .clip(CircleShape),
-                            contentAlignment = Alignment.Center
-                        )
-                        {
-                            Image(
-                                painter = painterResource(R.drawable.circle_arrow),
-                                contentDescription = stringResource(R.string.circle_background),
-                                modifier = Modifier.fillMaxSize()
-                            )
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                // Timer text
-                                val minutes = viewModel.timerSeconds / 60
-                                val seconds = viewModel.timerSeconds % 60
-                                Text(
-                                    text = String.format(Locale.getDefault(), "%d:%02d", minutes, seconds),
-                                    fontSize = 32.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.Black,
-                                    modifier = Modifier.padding(bottom = 8.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Control buttons (Start and Pause)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround,
-                    verticalAlignment = Alignment.Bottom
-                ) {
-                    val previousExerciseAvailable = viewModel.currentExerciseIndex > 0
-                    IconButton(onClick = { viewModel.previousSet(previousExerciseAvailable) },
-                        enabled = (previousExerciseAvailable || viewModel.canGoPrevious()) && !viewModel.isResting) {
-                        Icon(
-                            painter = painterResource(R.drawable.baseline_skip_previous_24),
-                            contentDescription = stringResource(R.string.previous)
-                        )
-                    }
-                    if (viewModel.isResting) {
-                        Button(onClick = { viewModel.endRestEarly() },
-                            colors = buttonColors,
-                            shape = RectangleShape) {
-                            Text(text = stringResource(R.string.finish_rest_early))
-                        }
-                    } else {
-                        val label = stringResource(R.string.input_actual_reps_label)
-                        TextField(
-                            value = viewModel.currentActualRepsInput,
-                            onValueChange = {
-                                if (it.toIntOrNull() != null || it.isBlank()) {
-                                    viewModel.updateCurrentActualRepsInput(it)
-                                }
-                            },
-                            textStyle = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier
-                                .padding(16.dp)
-                                .background(MaterialTheme.colorScheme.primaryContainer)
-                                .fillMaxWidth(0.5f),
-                            label = { Text(label) },
-                        )
-                    }
-                    val nextExerciseAvailable = viewModel.currentExerciseIndex < workoutWithExercises.exercises.size - 1
-                    IconButton(onClick = { viewModel.nextSet(nextExerciseAvailable) },
-                        enabled = (nextExerciseAvailable || viewModel.canGoNext()) && !viewModel.isResting) {
-                        Icon(
-                            painter = painterResource(R.drawable.baseline_skip_next_24),
-                            contentDescription = stringResource(R.string.next)
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                val nextExerciseAvailable = viewModel.currentExerciseIndex < workoutWithExercises.exercises.size - 1
-                if (!viewModel.canGoNext() && !nextExerciseAvailable) {
-                    Button(onClick = {
-                        viewModel.updateExerciseLog()
-                        viewModel.saveLogs()
-                        navController.navigate("Home")
-                        Toast.makeText(context, context.getString(R.string.workout_log_saved_toast), Toast.LENGTH_LONG).show()
-                    },
-                        colors = buttonColors,
-                        shape = RectangleShape
-                    ) {
-                        Text(text = stringResource(R.string.finish_workout))
-                    }
-                }
+                Text("Finish Workout")
             }
+        }
+    }
+}
+
+// Gotten from https://medium.com/@fahadhabib01/craft-a-captivating-animated-countdown-timer-with-jetpack-compose-0e2f16d64664
+@Composable
+private fun Header(
+    viewModel: RunWorkoutViewModel,
+    onSave: () -> Unit,
+    onSaveSet: (Float, Float) -> Unit// Callback for when Save is clicked
+) {
+    val workoutWithExercises = viewModel.workoutWithExercises.value
+    val exercises = workoutWithExercises?.exercises
+    val currentExerciseIndex = viewModel.currentExerciseIndex
+
+    val currentExercise = exercises?.getOrNull(currentExerciseIndex)
+
+    val unit1Text = currentExercise?.measurement?.unit1
+    val unit2Text = currentExercise?.measurement?.unit2
+
+    var unit1Input by rememberSaveable { mutableStateOf("0") }
+    var unit2Input by rememberSaveable { mutableStateOf("0") }
+
+    var unit1Value by rememberSaveable { mutableFloatStateOf(0f) }
+    var unit2Value by rememberSaveable { mutableFloatStateOf(0f) }
+
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager: FocusManager = LocalFocusManager.current
+
+    val isValidInput = remember(unit1Input, unit2Input) {
+        val unit1Valid = unit1Input.toFloatOrNull()?.let { it > 0 } ?: false
+        val unit2Valid = unit2Input.toFloatOrNull()?.let { it > 0 } ?: false
+        unit1Valid && unit2Valid
+    }
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = viewModel.workoutWithExercises.value?.exercises?.get(currentExerciseIndex)?.name ?: "Exercise", style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.align(Alignment.CenterHorizontally))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(vertical = 4.dp)
+        ) {
+            IconButton(onClick = {
+                unit2Value = (unit2Value - 1).coerceAtLeast(0f)
+                unit2Input = unit2Value.toString()
+            }) {
+                Icon(modifier = Modifier.size(48.dp),
+                    painter = painterResource(id = R.drawable.remove),
+                    contentDescription = stringResource(id = R.string.remove
+                ))
+            }
+            TextField(
+                value = unit2Input,
+                onValueChange = { newValue ->
+                    unit2Input = newValue.ifEmpty { "0" }
+                    unit2Value = newValue.toFloatOrNull() ?: 0f
+                },
+                label = {
+                    if (unit2Text != null) {
+                        Text(text = unit2Text)
+                    }
+                },
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                    }
+                )
+            )
+            IconButton(onClick = {
+                unit2Value += 1
+                unit2Input = unit2Value.toString()
+            }) {
+                Icon(painter = painterResource(id = R.drawable.plus), contentDescription = stringResource(
+                    id = R.string.plus
+                ))
+            }
+        }
+
+        Row (
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(vertical = 4.dp)
+        ) {
+            IconButton(onClick = {
+                unit1Value = (unit1Value - 1).coerceAtLeast(0f)
+                unit1Input = unit1Value.toString()
+            }) {
+                Icon(modifier = Modifier.size(48.dp),
+                    painter = painterResource(id = R.drawable.remove),
+                    contentDescription = stringResource(id = R.string.remove
+                    ))
+            }
+            TextField(
+                value = unit1Input,
+                onValueChange = { newValue ->
+                    unit1Input = newValue.ifEmpty { "0" }
+                    unit1Value = newValue.toFloatOrNull() ?: 0f
+                },
+                label = {
+                    if (unit1Text != null) {
+                        Text(text = unit1Text)
+                    }
+                },
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                    }
+                )
+            )
+            IconButton(onClick = {
+                unit1Value += 1
+                unit1Input = unit1Value.toString()
+            }) {
+                Icon(painter = painterResource(id = R.drawable.plus), contentDescription = stringResource(
+                    id = R.string.plus
+                ))
+            }
+        }
+        Row(
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
+        ) {
+            val buttonColors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+
+            Button(onClick = {
+                onSaveSet(unit1Value, unit2Value)
+                onSave()
+            },
+                colors = buttonColors,
+                shape = RectangleShape,
+                enabled = isValidInput,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp)
+            ) {
+                Text(text = "Save Set")
+            }
+            Button(onClick = {
+                unit1Value = 0f
+                unit2Value = 0f
+                unit1Input = "0"
+                unit2Input = "0"
+            },
+                colors = buttonColors,
+                shape = RectangleShape,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp)
+            ) {
+                Text(text = "Clear")
+            }
+        }
+    }
+}
+
+// Updated Timer composable to remove Start/Stop button
+@Composable
+fun Timer(
+    totalTime: Long,
+    currentTime: Long,
+    isTimerRunning: Boolean,
+    restartTimer: Boolean,  // Add a flag to handle timer reset
+    onRestartHandled: () -> Unit,  // Callback to signal when restart is handled
+    handleColor: Color,
+    activeBarColor: Color,
+    inactiveBarColor: Color,
+    modifier: Modifier = Modifier,
+    strokeWidth: Dp = 5.dp,
+    timerSize: Dp = 120.dp  // Adjustable timer size, default to 120.dp
+) {
+    var size by remember { mutableStateOf(IntSize.Zero) }
+    var value by remember { mutableFloatStateOf(1f) }  // Start with 1f (100% of the total time)
+    var internalCurrentTime by remember { mutableLongStateOf(currentTime) }
+
+    // Reset timer logic when restart is triggered
+    LaunchedEffect(key1 = restartTimer) {
+        if (restartTimer) {
+            internalCurrentTime = totalTime  // Reset the internal time
+            value = 1f  // Reset the circle to full
+            onRestartHandled()  // Notify that restart has been handled
+        }
+    }
+
+    // Timer countdown logic
+    LaunchedEffect(key1 = isTimerRunning, key2 = internalCurrentTime) {
+        if (isTimerRunning) {
+            while (internalCurrentTime > 0) {
+                delay(100L)  // Update every 100 milliseconds
+                internalCurrentTime -= 100L
+                value = internalCurrentTime / totalTime.toFloat()
+            }
+        }
+    }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier.onSizeChanged { size = it }
+    ) {
+        // The circular timer
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.size(timerSize)  // Adjust the size of the timer here
+        ) {
+            Canvas(modifier = Modifier.size(timerSize)) {  // Use the same size for the canvas
+                drawArc(
+                    color = inactiveBarColor,
+                    startAngle = -215f,
+                    sweepAngle = 250f,
+                    useCenter = false,
+                    size = Size(size.width.toFloat(), size.height.toFloat()),
+                    style = Stroke(strokeWidth.toPx(), cap = StrokeCap.Round)
+                )
+                drawArc(
+                    color = activeBarColor,
+                    startAngle = -215f,
+                    sweepAngle = 250f * value,  // Draw the active arc based on the value
+                    useCenter = false,
+                    size = Size(size.width.toFloat(), size.height.toFloat()),
+                    style = Stroke(strokeWidth.toPx(), cap = StrokeCap.Round)
+                )
+                val center = Offset(size.width / 2f, size.height / 2f)
+                val beta = (250f * value + 145f) * (PI / 180f).toFloat()
+                val r = size.width / 2f
+                val a = cos(beta) * r
+                val b = sin(beta) * r
+
+                drawPoints(
+                    listOf(Offset(center.x + a, center.y + b)),
+                    pointMode = PointMode.Points,
+                    color = handleColor,
+                    strokeWidth = (strokeWidth * 3f).toPx(),
+                    cap = StrokeCap.Round
+                )
+            }
+
+            Text(
+                text = (internalCurrentTime / 1000L).toString(),  // Display time in seconds
+                fontSize = 44.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface  // Set text color to black
+            )
+        }
+    }
+}
+
+@Composable
+fun SetContainer(
+    label1: String,
+    label2: String,
+    unit1: Float,
+    unit2: Float,
+    onDelete: () -> Unit
+) {
+
+    Row(
+        modifier = Modifier
+            .padding(8.dp)
+            .fillMaxSize(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "$label2: $unit2 kg", // todo make this modular
+            fontSize = 18.sp,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = "$label1: $unit1",
+            fontSize = 18.sp,
+            modifier = Modifier.weight(1f)
+        )
+        IconButton(
+            onClick = onDelete,
+            modifier = Modifier.padding(start = 8.dp)
+        ) {
+            Icon(painter = painterResource(id = R.drawable.delete),
+                contentDescription = stringResource(id = R.string.delete))
         }
     }
 }

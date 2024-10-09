@@ -17,6 +17,7 @@ import com.example.seng303_groupb_assignment2.entities.ExerciseLog
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
+import java.io.File.separator
 
 
 class WorkoutViewModel(
@@ -54,21 +55,14 @@ class WorkoutViewModel(
                 val workoutDescription = workoutWithExercises.workout.description
                 val restTime = exercise.restTime
                 val exerciseName = exercise.name
-                val exerciseType = exercise.measurement1.type
-                val exerciseValues = exercise.measurement1.values.joinToString(separator = ",") { it.toString() }
-                val exerciseType2 = exercise.measurement2.type
-                val exerciseValues2 = exercise.measurement2.values.joinToString(separator = ",") { it.toString() }
+                val exerciseMeasurement = exercise.measurement
 
                 listOf(
                     workoutName,
                     workoutDescription,
                     restTime.toString(),
                     exerciseName,
-                    exerciseType,
-                    exerciseValues,
-                    exerciseType2,
-                    exerciseValues2
-
+                    exerciseMeasurement.label
                 )
             }
 
@@ -95,20 +89,16 @@ class WorkoutViewModel(
                     logs.map { log : ExerciseLog ->
                         val exerciseName = exercise.name
                         val logTimestamp = log.timestamp
-                        val logSets = log.sets
-                        val logMeasurement1 = log.measurement1.type
-                        val logMeasurement1Vals = log.measurement1.values.joinToString(separator = ",") { it.toString() }
-                        val logMeasurement2 = log.measurement2.type
-                        val logMeasurement2Vals = log.measurement2.values.joinToString(separator = ",") { it.toString() }
+                        val logSets = log.record.size
+                        val firstValues = log.record.joinToString ( separator = "," ) { it.first.toString() }
+                        val secondValues = log.record.joinToString ( separator = "," ) { it.second.toString() }
 
                         listOf(
                             exerciseName,
                             logTimestamp.toString(),
                             logSets.toString(),
-                            logMeasurement1,
-                            logMeasurement1Vals,
-                            logMeasurement2,
-                            logMeasurement2Vals
+                            firstValues,
+                            secondValues
                         )
                     }
                 }

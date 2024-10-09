@@ -1,8 +1,8 @@
 package com.example.seng303_groupb_assignment2.database
 
 import androidx.room.TypeConverter
-import com.example.seng303_groupb_assignment2.entities.Measurement
 import com.example.seng303_groupb_assignment2.enums.Days
+import com.example.seng303_groupb_assignment2.enums.Measurement
 
 /**
  * This is used to convert to and from lists - looks like Rooms does not support list storage
@@ -45,20 +45,44 @@ class Converters {
         return value.split(",").map { Days.valueOf(it) }
     }
 
+//    @TypeConverter
+//    fun fromMeasurement(value: Measurement?): String? {
+//        return value?.let { it.type + ";" + it.values.joinToString(separator = ",") }
+//    }
+//
+//    // todo fix this
+//    @TypeConverter
+//    fun toMeasurement(value: String?): Measurement? {
+//        if (value.isNullOrEmpty()) return null
+//        val typeAndValues = value.split(";")
+//
+//        if (typeAndValues.size < 2) return null
+//
+//        val type = typeAndValues[0]
+//        val values = typeAndValues[1].split(",").mapNotNull { it.toFloatOrNull() }
+//        return Measurement(type, values)
+//    }
+
     @TypeConverter
-    fun fromMeasurement(value: Measurement?): String? {
-        return value?.let { it.type + ";" + it.values.joinToString(separator = ",") }
+    fun fromMeasurement(measurement: Measurement): String {
+        return measurement.label
     }
 
     @TypeConverter
-    fun toMeasurement(value: String?): Measurement? {
-        if (value.isNullOrEmpty()) return null
-        val typeAndValues = value.split(";")
+    fun toMeasurement(value: String): Measurement {
+        return Measurement.entries.first { it.label == value }
+    }
 
-        if (typeAndValues.size < 2) return null
+    @TypeConverter
+    fun fromRecord(record: MutableList<Pair<Float, Float>>): String {
+        return record.joinToString(separator = ";") { "${it.first},${it.second}" }
+    }
 
-        val type = typeAndValues[0]
-        val values = typeAndValues[1].split(",").mapNotNull { it.toFloatOrNull() }
-        return Measurement(type, values)
+    @TypeConverter
+    fun toRecord(value: String): MutableList<Pair<Float, Float>> {
+        return value.split(";").map {
+            val (first, second) = it.split(",")
+            Pair(first.toFloat(), second.toFloat())
+        }.toMutableList()
     }
 }

@@ -21,7 +21,7 @@
     <string name="reps_measurement">Reps</string>
     <string name="time_measurement">Time</string>
 
-    <!-- titles -->
+        <!-- titles -->
     <string name="exercises_modal_title">Add Exercise</string>
     <string name="exercises_title">Exercises</string>
     <string name="preferences_title">Preferences</string>
@@ -107,6 +107,7 @@
     <string name="measurement2_label">%s reps</string>
 
 
+    <string name="remove">Remove</string>
     <string name="sound">Sound</string>
     <string name="dark_mode">Dark Mode</string>
     <string name="units">Units</string>

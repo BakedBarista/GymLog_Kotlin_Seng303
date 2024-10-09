@@ -1,7 +1,6 @@
 package com.example.seng303_groupb_assignment2.screens
 
 import android.content.res.Configuration
-import android.text.Layout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -42,6 +41,7 @@ import com.example.seng303_groupb_assignment2.R
 import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.entities.ExerciseLog
 import com.example.seng303_groupb_assignment2.enums.ChartOption
+import com.example.seng303_groupb_assignment2.enums.Measurement
 import com.example.seng303_groupb_assignment2.enums.TimeRange
 import com.example.seng303_groupb_assignment2.enums.UnitType
 import com.example.seng303_groupb_assignment2.graphcomponents.CircleComponent
@@ -56,12 +56,8 @@ import com.patrykandpatrick.vico.compose.cartesian.marker.rememberDefaultCartesi
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
 import com.patrykandpatrick.vico.compose.cartesian.rememberVicoZoomState
-import com.patrykandpatrick.vico.compose.common.component.rememberShapeComponent
 import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
-import com.patrykandpatrick.vico.compose.common.component.shadow
-import com.patrykandpatrick.vico.compose.common.dimensions
 import com.patrykandpatrick.vico.compose.common.fill
-import com.patrykandpatrick.vico.compose.common.shape.markerCorneredShape
 import com.patrykandpatrick.vico.core.cartesian.Scroll
 import com.patrykandpatrick.vico.core.cartesian.Zoom
 import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
@@ -71,12 +67,8 @@ import com.patrykandpatrick.vico.core.cartesian.data.CartesianLayerRangeProvider
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
-import com.patrykandpatrick.vico.core.cartesian.marker.CartesianMarker
-import com.patrykandpatrick.vico.core.cartesian.marker.DefaultCartesianMarker
 import com.patrykandpatrick.vico.core.common.component.Component
-import com.patrykandpatrick.vico.core.common.component.TextComponent
 import com.patrykandpatrick.vico.core.common.data.ExtraStore
-import com.patrykandpatrick.vico.core.common.shape.Corner
 import org.koin.androidx.compose.getViewModel
 import java.time.Instant
 import java.time.LocalDate
@@ -137,10 +129,9 @@ fun ViewProgress(
                 onSearchQueryChanged = { searchQuery = it },
                 onExerciseSelected = { exercise ->
                     selectedExercise = exercise
-                    selectedOption = when (exercise.measurement1.type) {
-                        "Reps" -> ChartOption.MaxWeight
-                        "Time" -> ChartOption.MaxDistance
-                        else -> null
+                    selectedOption = when (exercise.measurement) {
+                        Measurement.REPS_WEIGHT -> ChartOption.MaxWeight
+                        Measurement.DISTANCE_TIME -> ChartOption.MaxDistance
                     }
                     showDialog = false
                 },
@@ -173,16 +164,10 @@ fun ExerciseHeader(
 
     val relevantOptions = remember(selectedExercise) {
         when {
-            selectedExercise?.measurement1?.type == "Reps" && selectedExercise.measurement2.type == "Weight" -> {
+            selectedExercise?.measurement?.equals(Measurement.REPS_WEIGHT) == true -> {
                 listOf(ChartOption.MaxWeight, ChartOption.TotalWorkoutVolume)
             }
-            selectedExercise?.measurement1?.type == "Time" && selectedExercise.measurement2.type == "Distance" -> {
-                listOf(ChartOption.MaxDistance, ChartOption.TotalDistance)
-            }
-            selectedExercise?.measurement1?.type == "Time" && selectedExercise.measurement2.type == "Weight" -> {
-                listOf(ChartOption.MaxDistance, ChartOption.TotalDistance)
-            }
-            selectedExercise?.measurement1?.type == "Reps" && selectedExercise.measurement2.type == "Distance" -> {
+            selectedExercise?.measurement?.equals(Measurement.DISTANCE_TIME) == true -> {
                 listOf(ChartOption.MaxDistance, ChartOption.TotalDistance)
             }
             else -> emptyList()
@@ -417,40 +402,52 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
     LaunchedEffect(exerciseLogs, selectedOption) {
         val dataSeries = when (selectedOption) {
             ChartOption.MaxWeight -> {
-                exerciseLogs.map { log ->
+                exerciseLogs.mapNotNull { log ->
                     val epochDay = Instant.ofEpochMilli(log.timestamp)
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
                         .toEpochDay()
-                    epochDay.toDouble() to (log.measurement2.values.maxOrNull() ?: 0f)
+                    val maxWeight = log.record.maxOfOrNull { it.second }?.takeIf { !it.isNaN() } ?: 0f
+                    if (maxWeight > 0f) epochDay.toDouble() to maxWeight else null
                 }
             }
             ChartOption.TotalWorkoutVolume -> {
-                exerciseLogs.map { log ->
+                exerciseLogs.mapNotNull { log ->
                     val epochDay = Instant.ofEpochMilli(log.timestamp)
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
                         .toEpochDay()
-                    val totalVolume = log.measurement1.values.zip(log.measurement2.values)
-                        .sumOf { (reps, weight) -> reps * weight.toDouble() }
-                    epochDay.toDouble() to totalVolume.toFloat()
+                    val totalVolume = log.record.sumOf { (reps, weight) -> reps * weight.toDouble() }
+                    if (!totalVolume.isNaN() && totalVolume > 0) {
+                        epochDay.toDouble() to totalVolume.toFloat()
+                    } else {
+                        null
+                    }
                 }
             }
             ChartOption.MaxDistance -> {
-                exerciseLogs.map { log ->
+                exerciseLogs.mapNotNull { log ->
                     val epochDay = Instant.ofEpochMilli(log.timestamp)
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
                         .toEpochDay()
-                    epochDay.toDouble() to (log.measurement2.values.maxOrNull() ?: 0f) }
+                    val maxDistance = log.record.maxOfOrNull { it.first }?.takeIf { !it.isNaN() } ?: 0f
+                    if (maxDistance > 0f) epochDay.toDouble() to maxDistance else null
+                }
             }
             ChartOption.TotalDistance -> {
-                exerciseLogs.map { log ->
+                exerciseLogs.mapNotNull { log ->
                     val epochDay = Instant.ofEpochMilli(log.timestamp)
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
                         .toEpochDay()
-                    epochDay.toDouble() to log.measurement2.values.sum() }
+                    val totalDistance = log.record.sumOf { it.first.toDouble() }
+                    if (!totalDistance.isNaN() && totalDistance > 0) {
+                        epochDay.toDouble() to totalDistance.toFloat()
+                    } else {
+                        null
+                    }
+                }
             }
 
             null -> {
