@@ -48,25 +48,28 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.seng303_groupb_assignment2.viewmodels.ManageWorkoutViewModel
+import com.example.seng303_groupb_assignment2.enums.Days
+import com.example.seng303_groupb_assignment2.notifications.NotificationManager
 import com.example.seng303_groupb_assignment2.screens.AddWorkout
+import com.example.seng303_groupb_assignment2.screens.BenchPressHelpScreen
+import com.example.seng303_groupb_assignment2.screens.Help
 import com.example.seng303_groupb_assignment2.screens.Home
 import com.example.seng303_groupb_assignment2.screens.RunWorkout
+import com.example.seng303_groupb_assignment2.screens.PushUpHelpScreen
+import com.example.seng303_groupb_assignment2.screens.QRScannerScreen
 import com.example.seng303_groupb_assignment2.screens.SelectWorkout
-import com.example.seng303_groupb_assignment2.screens.ViewLeaderboard
+import com.example.seng303_groupb_assignment2.screens.SquatHelpScreen
 import com.example.seng303_groupb_assignment2.screens.ViewPreferences
 import com.example.seng303_groupb_assignment2.screens.ViewProgress
 import com.example.seng303_groupb_assignment2.ui.theme.SENG303_GroupB_Assignment2Theme
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.seng303_groupb_assignment2.enums.Days
-import com.example.seng303_groupb_assignment2.notifications.NotificationManager
-import com.example.seng303_groupb_assignment2.screens.Help
+import com.example.seng303_groupb_assignment2.viewmodels.ManageWorkoutViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.PreferenceViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.RunWorkoutViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
@@ -77,6 +80,7 @@ class MainActivity : ComponentActivity() {
     private val workoutViewModel: WorkoutViewModel by koinViewModel()
     private val runWorkoutViewModel: RunWorkoutViewModel by koinViewModel()
     private val preferenceViewModel: PreferenceViewModel by koinViewModel()
+    private var startDestination = "Home"
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -128,7 +132,7 @@ class MainActivity : ComponentActivity() {
                     ) {
                         NavHost(
                             navController = navController,
-                            startDestination = "Home",
+                            startDestination = startDestination,
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight()
@@ -174,9 +178,41 @@ class MainActivity : ComponentActivity() {
                                 currentTitle = stringResource(id = R.string.help)
                                 Help(navController = navController)
                             }
+                            composable("QRScanner") {
+                                currentTitle = stringResource(id = R.string.qr_scanner_title)
+                                QRScannerScreen { qrCodeValue ->
+                                    when (qrCodeValue) {
+                                        "fitness_app://help/bench_press" -> {
+                                            navController.navigate("bench_press_help")
+                                        }
+                                        "fitness_app://help/push_up" -> {
+                                            navController.navigate("push_up_help")
+                                        }
+                                        "fitness_app://help/squat" -> {
+                                            navController.navigate("squat_help")
+                                        }
+                                        else -> {
+                                            // Optionally handle unknown QR codes or errors
+                                            android.util.Log.d("QRScanner", "Unknown QR Code scanned: $qrCodeValue")
+                                        }
+                                    }
+                                }
+                            }
                             composable("Preferences") {
                                 currentTitle = stringResource(id = R.string.preferences_title)
                                 ViewPreferences(navController = navController)
+                            }
+                            composable("push_up_help") {
+                                currentTitle = stringResource(id = R.string.push_up_title)
+                                PushUpHelpScreen()
+                            }
+                            composable("bench_press_help") {
+                                currentTitle = stringResource(id = R.string.bench_title)
+                                BenchPressHelpScreen()
+                            }
+                            composable("squat_help") {
+                                currentTitle = stringResource(id = R.string.squat_title)
+                                SquatHelpScreen()
                             }
                         }
                         if (!isPortrait) {
