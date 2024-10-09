@@ -12,7 +12,7 @@
     <string name="play">Play</string>
     <string name="next">Next</string>
     <string name="finish_workout">Finish Workout!</string>
-    <string name="finish_rest_early">End Rest Early</string>
+    <string name="finish_rest_early">Skip Rest</string>
 
     <!-- titles -->
     <string name="exercises_modal_title">Add Exercise</string>

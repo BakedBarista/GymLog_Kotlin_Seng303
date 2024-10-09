@@ -51,14 +51,16 @@ class RunWorkoutViewModel(
 
     fun startTimer() {
         isResting = true
-        if (workoutWithExercises.value?.exercises?.get(currentExerciseIndex)?.restTime != null)
-        timerSeconds = workoutWithExercises.value?.exercises?.get(currentExerciseIndex)?.restTime!!
-        viewModelScope.launch {
-            while (isResting && timerSeconds > 0) {
-                delay(1000L)
-                timerSeconds--
+        val exercise = workoutWithExercises.value?.exercises?.get(currentExerciseIndex)!!
+        if (exercise.restTime != null) {
+            timerSeconds = exercise.restTime!!
+            viewModelScope.launch {
+                while (isResting && timerSeconds > 0) {
+                    delay(1000L)
+                    timerSeconds--
+                }
+                isResting = false
             }
-            isResting = false
         }
     }
     // Move to the next exercise
