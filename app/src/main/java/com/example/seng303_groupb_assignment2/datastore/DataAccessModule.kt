@@ -7,6 +7,7 @@ import com.example.seng303_groupb_assignment2.database.AppDatabase
 import com.example.seng303_groupb_assignment2.models.UserPreferences
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.PreferenceViewModel
+import com.example.seng303_groupb_assignment2.viewmodels.RunWorkoutViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
@@ -21,5 +22,6 @@ val dataAccessModule = module {
     viewModel { ExerciseViewModel(get<ExerciseDao>(), get<WorkoutDao>(),  get<ExerciseLogDao>()) }
     viewModel { ExerciseViewModel(get<ExerciseDao>(), get<WorkoutDao>(), get<ExerciseLogDao>()) }
     viewModel { WorkoutViewModel(get<WorkoutDao>(), get<ExerciseLogDao>()) }
+    viewModel { RunWorkoutViewModel(get<WorkoutDao>(), get<ExerciseLogDao>())}
     viewModel { PreferenceViewModel(get<PreferencePersistentStorage<UserPreferences>>()) }
 }

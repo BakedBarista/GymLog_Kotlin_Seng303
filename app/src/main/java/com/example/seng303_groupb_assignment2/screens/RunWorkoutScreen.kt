@@ -2,6 +2,7 @@ package com.example.seng303_groupb_assignment2.screens
 
 import android.content.res.Configuration
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -35,6 +36,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -53,6 +55,8 @@ fun RunWorkout(
     workoutWithExercises: WorkoutWithExercises,
     viewModel: RunWorkoutViewModel
 ) {
+    val context = LocalContext.current
+
     workoutWithExercises.let { workout ->
         LaunchedEffect(workout) {
             viewModel.initialize(workout)
@@ -273,8 +277,8 @@ fun RunWorkout(
                     Button(onClick = {
                         viewModel.updateExerciseLog()
                         viewModel.saveLogs()
-                        // TODO - bring up toast that info is saved
                         navController.navigate("Home")
+                        Toast.makeText(context, context.getString(R.string.workout_log_saved_toast), Toast.LENGTH_LONG).show()
                     },
                         colors = buttonColors,
                         shape = RectangleShape

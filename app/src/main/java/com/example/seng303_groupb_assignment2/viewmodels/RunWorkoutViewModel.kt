@@ -172,8 +172,10 @@ class RunWorkoutViewModel(
     }
 
     fun saveLogs() {
-        logsList.forEach {
-
+        viewModelScope.launch {
+            logsList.forEach { exerciseLog ->
+                exerciseLogDao.upsertExerciseLog(exerciseLog = exerciseLog)
+            }
         }
     }
 }
