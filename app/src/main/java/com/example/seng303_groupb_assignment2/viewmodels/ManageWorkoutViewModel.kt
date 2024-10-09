@@ -6,8 +6,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.example.seng303_groupb_assignment2.entities.Exercise
-import com.example.seng303_groupb_assignment2.entities.Measurement
 import com.example.seng303_groupb_assignment2.enums.Days
+import com.example.seng303_groupb_assignment2.enums.Measurement
 
 class ManageWorkoutViewModel(): ViewModel() {
     var name by mutableStateOf("")
@@ -40,17 +40,13 @@ class ManageWorkoutViewModel(): ViewModel() {
 
     fun addExercise(
         name: String,
-        sets: Int,
-        measurement1: Measurement,
-        measurement2: Measurement,
-        restTime: Int?
+        restTime: Int?,
+        measurement: Measurement
     ) {
         val exercise = Exercise(
             name = name,
-            sets = sets,
-            measurement1 = measurement1,
-            measurement2 = measurement2,
-            restTime = restTime
+            restTime = restTime,
+            measurement = measurement
         )
 
         exercises.add(exercise)
@@ -60,17 +56,14 @@ class ManageWorkoutViewModel(): ViewModel() {
         exercises.removeAt(index)
     }
 
-    fun updateExercise(index: Int, name: String, sets: Int, m1: Measurement,
-                       m2: Measurement, restTime: Int?) {
+    fun updateExercise(index: Int, name: String,
+                       restTime: Int?, measurement: Measurement) {
         val exercise = exercises[index]
         exercise.name = name
-        exercise.sets = sets
-        exercise.measurement1 = m1
-        exercise.measurement2 = m2
-
         if (restTime != null) {
             exercise.restTime = restTime
         }
+        exercise.measurement = measurement
     }
 
     fun validName(): Boolean {

@@ -42,6 +42,7 @@ import com.example.seng303_groupb_assignment2.R
 import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.entities.ExerciseLog
 import com.example.seng303_groupb_assignment2.enums.ChartOption
+import com.example.seng303_groupb_assignment2.enums.Measurement
 import com.example.seng303_groupb_assignment2.enums.TimeRange
 import com.example.seng303_groupb_assignment2.enums.UnitType
 import com.example.seng303_groupb_assignment2.graphcomponents.CircleComponent
@@ -137,10 +138,9 @@ fun ViewProgress(
                 onSearchQueryChanged = { searchQuery = it },
                 onExerciseSelected = { exercise ->
                     selectedExercise = exercise
-                    selectedOption = when (exercise.measurement1.type) {
-                        "Reps" -> ChartOption.MaxWeight
-                        "Time" -> ChartOption.MaxDistance
-                        else -> null
+                    selectedOption = when (exercise.measurement) {
+                        Measurement.REPS_WEIGHT -> ChartOption.MaxWeight
+                        Measurement.TIME_DISTANCE -> ChartOption.MaxDistance
                     }
                     showDialog = false
                 },
@@ -173,16 +173,10 @@ fun ExerciseHeader(
 
     val relevantOptions = remember(selectedExercise) {
         when {
-            selectedExercise?.measurement1?.type == "Reps" && selectedExercise.measurement2.type == "Weight" -> {
+            selectedExercise?.measurement?.equals(Measurement.REPS_WEIGHT) == true -> {
                 listOf(ChartOption.MaxWeight, ChartOption.TotalWorkoutVolume)
             }
-            selectedExercise?.measurement1?.type == "Time" && selectedExercise.measurement2.type == "Distance" -> {
-                listOf(ChartOption.MaxDistance, ChartOption.TotalDistance)
-            }
-            selectedExercise?.measurement1?.type == "Time" && selectedExercise.measurement2.type == "Weight" -> {
-                listOf(ChartOption.MaxDistance, ChartOption.TotalDistance)
-            }
-            selectedExercise?.measurement1?.type == "Reps" && selectedExercise.measurement2.type == "Distance" -> {
+            selectedExercise?.measurement?.equals(Measurement.TIME_DISTANCE) == true -> {
                 listOf(ChartOption.MaxDistance, ChartOption.TotalDistance)
             }
             else -> emptyList()
@@ -422,7 +416,8 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
                         .toEpochDay()
-                    epochDay.toDouble() to (log.measurement2.values.maxOrNull() ?: 0f)
+                    val maxWeight = log.record.maxOfOrNull { it.second } ?: 0f
+                    epochDay.toDouble() to maxWeight
                 }
             }
             ChartOption.TotalWorkoutVolume -> {
@@ -431,8 +426,7 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
                         .toEpochDay()
-                    val totalVolume = log.measurement1.values.zip(log.measurement2.values)
-                        .sumOf { (reps, weight) -> reps * weight.toDouble() }
+                    val totalVolume = log.record.sumOf { (reps, weight) -> reps * weight.toDouble() }
                     epochDay.toDouble() to totalVolume.toFloat()
                 }
             }
@@ -442,7 +436,9 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
                         .toEpochDay()
-                    epochDay.toDouble() to (log.measurement2.values.maxOrNull() ?: 0f) }
+                    val maxDistance = log.record.maxOfOrNull { it.first } ?: 0f
+                    epochDay.toDouble() to maxDistance
+                }
             }
             ChartOption.TotalDistance -> {
                 exerciseLogs.map { log ->
@@ -450,7 +446,9 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
                         .toEpochDay()
-                    epochDay.toDouble() to log.measurement2.values.sum() }
+                    val totalDistance = log.record.sumOf { it.first.toDouble() }
+                    epochDay.toDouble() to totalDistance.toFloat()
+                }
             }
 
             null -> {

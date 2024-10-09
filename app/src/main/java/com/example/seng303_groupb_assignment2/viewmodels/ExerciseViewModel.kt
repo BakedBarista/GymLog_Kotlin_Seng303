@@ -11,9 +11,9 @@ import com.example.seng303_groupb_assignment2.daos.ExerciseLogDao
 import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.entities.WorkoutExerciseCrossRef
 import com.example.seng303_groupb_assignment2.entities.ExerciseLog
-import com.example.seng303_groupb_assignment2.entities.Measurement
 import com.example.seng303_groupb_assignment2.entities.Workout
 import com.example.seng303_groupb_assignment2.enums.Days
+import com.example.seng303_groupb_assignment2.enums.Measurement
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.ZoneId
@@ -76,36 +76,27 @@ class ExerciseViewModel(
                         Log.d("DBINIT", "INSERT EXERCISE")
                         val benchPress = Exercise(
                             name = "Bench Press",
-                            sets = 4,
-                            measurement1 = Measurement("Reps", listOf(10f, 10f, 10f)),
-                            measurement2 = Measurement("Weight", listOf(100f, 100f, 100f)),
-                            restTime = 90
+                            restTime = 90,
+                            measurement = Measurement.REPS_WEIGHT
                         )
 
                         val run = Exercise(
                             name = "Run",
-                            sets = 1,
-                            measurement1 = Measurement("Time", listOf(10f)),
-                            measurement2 = Measurement("Distance", listOf(30f)),
-                            restTime = 0
+                            restTime = 0,
+                            measurement = Measurement.TIME_DISTANCE
                         )
 
                         val noLogs = Exercise(
                             name = "No logs",
-                            sets = 1,
-                            measurement1 = Measurement("Invalid Test", listOf(100f)),
-                            measurement2 = Measurement(
-                                "Not a real measurement, seeing if the graph breaks",
-                                listOf(100f)
-                            ),
-                            restTime = 0
+                            restTime = 0,
+                            measurement = Measurement.TIME_DISTANCE
                         )
 
                         val exerciseId = exerciseDao.upsertExercise(benchPress)
                         val exerciseIdTwo = exerciseDao.upsertExercise(run)
                         val exerciseIdThree = exerciseDao.upsertExercise(noLogs)
 
-                        val workoutWithExercise: WorkoutExerciseCrossRef =
+                        val workoutWithExercise =
                             WorkoutExerciseCrossRef(workoutOneId, exerciseId)
 
                         workoutDao.upsertWorkoutExerciseCrossRef(workoutWithExercise)
@@ -114,10 +105,8 @@ class ExerciseViewModel(
                             exerciseDao.upsertExercise(
                                 Exercise(
                                     name = "Exercise $i",
-                                    sets = 3,
-                                    measurement1 = Measurement("Reps", listOf(10f, 10f, 10f)),
-                                    measurement2 = Measurement("Weight", listOf(10f, 10f, 10f)),
-                                    restTime = 60
+                                    restTime = 60,
+                                    measurement = Measurement.REPS_WEIGHT
                                 )
                             )
                         }
@@ -129,14 +118,11 @@ class ExerciseViewModel(
                             val date = LocalDate.of(2020, 1, 1).plusDays(i.toLong())
                             val timestamp =
                                 date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                            val randomWeights = List(4) { Random.nextFloat() * 50 + 50 }
 
                             val log = ExerciseLog(
                                 exerciseId = exerciseId,
                                 timestamp = timestamp,
-                                sets = 4,
-                                measurement1 = Measurement("Reps", listOf(10f, 9f, 8f, 6f)),
-                                measurement2 = Measurement("Weight", randomWeights)
+                                record = listOf(Pair(3f, Random.nextFloat() * 50 + 50), Pair(3f, Random.nextFloat() * 50 + 50), Pair(3f, Random.nextFloat() * 50 + 50))
                             )
                             logsBench.add(log)
                         }
@@ -148,9 +134,7 @@ class ExerciseViewModel(
                             val log = ExerciseLog(
                                 exerciseId = exerciseIdTwo,
                                 timestamp = timestamp,
-                                sets = 1,
-                                measurement1 = Measurement("Time", listOf(10f)),
-                                measurement2 = Measurement("Distance", randomDistance)
+                                record = listOf(Pair(Random.nextFloat() * 10 + 10, Random.nextFloat() * 30 + 10))
                             )
                             logsRun.add(log)
                         }
