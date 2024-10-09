@@ -131,7 +131,7 @@ fun SelectWorkout(
                             onSuccess = { uri ->
                                 // Open the QR code file
                                 openFile(context, uri)
-                                Toast.makeText(context, context.getString(R.string.workout_exported_toast), Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, context.getString(R.string.qr_exported_toast), Toast.LENGTH_LONG).show()
                             },
                             onFailure = {
                                 Toast.makeText(context, context.getString(R.string.workout_exported_failure_toast), Toast.LENGTH_LONG).show()
@@ -182,7 +182,7 @@ fun SelectWorkout(
                             onSuccess = { uri ->
                                 // Open the QR code file
                                 openFile(context, uri)
-                                Toast.makeText(context, context.getString(R.string.workout_exported_toast), Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, context.getString(R.string.qr_exported_toast), Toast.LENGTH_LONG).show()
                             },
                             onFailure = {
                                 Toast.makeText(context, context.getString(R.string.workout_exported_failure_toast), Toast.LENGTH_LONG).show()
