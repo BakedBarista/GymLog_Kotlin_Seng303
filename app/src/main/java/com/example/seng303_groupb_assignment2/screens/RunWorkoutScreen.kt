@@ -44,6 +44,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PointMode
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.onSizeChanged
@@ -73,6 +74,11 @@ fun RunWorkout(
     viewModel: RunWorkoutViewModel,
     navController: NavController
 ) {
+    val buttonColors = ButtonDefaults.buttonColors(
+        containerColor = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+    )
+
     val workoutWithExercises = viewModel.workoutWithExercises.value
     val exercises = workoutWithExercises?.exercises
     val currentExerciseIndex = viewModel.currentExerciseIndex
@@ -177,7 +183,9 @@ fun RunWorkout(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(8.dp)
+                    .padding(8.dp),
+                colors = buttonColors,
+                shape = RectangleShape
             ) {
                 Text("Finish Workout")
             }
@@ -216,7 +224,7 @@ private fun Header(
         unit1Valid && unit2Valid
     }
 
-    Column {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(text = viewModel.workoutWithExercises.value?.exercises?.get(currentExerciseIndex)?.name ?: "Exercise", style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.align(Alignment.CenterHorizontally))
 
@@ -224,11 +232,11 @@ private fun Header(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(vertical = 4.dp)
         ) {
-            IconButton(modifier = Modifier.size(24.dp), onClick = {
+            IconButton(onClick = {
                 unit2Value = (unit2Value - 1).coerceAtLeast(0f)
                 unit2Input = unit2Value.toString()
             }) {
-                Icon(modifier = Modifier.size(24.dp),
+                Icon(modifier = Modifier.size(48.dp),
                     painter = painterResource(id = R.drawable.remove),
                     contentDescription = stringResource(id = R.string.remove
                 ))
@@ -269,11 +277,11 @@ private fun Header(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(vertical = 4.dp)
         ) {
-            IconButton(modifier = Modifier.size(24.dp), onClick = {
-                unit2Value = (unit1Value - 1).coerceAtLeast(0f)
-                unit2Input = unit1Value.toString()
+            IconButton(onClick = {
+                unit1Value = (unit1Value - 1).coerceAtLeast(0f)
+                unit1Input = unit1Value.toString()
             }) {
-                Icon(modifier = Modifier.size(24.dp),
+                Icon(modifier = Modifier.size(48.dp),
                     painter = painterResource(id = R.drawable.remove),
                     contentDescription = stringResource(id = R.string.remove
                     ))
@@ -315,10 +323,17 @@ private fun Header(
                 .fillMaxWidth()
                 .padding(top = 8.dp)
         ) {
+            val buttonColors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+
             Button(onClick = {
                 onSaveSet(unit1Value, unit2Value)
                 onSave()
             },
+                colors = buttonColors,
+                shape = RectangleShape,
                 enabled = isValidInput,
                 modifier = Modifier
                     .weight(1f)
@@ -332,6 +347,8 @@ private fun Header(
                 unit1Input = "0"
                 unit2Input = "0"
             },
+                colors = buttonColors,
+                shape = RectangleShape,
                 modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = 8.dp)
