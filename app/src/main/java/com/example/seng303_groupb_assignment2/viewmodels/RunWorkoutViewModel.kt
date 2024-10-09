@@ -51,6 +51,7 @@ class RunWorkoutViewModel(
 
     fun startTimer() {
         isResting = true
+        if (workoutWithExercises.value?.exercises?.get(currentExerciseIndex)?.restTime != null)
         timerSeconds = workoutWithExercises.value?.exercises?.get(currentExerciseIndex)?.restTime!!
         viewModelScope.launch {
             while (isResting && timerSeconds > 0) {
