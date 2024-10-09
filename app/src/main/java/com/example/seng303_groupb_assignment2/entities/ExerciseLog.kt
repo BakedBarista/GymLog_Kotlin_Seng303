@@ -23,5 +23,5 @@ data class ExerciseLog(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val exerciseId: Long,
     val timestamp: Long,
-    val record: List<Pair<Float, Float>> // Reps | Distance / Weight | Time
+    val record: MutableList<Pair<Float, Float>> // Reps | Distance / Weight | Time
 )

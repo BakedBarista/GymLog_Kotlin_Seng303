@@ -122,7 +122,7 @@ class ExerciseViewModel(
                             val log = ExerciseLog(
                                 exerciseId = exerciseId,
                                 timestamp = timestamp,
-                                record = listOf(Pair(3f, Random.nextFloat() * 50 + 50), Pair(3f, Random.nextFloat() * 50 + 50), Pair(3f, Random.nextFloat() * 50 + 50))
+                                record = mutableListOf(Pair(3f, Random.nextFloat() * 50 + 50), Pair(3f, Random.nextFloat() * 50 + 50), Pair(3f, Random.nextFloat() * 50 + 50))
                             )
                             logsBench.add(log)
                         }
@@ -134,7 +134,7 @@ class ExerciseViewModel(
                             val log = ExerciseLog(
                                 exerciseId = exerciseIdTwo,
                                 timestamp = timestamp,
-                                record = listOf(Pair(Random.nextFloat() * 10 + 10, Random.nextFloat() * 30 + 10))
+                                record = mutableListOf(Pair(Random.nextFloat() * 10 + 10, Random.nextFloat() * 30 + 10))
                             )
                             logsRun.add(log)
                         }

@@ -74,15 +74,15 @@ class Converters {
     }
 
     @TypeConverter
-    fun fromRecord(record: List<Pair<Float, Float>>): String {
+    fun fromRecord(record: MutableList<Pair<Float, Float>>): String {
         return record.joinToString(separator = ";") { "${it.first},${it.second}" }
     }
 
     @TypeConverter
-    fun toRecord(value: String): List<Pair<Float, Float>> {
+    fun toRecord(value: String): MutableList<Pair<Float, Float>> {
         return value.split(";").map {
             val (first, second) = it.split(",")
             Pair(first.toFloat(), second.toFloat())
-        }
+        }.toMutableList()
     }
 }

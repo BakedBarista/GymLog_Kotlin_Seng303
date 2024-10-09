@@ -151,7 +151,7 @@ class MainActivity : ComponentActivity() {
                                 val workoutWithExercises by runWorkoutViewModel.workoutWithExercises.observeAsState()
 
                                 workoutWithExercises?.let {
-                                    RunWorkout(navController = navController, workoutWithExercises = it, viewModel = runWorkoutViewModel)
+                                    RunWorkout(viewModel = runWorkoutViewModel)
                                 } ?: run {
                                     Text("Loading...")
                                 }
