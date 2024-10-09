@@ -292,20 +292,20 @@ private fun DisplayExerciseCard(
     delete: () -> Unit,
 ) {
     val context = LocalContext.current
-    var manageExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
-    val exerciseModel: ExerciseModalViewModel = viewModel()
     val itemHeight = 100
     val spacing = 10
 
+    val exerciseModel: ExerciseModalViewModel = viewModel()
+    var manageExerciseModalOpen: Boolean by rememberSaveable { mutableStateOf(false) }
     if (manageExerciseModalOpen) {
         ManageExerciseModal(
+            exerciseModel = exerciseModel,
             closeModal = { manageExerciseModalOpen = false },
-            submitModal = edit,
-            exerciseModel = exerciseModel
+            submitModal = edit
         )
     }
 
-    var offsetY by remember { mutableStateOf(0f) }
+    var offsetY by remember { mutableFloatStateOf(0f) }
     var dragging by remember { mutableStateOf(false) }
     Card(modifier = Modifier
         .offset(y = offsetY.dp)
@@ -331,15 +331,7 @@ private fun DisplayExerciseCard(
                 }
                 IconButton(onClick = {
                     manageExerciseModalOpen = true
-                    exerciseModel.updateExerciseName(exercise.name)
-                    exerciseModel.updateSets(exercise.sets.toString())
-                    if (exercise.restTime != null) {
-                        exerciseModel.updateRestTime(exercise.restTime.toString())
-                    }
-                    exerciseModel.updateMeasurementType1(exercise.measurement1.type)
-                    exerciseModel.updateMeasurementType2(exercise.measurement2.type)
-                    exerciseModel.updateMeasurementValues1(exercise.measurement1.values.map { it.toString() })
-                    exerciseModel.updateMeasurementValues2(exercise.measurement2.values.map { it.toString() })
+                    exerciseModel.setupFromExercise(exercise)
                 }) {
                     Icon(
                         painter = painterResource(id = R.drawable.edit),
@@ -531,7 +523,7 @@ fun MeasurementSelection(
 }
 
 @Composable
-private fun ManageExerciseModal(
+fun ManageExerciseModal(
     exerciseModel: ExerciseModalViewModel = viewModel(),
     closeModal: () -> Unit,
     submitModal: (String, Int, Measurement, Measurement, Int?) -> Unit

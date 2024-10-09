@@ -9,6 +9,12 @@
     <string name="edit">Edit</string>
     <string name="delete">Delete</string>
 
+    <!-- measurements -->
+    <string name="weight_measurement">Weight</string>
+    <string name="distance_measurement">Distance</string>
+    <string name="reps_measurement">Reps</string>
+    <string name="time_measurement">Time</string>
+
     <!-- titles -->
     <string name="exercises_modal_title">Add Exercise</string>
     <string name="exercises_title">Exercises</string>

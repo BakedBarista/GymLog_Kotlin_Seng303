@@ -4,6 +4,8 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.example.seng303_groupb_assignment2.entities.Exercise
+import com.example.seng303_groupb_assignment2.entities.Measurement
 import kotlinx.coroutines.launch
 
 class ExerciseModalViewModel(
@@ -108,5 +110,30 @@ class ExerciseModalViewModel(
 
     fun validExerciseName(): Boolean {
         return exerciseName.isNotBlank()
+    }
+
+    fun setupFromExercise(exercise: Exercise) {
+        updateExerciseName(exercise.name)
+        updateSets(exercise.sets.toString())
+        updateMeasurementType1(exercise.measurement1.type)
+        updateMeasurementValues1(exercise.measurement1.values.map { it.toString() })
+        updateMeasurementType2(exercise.measurement2.type)
+        updateMeasurementValues2(exercise.measurement2.values.map { it.toString() })
+
+        if (exercise.restTime == null) {
+            updateRestTime("")
+        } else {
+            updateRestTime(exercise.restTime.toString())
+        }
+    }
+
+    fun clear() {
+        updateExerciseName("")
+        updateSets("")
+        updateMeasurementType1("")
+        updateMeasurementValues1(listOf())
+        updateMeasurementType2("")
+        updateMeasurementValues2(listOf())
+        updateRestTime("")
     }
 }
