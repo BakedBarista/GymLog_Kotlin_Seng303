@@ -1,25 +1,34 @@
 package com.example.seng303_groupb_assignment2
 
 import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailDefaults
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -36,7 +45,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -48,10 +59,15 @@ import com.example.seng303_groupb_assignment2.screens.Home
 import com.example.seng303_groupb_assignment2.screens.RunWorkout
 import com.example.seng303_groupb_assignment2.screens.SelectWorkout
 import com.example.seng303_groupb_assignment2.screens.ViewLeaderboard
+import com.example.seng303_groupb_assignment2.screens.ViewPreferences
 import com.example.seng303_groupb_assignment2.screens.ViewProgress
 import com.example.seng303_groupb_assignment2.ui.theme.SENG303_GroupB_Assignment2Theme
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.seng303_groupb_assignment2.enums.Days
+import com.example.seng303_groupb_assignment2.notifications.NotificationManager
+import com.example.seng303_groupb_assignment2.screens.Help
+import com.example.seng303_groupb_assignment2.viewmodels.PreferenceViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.RunWorkoutViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel as koinViewModel
@@ -60,12 +76,31 @@ class MainActivity : ComponentActivity() {
     private val exerciseViewModel: ExerciseViewModel by koinViewModel()
     private val workoutViewModel: WorkoutViewModel by koinViewModel()
     private val runWorkoutViewModel: RunWorkoutViewModel by koinViewModel()
+    private val preferenceViewModel: PreferenceViewModel by koinViewModel()
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        intent?.let {
+            if (it.getBooleanExtra("notify", false)) {
+                val notificationHandler = NotificationManager(this)
+                workoutViewModel.allWorkouts.observe(this) { workouts ->
+                    val currentDay: Days = Days.getCurrentDay();
+                    workouts.forEach { workoutWithExercises ->
+                        if (workoutWithExercises.workout.schedule.contains(currentDay)) {
+                            notificationHandler.sendWorkoutNotification(workoutWithExercises.workout.name)
+                        }
+                    }
+                }
+            }
+        }
+
         enableEdgeToEdge()
         setContent {
-            SENG303_GroupB_Assignment2Theme {
+            val preferences = preferenceViewModel.preferences.observeAsState()
+            val isDarkMode = preferences.value?.darkMode ?: false
+
+            SENG303_GroupB_Assignment2Theme(darkTheme = isDarkMode) {
                 val navController = rememberNavController()
                 val configuration = LocalConfiguration.current
                 val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
@@ -76,7 +111,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     topBar = {
                         if (isPortrait) {
-                            CustomTopAppBar(title = currentTitle)
+                            CustomTopAppBar(title = currentTitle, navController)
                         }
                     },
                     bottomBar = {
@@ -89,6 +124,7 @@ class MainActivity : ComponentActivity() {
                     Row(
                         modifier = Modifier
                             .fillMaxSize()
+                            .padding(padding)
                     ) {
                         NavHost(
                             navController = navController,
@@ -96,10 +132,9 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight()
-                                .padding(padding)
                         ) {
                             composable("Home") {
-                                currentTitle = "Home"
+                                currentTitle = stringResource(id = R.string.home)
                                 Home(navController = navController)
                             }
                             composable("Run") {
@@ -118,11 +153,11 @@ class MainActivity : ComponentActivity() {
                             }
 
                             composable("SelectWorkout") {
-                                currentTitle = "Select Workout"
+                                currentTitle = stringResource(id = R.string.select_workout)
                                 SelectWorkout(navController = navController)
                             }
                             composable("Add") {
-                                currentTitle = "Workout Builder"
+                                currentTitle = stringResource(id = R.string.workout_builder_title)
                                 val manageWorkoutViewModel: ManageWorkoutViewModel = viewModel()
                                 AddWorkout(
                                     navController = navController,
@@ -132,12 +167,16 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                             composable("Progress") {
-                                currentTitle = "View Progress"
+                                currentTitle = stringResource(id = R.string.progress_title)
                                 ViewProgress(navController = navController)
                             }
-                            composable("Leaderboard") {
-                                currentTitle = "Leaderboard"
-                                ViewLeaderboard(navController = navController)
+                            composable("Help") {
+                                currentTitle = stringResource(id = R.string.help)
+                                Help(navController = navController)
+                            }
+                            composable("Preferences") {
+                                currentTitle = stringResource(id = R.string.preferences_title)
+                                ViewPreferences(navController = navController)
                             }
                         }
                         if (!isPortrait) {
@@ -168,7 +207,7 @@ fun CustomBottomAppBar(
             AppBarIconButton(navController, "Add", R.drawable.add, "Add", currentDestination == "Add")
             AppBarIconButton(navController, "Home", R.drawable.home, "Home", currentDestination == "Home")
             AppBarIconButton(navController, "Progress", R.drawable.progress, "Progress", currentDestination == "Progress")
-            AppBarIconButton(navController, "Leaderboard", R.drawable.leaderboard, "Leaderboard", currentDestination == "Leaderboard")
+            AppBarIconButton(navController, "Help", R.drawable.question_mark, "Help", currentDestination == "Help")
         }
     }
 }
@@ -196,7 +235,7 @@ fun CustomSideBar(
                 AppBarNavigationRailItem(navController, "Add", R.drawable.add, "Add", currentDestination == "Add")
                 AppBarNavigationRailItem(navController, "Home", R.drawable.home, "Home", currentDestination == "Home")
                 AppBarNavigationRailItem(navController, "Progress", R.drawable.progress, "Progress", currentDestination == "Progress")
-                AppBarNavigationRailItem(navController, "Leaderboard", R.drawable.leaderboard, "Leaderboard", currentDestination == "Leaderboard")
+                AppBarNavigationRailItem(navController, "Help", R.drawable.question_mark, "Help", currentDestination == "Help")
             }
         }
     }
@@ -255,14 +294,39 @@ fun AppBarIconButton(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomTopAppBar(
-    title: String
+    title: String,
+    navController: NavController
 ) {
-    // TODO possibly update this to center the text and maybe make the text larger.
+    val currentBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = currentBackStackEntry?.destination?.route
+
     TopAppBar(
         title = {
-            Text(
-                text = title,
-            )
+            Box(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = title,
+                    style = androidx.compose.ui.text.TextStyle(
+                        fontSize = 30.sp
+                    ),
+                    modifier = Modifier.align(Alignment.Center)
+                )
+
+                if (currentRoute != "Preferences") {
+                    IconButton(
+                        onClick = { navController.navigate("Preferences") },
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 12.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_gear),
+                            contentDescription = "Settings"
+                        )
+                    }
+                }
+            }
         }
     )
 }

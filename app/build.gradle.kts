@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     id("com.google.devtools.ksp")
+    kotlin("plugin.serialization") version "2.0.20"
 }
 
 android {
@@ -51,9 +52,25 @@ android {
 }
 
 dependencies {
+    implementation(libs.accompanist.permissions.v0360)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.runtime.livedata)
+    implementation(libs.androidx.datastore.core.android)
+    implementation(libs.androidx.datastore.preferences.core.jvm)
+    implementation("androidx.preference:preference-ktx:1.2.1")
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
+
+    implementation(libs.mlkit)
+    implementation(libs.zxing.core)
+    implementation(libs.zxing.android.embedded)
+
+
+    implementation(libs.gson)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.camera2)
 
     // To use Kotlin Symbol Processing (KSP)
     ksp(libs.androidx.room.compiler)
@@ -83,8 +100,6 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    // https://mvnrepository.com/artifact/com.google.android.material/material
-    runtimeOnly(libs.material)
     implementation(libs.androidx.navigation.compose)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -93,4 +108,19 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // To serialise data
+    implementation(libs.jetbrains.kotlinx.serialization.json)
+
+    // Dependencies for Vico, a graphing library
+    // For Jetpack Compose.
+    implementation(libs.compose)
+    // For `compose`. Creates a `ChartStyle` based on an M2 Material Theme.
+    implementation(libs.compose.m2)
+    // For `compose`. Creates a `ChartStyle` based on an M3 Material Theme.
+    implementation(libs.compose.m3)
+    // Houses the core logic for charts and other elements. Included in all other modules.
+    implementation(libs.core)
+    // For the view system.
+    implementation(libs.views)
 }
