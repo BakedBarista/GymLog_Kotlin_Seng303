@@ -40,16 +40,18 @@ import androidx.compose.ui.graphics.Color
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Help(navController: NavController) {
-    Scaffold {
+    Scaffold { paddingValues -> // Accept the padding values provided by Scaffold
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(paddingValues) // Apply padding to avoid overlap
         ) {
             item {
                 ExerciseCard(
                     title = "Push-Up",
-                    onClick = { navController.navigate("push_up_help") }
+                    onClick = {
+                        navController.navigate("push_up_help")
+                    }
                 )
                 Spacer(modifier = Modifier.height(10.dp))
             }
@@ -57,7 +59,9 @@ fun Help(navController: NavController) {
             item {
                 ExerciseCard(
                     title = "Bench Press",
-                    onClick = { navController.navigate("bench_press_help") }
+                    onClick = {
+                        navController.navigate("bench_press_help")
+                    }
                 )
                 Spacer(modifier = Modifier.height(10.dp))
             }
@@ -65,7 +69,9 @@ fun Help(navController: NavController) {
             item {
                 ExerciseCard(
                     title = "Squat",
-                    onClick = { navController.navigate("squat_help") }
+                    onClick = {
+                        navController.navigate("squat_help")
+                    }
                 )
             }
         }
@@ -77,7 +83,10 @@ fun ExerciseCard(title: String, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
+            .clickable {
+                onClick()
+                android.util.Log.d("HelpScreen", "$title card clicked")
+            }
             .padding(8.dp),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary)
@@ -87,11 +96,12 @@ fun ExerciseCard(title: String, onClick: () -> Unit) {
                 text = title,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = MaterialTheme.colorScheme.onSecondary
             )
         }
     }
 }
+
 
 
 
