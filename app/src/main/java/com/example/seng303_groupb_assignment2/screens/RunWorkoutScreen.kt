@@ -98,83 +98,89 @@ fun RunWorkout(
         isTimerRunning = true
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize()
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Header(viewModel, onSave = {
-            isTimerRunning = true
-        }, onSaveSet = ::onSaveSet)
-        Spacer(modifier = Modifier.height(16.dp))
+        item {
+            Header(viewModel, onSave = {
+                isTimerRunning = true
+            }, onSaveSet = ::onSaveSet)
+        }
 
-        // Timer Box
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceAround,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            IconButton(onClick = {
-                viewModel.previousExercise()
-                isTimerRunning = false
-            },
-                enabled = isPreviousEnabled
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        item {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceAround,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.baseline_skip_previous_24),
-                    contentDescription = stringResource(id = R.string.next)
-                )
-            }
-            Timer(
-                totalTime = restTime * 1000L,
-                currentTime = currentTime,
-                isTimerRunning = isTimerRunning,
-                restartTimer = restartTimer,
-                onRestartHandled = { restartTimer = false },
-                handleColor = Color.Green,
-                inactiveBarColor = Color.DarkGray,
-                activeBarColor = Color(0xFF37B900),
-                modifier = Modifier.size(100.dp),
-                timerSize = 100.dp
-            )
-            IconButton(
-                onClick = {
-                    viewModel.nextExercise()
+                IconButton(onClick = {
+                    viewModel.previousExercise()
                     isTimerRunning = false
                 },
-                enabled = isNextEnabled
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.baseline_skip_next_24),
-                    contentDescription = stringResource(id = R.string.next)
+                    enabled = isPreviousEnabled
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.baseline_skip_previous_24),
+                        contentDescription = stringResource(id = R.string.next)
+                    )
+                }
+                Timer(
+                    totalTime = restTime * 1000L,
+                    currentTime = currentTime,
+                    isTimerRunning = isTimerRunning,
+                    restartTimer = restartTimer,
+                    onRestartHandled = { restartTimer = false },
+                    handleColor = Color.Green,
+                    inactiveBarColor = Color.DarkGray,
+                    activeBarColor = Color(0xFF37B900),
+                    modifier = Modifier.size(100.dp),
+                    timerSize = 100.dp
                 )
+                IconButton(
+                    onClick = {
+                        viewModel.nextExercise()
+                        isTimerRunning = false
+                    },
+                    enabled = isNextEnabled
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.baseline_skip_next_24),
+                        contentDescription = stringResource(id = R.string.next)
+                    )
+                }
             }
         }
 
-        // Display saved sets in LazyColumn
-        LazyColumn(modifier = Modifier
-            .fillMaxWidth()
-            .weight(1f)) {
-            itemsIndexed(sets) { index, set ->
-                SetContainer(
-                    label1 = unit1Text ?: "Reps",
-                    label2 = unit2Text ?: "Weight",
-                    unit1 = set.first,
-                    unit2 = set.second,
-                    onDelete = {
-                        viewModel.removeSetFromCurrentExercise(index)
-                    }
-                )
-            }
+        itemsIndexed(sets) { index, set ->
+            SetContainer(
+                label1 = unit1Text ?: "Reps",
+                label2 = unit2Text ?: "Weight",
+                unit1 = set.first,
+                unit2 = set.second,
+                onDelete = {
+                    viewModel.removeSetFromCurrentExercise(index)
+                }
+            )
         }
-        Button(onClick = {
-            viewModel.saveLogs()
-            viewModel.clearWorkoutData()
-            navController.navigate("SelectWorkout")
-        },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-        ) {
-            Text("Finish Workout")
+
+        item {
+            Button(
+                onClick = {
+                    viewModel.saveLogs()
+                    viewModel.clearWorkoutData()
+                    navController.navigate("SelectWorkout")
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            ) {
+                Text("Finish Workout")
+            }
         }
     }
 }
