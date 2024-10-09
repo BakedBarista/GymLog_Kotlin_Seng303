@@ -157,8 +157,20 @@ class MainActivity : ComponentActivity() {
                             composable("QRScanner") {
                                 currentTitle = stringResource(id = R.string.qr_scanner_title)
                                 QRScannerScreen { qrCodeValue ->
-                                    if(qrCodeValue == "fitness_app://help") {
-                                    navController.navigate("Help")
+                                    when (qrCodeValue) {
+                                        "fitness_app://help/bench_press" -> {
+                                            navController.navigate("bench_press_help")
+                                        }
+                                        "fitness_app://help/push_up" -> {
+                                            navController.navigate("push_up_help")
+                                        }
+                                        "fitness_app://help/squat" -> {
+                                            navController.navigate("squat_help")
+                                        }
+                                        else -> {
+                                            // Optionally handle unknown QR codes or errors
+                                            android.util.Log.d("QRScanner", "Unknown QR Code scanned: $qrCodeValue")
+                                        }
                                     }
                                 }
                             }

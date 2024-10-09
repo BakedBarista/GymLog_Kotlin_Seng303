@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.navigation.NavController
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 
@@ -48,11 +49,14 @@ fun QRScannerScreen(onQRCodeScanned: (String) -> Unit) {
                                 .addOnSuccessListener { barcodes ->
                                     for (barcode in barcodes) {
                                         barcode.rawValue?.let { qrCodeValue ->
+                                            android.util.Log.d("QRScanner", "QR Code Scanned: $qrCodeValue")
                                             onQRCodeScanned(qrCodeValue)
                                         }
                                     }
                                 }
-                                .addOnFailureListener { }
+                                .addOnFailureListener {
+                                    // Handle failure
+                                }
                                 .addOnCompleteListener {
                                     imageProxy.close()
                                 }
@@ -68,5 +72,3 @@ fun QRScannerScreen(onQRCodeScanned: (String) -> Unit) {
         }, ContextCompat.getMainExecutor(context))
     }
 }
-
-
