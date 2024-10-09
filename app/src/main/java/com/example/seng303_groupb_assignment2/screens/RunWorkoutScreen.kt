@@ -16,8 +16,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -46,6 +49,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -54,6 +59,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import com.example.seng303_groupb_assignment2.R
 import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.viewmodels.RunWorkoutViewModel
 import kotlinx.coroutines.delay
@@ -63,7 +70,8 @@ import kotlin.math.sin
 
 @Composable
 fun RunWorkout(
-    viewModel: RunWorkoutViewModel
+    viewModel: RunWorkoutViewModel,
+    navController: NavController
 ) {
     val workoutWithExercises = viewModel.workoutWithExercises.value
     val exercises = workoutWithExercises?.exercises
@@ -71,62 +79,84 @@ fun RunWorkout(
 
     // Retrieve current exercise and rest time
     val currentExercise = exercises?.getOrNull(currentExerciseIndex)
-    val restTime = currentExercise?.restTime ?: 0 // Default to 0 if no restTime is available
+    val unit1Text = currentExercise?.measurement?.unit1
+    val unit2Text = currentExercise?.measurement?.unit2
+    val restTime = currentExercise?.restTime ?: 0
 
     var isTimerRunning by rememberSaveable { mutableStateOf(false) }
-    var currentTime by rememberSaveable { mutableLongStateOf(restTime * 1000L) } // Timer starts with the total rest time
-    var restartTimer by rememberSaveable { mutableStateOf(false) } // Flag to reset the timer
-    var sets = viewModel.getSetsForCurrentExercise()
+    var currentTime by rememberSaveable { mutableLongStateOf(restTime * 1000L) }
+    var restartTimer by rememberSaveable { mutableStateOf(false) }
+    val sets = viewModel.getSetsForCurrentExercise()
 
-    // Function to reset the timer when "Save Set" is pressed
+    val isPreviousEnabled = currentExerciseIndex > 0
+    val isNextEnabled = currentExerciseIndex < (exercises?.size ?: 0) - 1
+
     fun onSaveSet(unit1: Float, unit2: Float) {
         viewModel.addSetToCurrentExercise(unit1, unit2)
-        currentTime = restTime * 1000L  // Reset the timer
-        restartTimer = true             // Signal to LaunchedEffect to restart the timer
-        isTimerRunning = true           // Ensure the timer starts running again
+        currentTime = restTime * 1000L
+        restartTimer = true
+        isTimerRunning = true
     }
 
-    Column {
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
         Header(viewModel, onSave = {
-            isTimerRunning = true // Start the timer when "Save" is clicked
+            isTimerRunning = true
         }, onSaveSet = ::onSaveSet)
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Timer Box
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceAround
+            horizontalArrangement = Arrangement.SpaceAround,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Button(onClick = {
+            IconButton(onClick = {
                 viewModel.previousExercise()
-                isTimerRunning = false  // Reset timer on exercise change
-            }) {
-                Text("Previous")
+                isTimerRunning = false
+            },
+                enabled = isPreviousEnabled
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_skip_previous_24),
+                    contentDescription = stringResource(id = R.string.next)
+                )
             }
             Timer(
                 totalTime = restTime * 1000L,
-                currentTime = currentTime,  // Pass currentTime as a parameter
+                currentTime = currentTime,
                 isTimerRunning = isTimerRunning,
-                restartTimer = restartTimer,  // Flag to trigger timer reset
-                onRestartHandled = { restartTimer = false },  // Reset flag once handled
+                restartTimer = restartTimer,
+                onRestartHandled = { restartTimer = false },
                 handleColor = Color.Green,
                 inactiveBarColor = Color.DarkGray,
                 activeBarColor = Color(0xFF37B900),
-                modifier = Modifier.size(100.dp),  // Set the size smaller, or use the new parameter
-                timerSize = 100.dp  // Set this to a smaller value to shrink the timer
+                modifier = Modifier.size(100.dp),
+                timerSize = 100.dp
             )
-            // Next Button
-            Button(onClick = {
-                viewModel.nextExercise()
-                isTimerRunning = false  // Reset timer on exercise change
-            }) {
-                Text("Next")
+            IconButton(
+                onClick = {
+                    viewModel.nextExercise()
+                    isTimerRunning = false
+                },
+                enabled = isNextEnabled
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_skip_next_24),
+                    contentDescription = stringResource(id = R.string.next)
+                )
             }
         }
 
         // Display saved sets in LazyColumn
-        LazyColumn(modifier = Modifier.padding(16.dp)) {
+        LazyColumn(modifier = Modifier
+            .fillMaxWidth()
+            .weight(1f)) {
             itemsIndexed(sets) { index, set ->
                 SetContainer(
+                    label1 = unit1Text ?: "Reps",
+                    label2 = unit2Text ?: "Weight",
                     unit1 = set.first,
                     unit2 = set.second,
                     onDelete = {
@@ -136,22 +166,18 @@ fun RunWorkout(
             }
         }
         Button(onClick = {
-            viewModel.saveLogs() // Persist the workout progress
-        }) {
+            viewModel.saveLogs()
+            viewModel.clearWorkoutData()
+            navController.navigate("SelectWorkout")
+        },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        ) {
             Text("Finish Workout")
         }
     }
 }
-
-/**
- * Rounds a float value to the nearest 0.5.
- */
-fun roundToNearestHalf(value: Float): Float {
-    return (Math.round(value * 2) / 2.0).toFloat()
-}
-
-
-
 
 // Gotten from https://medium.com/@fahadhabib01/craft-a-captivating-animated-countdown-timer-with-jetpack-compose-0e2f16d64664
 @Composable
@@ -178,11 +204,16 @@ private fun Header(
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager: FocusManager = LocalFocusManager.current
 
+    val isValidInput = remember(unit1Input, unit2Input) {
+        val unit1Valid = unit1Input.toFloatOrNull()?.let { it > 0 } ?: false
+        val unit2Valid = unit2Input.toFloatOrNull()?.let { it > 0 } ?: false
+        unit1Valid && unit2Valid
+    }
+
     Column {
-        Text(text = viewModel.workoutWithExercises.value?.exercises?.get(currentExerciseIndex)?.name ?: "Exercise")
-        if (unit2Text != null) {
-            Text(text = unit2Text)
-        }
+        Text(text = viewModel.workoutWithExercises.value?.exercises?.get(currentExerciseIndex)?.name ?: "Exercise", style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.align(Alignment.CenterHorizontally))
+
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(vertical = 4.dp)
@@ -196,7 +227,7 @@ private fun Header(
             TextField(
                 value = unit2Input,
                 onValueChange = { newValue ->
-                    unit2Input = newValue
+                    unit2Input = newValue.ifEmpty { "0" }
                     unit2Value = newValue.toFloatOrNull() ?: 0f
                 },
                 label = {
@@ -215,16 +246,16 @@ private fun Header(
                     }
                 )
             )
-            Button(onClick = {
+            IconButton(onClick = {
                 unit2Value += 1
                 unit2Input = unit2Value.toString()
             }) {
-                Text(text = "+")
+                Icon(painter = painterResource(id = R.drawable.plus), contentDescription = stringResource(
+                    id = R.string.plus
+                ))
             }
         }
-        if (unit1Text != null) {
-            Text(text = unit1Text)
-        }
+
         Row (
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(vertical = 4.dp)
@@ -238,7 +269,7 @@ private fun Header(
             TextField(
                 value = unit1Input,
                 onValueChange = { newValue ->
-                    unit1Input = newValue
+                    unit1Input = newValue.ifEmpty { "0" }
                     unit1Value = newValue.toFloatOrNull() ?: 0f
                 },
                 label = {
@@ -257,25 +288,30 @@ private fun Header(
                     }
                 )
             )
-            Button(onClick = {
+            IconButton(onClick = {
                 unit1Value += 1
                 unit1Input = unit1Value.toString()
             }) {
-                Text(text = "+")
+                Icon(painter = painterResource(id = R.drawable.plus), contentDescription = stringResource(
+                    id = R.string.plus
+                ))
             }
         }
         Row(
             horizontalArrangement = Arrangement.SpaceEvenly,
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
         ) {
             Button(onClick = {
                 onSaveSet(unit1Value, unit2Value)
                 onSave()
-                unit1Value = 0f
-                unit2Value = 0f
-                unit1Input = "0"
-                unit2Input = "0"
-            }) {
+            },
+                enabled = isValidInput,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp)
+            ) {
                 Text(text = "Save Set")
             }
             Button(onClick = {
@@ -283,7 +319,11 @@ private fun Header(
                 unit2Value = 0f
                 unit1Input = "0"
                 unit2Input = "0"
-            }) {
+            },
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp)
+            ) {
                 Text(text = "Clear")
             }
         }
@@ -382,10 +422,13 @@ fun Timer(
 
 @Composable
 fun SetContainer(
+    label1: String,
+    label2: String,
     unit1: Float,
     unit2: Float,
     onDelete: () -> Unit
 ) {
+
     Row(
         modifier = Modifier
             .padding(8.dp)
@@ -393,21 +436,21 @@ fun SetContainer(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Weight: $unit2 kg", // todo make this modular
+            text = "$label2: $unit2 kg", // todo make this modular
             fontSize = 18.sp,
             modifier = Modifier.weight(1f)
         )
         Text(
-            text = "Reps: $unit1",
+            text = "$label1: $unit1",
             fontSize = 18.sp,
             modifier = Modifier.weight(1f)
         )
-        Button(
+        IconButton(
             onClick = onDelete,
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
             modifier = Modifier.padding(start = 8.dp)
         ) {
-            Text(text = "Delete", color = Color.White)
+            Icon(painter = painterResource(id = R.drawable.delete),
+                contentDescription = stringResource(id = R.string.delete))
         }
     }
 }

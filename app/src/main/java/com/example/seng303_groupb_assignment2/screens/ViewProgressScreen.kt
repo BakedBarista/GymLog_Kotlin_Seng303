@@ -402,43 +402,51 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
     LaunchedEffect(exerciseLogs, selectedOption) {
         val dataSeries = when (selectedOption) {
             ChartOption.MaxWeight -> {
-                exerciseLogs.map { log ->
+                exerciseLogs.mapNotNull { log ->
                     val epochDay = Instant.ofEpochMilli(log.timestamp)
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
                         .toEpochDay()
-                    val maxWeight = log.record.maxOfOrNull { it.second } ?: 0f
-                    epochDay.toDouble() to maxWeight
+                    val maxWeight = log.record.maxOfOrNull { it.second }?.takeIf { !it.isNaN() } ?: 0f
+                    if (maxWeight > 0f) epochDay.toDouble() to maxWeight else null
                 }
             }
             ChartOption.TotalWorkoutVolume -> {
-                exerciseLogs.map { log ->
+                exerciseLogs.mapNotNull { log ->
                     val epochDay = Instant.ofEpochMilli(log.timestamp)
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
                         .toEpochDay()
                     val totalVolume = log.record.sumOf { (reps, weight) -> reps * weight.toDouble() }
-                    epochDay.toDouble() to totalVolume.toFloat()
+                    if (!totalVolume.isNaN() && totalVolume > 0) {
+                        epochDay.toDouble() to totalVolume.toFloat()
+                    } else {
+                        null
+                    }
                 }
             }
             ChartOption.MaxDistance -> {
-                exerciseLogs.map { log ->
+                exerciseLogs.mapNotNull { log ->
                     val epochDay = Instant.ofEpochMilli(log.timestamp)
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
                         .toEpochDay()
-                    val maxDistance = log.record.maxOfOrNull { it.first } ?: 0f
-                    epochDay.toDouble() to maxDistance
+                    val maxDistance = log.record.maxOfOrNull { it.first }?.takeIf { !it.isNaN() } ?: 0f
+                    if (maxDistance > 0f) epochDay.toDouble() to maxDistance else null
                 }
             }
             ChartOption.TotalDistance -> {
-                exerciseLogs.map { log ->
+                exerciseLogs.mapNotNull { log ->
                     val epochDay = Instant.ofEpochMilli(log.timestamp)
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
                         .toEpochDay()
                     val totalDistance = log.record.sumOf { it.first.toDouble() }
-                    epochDay.toDouble() to totalDistance.toFloat()
+                    if (!totalDistance.isNaN() && totalDistance > 0) {
+                        epochDay.toDouble() to totalDistance.toFloat()
+                    } else {
+                        null
+                    }
                 }
             }
 

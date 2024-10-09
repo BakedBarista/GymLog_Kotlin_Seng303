@@ -115,9 +115,7 @@ class ExerciseViewModel(
                         val logsRun = mutableListOf<ExerciseLog>()
 
                         for (i in 0 until 365) {
-                            val date = LocalDate.of(2020, 1, 1).plusDays(i.toLong())
-                            val timestamp =
-                                date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                            val timestamp = System.currentTimeMillis() - (i * 24 * 60 * 60 * 1000L)
 
                             val log = ExerciseLog(
                                 exerciseId = exerciseId,

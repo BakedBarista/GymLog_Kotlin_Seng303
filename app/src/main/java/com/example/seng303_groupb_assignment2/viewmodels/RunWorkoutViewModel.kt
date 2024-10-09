@@ -31,6 +31,12 @@ class RunWorkoutViewModel(
     // Map from exercise index to list of sets (unit1, unit2)
     private var exerciseSets = mutableMapOf<Int, SnapshotStateList<Pair<Float, Float>>>()
 
+    fun clearWorkoutData() {
+        currentExerciseIndex = 0
+        exerciseSets.clear()
+        _workoutWithExercises.value = null  // Clear the loaded workout data
+    }
+
     // Function to get sets for the current exercise
     fun getSetsForCurrentExercise(): SnapshotStateList<Pair<Float, Float>> {
         return exerciseSets.getOrPut(currentExerciseIndex) { mutableStateListOf() }
