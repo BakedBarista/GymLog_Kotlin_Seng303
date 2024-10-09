@@ -53,6 +53,7 @@
     <string name="workout_exported_failure_toast">Failed to export workout</string>
     <string name="workout_log_exported_failure_toast">Failed to export workout logs</string>
     <string name="workout_log_saved_toast">A log of your workout has been saved</string>
+    <string name="no_exercises_toast">Add some exercise to workout first</string>
 
     <!-- informational -->
     <string name="tap_select">Tap to select an exercise</string>
