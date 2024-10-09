@@ -1,9 +1,17 @@
 package com.example.seng303_groupb_assignment2.screens
 
 import ExerciseModalViewModel
+import android.content.Context
+import android.content.Intent
 import android.content.res.Configuration
+import android.graphics.Bitmap
+import android.graphics.Color
+import android.net.Uri
+import android.os.Environment
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -50,6 +58,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
@@ -71,6 +80,16 @@ import org.koin.androidx.compose.getViewModel
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.seng303_groupb_assignment2.entities.Measurement
+import androidx.core.content.FileProvider
+import com.google.gson.Gson
+import com.google.mlkit.vision.barcode.BarcodeScanner
+import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.common.InputImage
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.qrcode.QRCodeWriter
+import java.io.File
+import java.io.FileOutputStream
 
 
 @Composable
@@ -83,6 +102,7 @@ fun SelectWorkout(
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
     val context = LocalContext.current
+    var qrCodeBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
     val modalViewModel: ExerciseModalViewModel = viewModel()
     var currentExerciseId: Long? by rememberSaveable { mutableStateOf(null) }
@@ -135,14 +155,28 @@ fun SelectWorkout(
                         exerciseViewModel.deleteExercise(exercise)
                     },
                     onExportWorkout = {
-                        workoutViewModel.exportWorkout(
-                            context = context, // Pass the required context
+                        exportWorkout(
+                            context = context,
                             workoutWithExercises = workoutWithExercises,
-                            onSuccess = { filePath ->
-                                Toast.makeText(context, context.getString(R.string.workout_exported_toast, filePath), Toast.LENGTH_LONG).show()
+                            onSuccess = { uri ->
+                                // Open the QR code file
+                                openFile(context, uri)
+                                Toast.makeText(context, context.getString(R.string.qr_exported_toast), Toast.LENGTH_LONG).show()
                             },
                             onFailure = {
                                 Toast.makeText(context, context.getString(R.string.workout_exported_failure_toast), Toast.LENGTH_LONG).show()
+                            }
+                        )
+                    },
+                    onExportWorkoutLog = {
+                        workoutViewModel.exportWorkoutLog(
+                            context = context,
+                            workoutWithExercises = workoutWithExercises,
+                            onSuccess = { filePath ->
+                                Toast.makeText(context, context.getString(R.string.workout_logs_exported_toast, filePath), Toast.LENGTH_LONG).show()
+                            },
+                            onFailure = {
+                                Toast.makeText(context, context.getString(R.string.workout_log_exported_failure_toast), Toast.LENGTH_LONG).show()
                             }
                         )
                     }
@@ -174,15 +208,30 @@ fun SelectWorkout(
                     onDeleteExercise = { exercise ->
                         exerciseViewModel.deleteExercise(exercise) },
                     onExportWorkout = {
-                        workoutViewModel.exportWorkout(
+
+                        exportWorkout(
                             context = context,
                             workoutWithExercises = workoutWithExercises,
-                            onSuccess = { filePath ->
-                                Toast.makeText(context, context.getString(R.string.workout_exported_toast, filePath), Toast.LENGTH_LONG).show()
+                            onSuccess = { uri ->
+                                // Open the QR code file
+                                openFile(context, uri)
+                                Toast.makeText(context, context.getString(R.string.qr_exported_toast), Toast.LENGTH_LONG).show()
                             },
                             onFailure = {
                                 Toast.makeText(context, context.getString(R.string.workout_exported_failure_toast), Toast.LENGTH_LONG).show()
 
+                            }
+                        )
+                    },
+                    onExportWorkoutLog = {
+                        workoutViewModel.exportWorkoutLog(
+                            context = context,
+                            workoutWithExercises = workoutWithExercises,
+                            onSuccess = { filePath ->
+                                Toast.makeText(context, context.getString(R.string.workout_logs_exported_toast, filePath), Toast.LENGTH_LONG).show()
+                            },
+                            onFailure = {
+                                Toast.makeText(context, context.getString(R.string.workout_log_exported_failure_toast), Toast.LENGTH_LONG).show()
                             }
                         )
                     }
@@ -191,7 +240,13 @@ fun SelectWorkout(
         }
     }
 }
-
+private fun openFile(context: Context, uri: Uri) {
+    val intent = Intent(Intent.ACTION_VIEW).apply {
+        setDataAndType(uri, "image/png")
+        flags = Intent.FLAG_ACTIVITY_NO_HISTORY or Intent.FLAG_GRANT_READ_URI_PERMISSION
+    }
+    context.startActivity(Intent.createChooser(intent, "Open QR Code"))
+}
 @Composable
 fun WorkoutItem(
     workoutWithExercises: WorkoutWithExercises,
@@ -201,7 +256,8 @@ fun WorkoutItem(
     onDeleteWorkout: () -> Unit,
     onEditExercise: (Exercise) -> Unit,
     onDeleteExercise: (Exercise) -> Unit,
-    onExportWorkout: () -> Unit
+    onExportWorkout: () -> Unit,
+    onExportWorkoutLog: () -> Unit
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     var showEditDialog by rememberSaveable { mutableStateOf(false) }
@@ -274,35 +330,46 @@ fun WorkoutItem(
                             contentDescription = stringResource(R.string.start_workout)
                         )
                     }
-                    IconButton(onClick = { showDropdownMenu = true }) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.more_vert),
-                            contentDescription = stringResource(R.string.more_options)
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = showDropdownMenu,
-                        onDismissRequest = { showDropdownMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.edit_workout)) },
-                            onClick = {
-                                showEditDialog = true
-                                showDropdownMenu = false
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.delete_workout)) },
-                            onClick = {
-                                onDeleteWorkout()
-                                showDropdownMenu = false
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(id = R.string.export_workout))},
-                            onClick = {
-                                onExportWorkout()
-                                showDropdownMenu = false })
+                    Box {
+                        IconButton(onClick = { showDropdownMenu = true }) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.more_vert),
+                                contentDescription = stringResource(R.string.more_options)
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showDropdownMenu,
+                            onDismissRequest = { showDropdownMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(id = R.string.export_workout)) },
+                                onClick = {
+                                    onExportWorkout()
+                                    showDropdownMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(id = R.string.export_workout_log)) },
+                                onClick = {
+                                    onExportWorkoutLog()
+                                    showDropdownMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.edit_workout)) },
+                                onClick = {
+                                    showEditDialog = true
+                                    showDropdownMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.delete_workout)) },
+                                onClick = {
+                                    onDeleteWorkout()
+                                    showDropdownMenu = false
+                                }
+                            )
+                        }
                     }
                 }
                 ScheduleInformation(workoutWithExercises.workout.schedule)
@@ -521,3 +588,66 @@ fun ExerciseItem(
         }
     }
 }
+
+fun convertWorkoutToJson(workoutWithExercises: WorkoutWithExercises): String {
+    val gson = Gson()
+    return gson.toJson(workoutWithExercises)
+}
+
+fun generateQRCode(data: String): Bitmap? {
+    try {
+        val writer = QRCodeWriter()
+        val bitMatrix = writer.encode(data, BarcodeFormat.QR_CODE, 200, 200)
+        val width = bitMatrix.width
+        val height = bitMatrix.height
+        val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+
+        for (x in 0 until width) {
+            for (y in 0 until height) {
+                bmp.setPixel(x, y, if (bitMatrix[x, y]) Color.BLACK else Color.WHITE)
+            }
+        }
+        return bmp
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+    return null
+}
+
+fun exportWorkout(
+    context: Context,
+    workoutWithExercises: WorkoutWithExercises,
+    onSuccess: (Uri) -> Unit,
+    onFailure: () -> Unit
+) {
+    // Convert workout to JSON
+    val workoutJson = convertWorkoutToJson(workoutWithExercises)
+
+    // Generate QR Code
+    val qrCodeBitmap = generateQRCode(workoutJson)
+
+    // Save QR Code to file
+    if (qrCodeBitmap != null) {
+        try {
+            val uri = saveBitmapToFile(context, qrCodeBitmap)
+            onSuccess(uri)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            onFailure()
+        }
+    } else {
+        onFailure()
+    }
+}
+
+
+fun saveBitmapToFile(context: Context, bitmap: Bitmap?): Uri {
+    val file = File(context.cacheDir, "qr_code_${System.currentTimeMillis()}.png")
+    if (bitmap != null) {
+        FileOutputStream(file).use { out ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+        }
+    }
+    return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+}
+

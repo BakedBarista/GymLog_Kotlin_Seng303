@@ -60,9 +60,18 @@ dependencies {
     implementation(libs.androidx.datastore.preferences.core.jvm)
     implementation("androidx.preference:preference-ktx:1.2.1")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
+
+    implementation(libs.mlkit)
+    implementation(libs.zxing.core)
+    implementation(libs.zxing.android.embedded)
 
 
     implementation(libs.gson)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.play.services.mlkit.barcode.scanning)
 
     // To use Kotlin Symbol Processing (KSP)
     ksp(libs.androidx.room.compiler)
