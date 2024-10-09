@@ -526,7 +526,14 @@ private fun ManageExerciseModal(
     closeModal: () -> Unit,
     submitModal: (String, Int?, Measurement) -> Unit
 ) {
+    val measurements = Measurement.entries.toTypedArray()
     val context = LocalContext.current
+    var open by rememberSaveable { mutableStateOf(false) }
+    var selectedMeasurement by rememberSaveable {
+        mutableStateOf(Measurement.REPS_WEIGHT)
+    }
+    var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
+
 
     Dialog(onDismissRequest = {
         closeModal()
@@ -566,17 +573,49 @@ private fun ManageExerciseModal(
                         isError = !exerciseModel.validRestTime(),
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                 }
 
                 item {
-                    TextField(
-                        value = exerciseModel.measurement.label,
-                        onValueChange = { exerciseModel.updateMeasurement(exerciseModel.measurement) },
-                        label = { Text(context.getString(R.string.measurement_text))},
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+                    Box (
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.inverseOnSurface, shape = MaterialTheme.shapes.small)
+                            .clickable { open = true }
+                            .padding(16.dp)
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = measurements[selectedIndex].label,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Icon(
+                                painter = painterResource(id = R.drawable.dropdown),
+                                contentDescription = "Measurements"
+                            )
+                        }
+                            DropdownMenu(
+                                expanded = open,
+                                onDismissRequest = { open = false }
+                            ) {
+                                measurements.forEachIndexed { index, measurement ->
+                                    DropdownMenuItem(
+                                        text = { Text(measurement.label) },
+                                        onClick = {
+                                            selectedIndex = index
+                                            open = false
+                                            exerciseModel.updateMeasurement(measurement)
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
 
                 item {
                     val buttonColors = ButtonDefaults.buttonColors(

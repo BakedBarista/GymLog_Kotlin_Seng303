@@ -83,13 +83,13 @@ class ExerciseViewModel(
                         val run = Exercise(
                             name = "Run",
                             restTime = 0,
-                            measurement = Measurement.TIME_DISTANCE
+                            measurement = Measurement.DISTANCE_TIME
                         )
 
                         val noLogs = Exercise(
                             name = "No logs",
                             restTime = 0,
-                            measurement = Measurement.TIME_DISTANCE
+                            measurement = Measurement.DISTANCE_TIME
                         )
 
                         val exerciseId = exerciseDao.upsertExercise(benchPress)

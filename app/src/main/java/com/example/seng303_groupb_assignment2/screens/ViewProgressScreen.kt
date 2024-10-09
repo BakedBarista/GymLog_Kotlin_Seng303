@@ -1,7 +1,6 @@
 package com.example.seng303_groupb_assignment2.screens
 
 import android.content.res.Configuration
-import android.text.Layout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -57,12 +56,8 @@ import com.patrykandpatrick.vico.compose.cartesian.marker.rememberDefaultCartesi
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
 import com.patrykandpatrick.vico.compose.cartesian.rememberVicoZoomState
-import com.patrykandpatrick.vico.compose.common.component.rememberShapeComponent
 import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
-import com.patrykandpatrick.vico.compose.common.component.shadow
-import com.patrykandpatrick.vico.compose.common.dimensions
 import com.patrykandpatrick.vico.compose.common.fill
-import com.patrykandpatrick.vico.compose.common.shape.markerCorneredShape
 import com.patrykandpatrick.vico.core.cartesian.Scroll
 import com.patrykandpatrick.vico.core.cartesian.Zoom
 import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
@@ -72,12 +67,8 @@ import com.patrykandpatrick.vico.core.cartesian.data.CartesianLayerRangeProvider
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
-import com.patrykandpatrick.vico.core.cartesian.marker.CartesianMarker
-import com.patrykandpatrick.vico.core.cartesian.marker.DefaultCartesianMarker
 import com.patrykandpatrick.vico.core.common.component.Component
-import com.patrykandpatrick.vico.core.common.component.TextComponent
 import com.patrykandpatrick.vico.core.common.data.ExtraStore
-import com.patrykandpatrick.vico.core.common.shape.Corner
 import org.koin.androidx.compose.getViewModel
 import java.time.Instant
 import java.time.LocalDate
@@ -140,7 +131,7 @@ fun ViewProgress(
                     selectedExercise = exercise
                     selectedOption = when (exercise.measurement) {
                         Measurement.REPS_WEIGHT -> ChartOption.MaxWeight
-                        Measurement.TIME_DISTANCE -> ChartOption.MaxDistance
+                        Measurement.DISTANCE_TIME -> ChartOption.MaxDistance
                     }
                     showDialog = false
                 },
@@ -176,7 +167,7 @@ fun ExerciseHeader(
             selectedExercise?.measurement?.equals(Measurement.REPS_WEIGHT) == true -> {
                 listOf(ChartOption.MaxWeight, ChartOption.TotalWorkoutVolume)
             }
-            selectedExercise?.measurement?.equals(Measurement.TIME_DISTANCE) == true -> {
+            selectedExercise?.measurement?.equals(Measurement.DISTANCE_TIME) == true -> {
                 listOf(ChartOption.MaxDistance, ChartOption.TotalDistance)
             }
             else -> emptyList()
