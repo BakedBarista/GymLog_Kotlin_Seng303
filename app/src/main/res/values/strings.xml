@@ -107,6 +107,7 @@
     <string name="measurement2_label">%s reps</string>
 
 
+    <string name="remove">Remove</string>
     <string name="sound">Sound</string>
     <string name="dark_mode">Dark Mode</string>
     <string name="units">Units</string>

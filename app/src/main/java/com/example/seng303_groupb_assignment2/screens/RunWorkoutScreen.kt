@@ -224,11 +224,14 @@ private fun Header(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(vertical = 4.dp)
         ) {
-            Button(onClick = {
+            IconButton(modifier = Modifier.size(24.dp), onClick = {
                 unit2Value = (unit2Value - 1).coerceAtLeast(0f)
                 unit2Input = unit2Value.toString()
             }) {
-                Text(text = "-")
+                Icon(modifier = Modifier.size(24.dp),
+                    painter = painterResource(id = R.drawable.remove),
+                    contentDescription = stringResource(id = R.string.remove
+                ))
             }
             TextField(
                 value = unit2Input,
@@ -266,11 +269,14 @@ private fun Header(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(vertical = 4.dp)
         ) {
-            Button(onClick = {
-                unit1Value = (unit1Value - 1).coerceAtLeast(0f)
-                unit1Input = unit1Value.toString()
+            IconButton(modifier = Modifier.size(24.dp), onClick = {
+                unit2Value = (unit1Value - 1).coerceAtLeast(0f)
+                unit2Input = unit1Value.toString()
             }) {
-                Text(text = "-")
+                Icon(modifier = Modifier.size(24.dp),
+                    painter = painterResource(id = R.drawable.remove),
+                    contentDescription = stringResource(id = R.string.remove
+                    ))
             }
             TextField(
                 value = unit1Input,
