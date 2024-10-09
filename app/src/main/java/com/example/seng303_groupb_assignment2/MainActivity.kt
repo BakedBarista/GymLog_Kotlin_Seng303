@@ -51,10 +51,13 @@ import androidx.navigation.compose.rememberNavController
 import com.example.seng303_groupb_assignment2.enums.Days
 import com.example.seng303_groupb_assignment2.notifications.NotificationManager
 import com.example.seng303_groupb_assignment2.screens.AddWorkout
+import com.example.seng303_groupb_assignment2.screens.BenchPressHelpScreen
 import com.example.seng303_groupb_assignment2.screens.Help
 import com.example.seng303_groupb_assignment2.screens.Home
+import com.example.seng303_groupb_assignment2.screens.PushUpHelpScreen
 import com.example.seng303_groupb_assignment2.screens.QRScannerScreen
 import com.example.seng303_groupb_assignment2.screens.SelectWorkout
+import com.example.seng303_groupb_assignment2.screens.SquatHelpScreen
 import com.example.seng303_groupb_assignment2.screens.ViewPreferences
 import com.example.seng303_groupb_assignment2.screens.ViewProgress
 import com.example.seng303_groupb_assignment2.ui.theme.SENG303_GroupB_Assignment2Theme
@@ -154,14 +157,38 @@ class MainActivity : ComponentActivity() {
                             composable("QRScanner") {
                                 currentTitle = stringResource(id = R.string.qr_scanner_title)
                                 QRScannerScreen { qrCodeValue ->
-                                    if(qrCodeValue == "fitness_app://help") {
-                                    navController.navigate("Help")
+                                    when (qrCodeValue) {
+                                        "fitness_app://help/bench_press" -> {
+                                            navController.navigate("bench_press_help")
+                                        }
+                                        "fitness_app://help/push_up" -> {
+                                            navController.navigate("push_up_help")
+                                        }
+                                        "fitness_app://help/squat" -> {
+                                            navController.navigate("squat_help")
+                                        }
+                                        else -> {
+                                            // Optionally handle unknown QR codes or errors
+                                            android.util.Log.d("QRScanner", "Unknown QR Code scanned: $qrCodeValue")
+                                        }
                                     }
                                 }
                             }
                             composable("Preferences") {
                                 currentTitle = stringResource(id = R.string.preferences_title)
                                 ViewPreferences(navController = navController)
+                            }
+                            composable("push_up_help") {
+                                currentTitle = stringResource(id = R.string.push_up_title)
+                                PushUpHelpScreen()
+                            }
+                            composable("bench_press_help") {
+                                currentTitle = stringResource(id = R.string.bench_title)
+                                BenchPressHelpScreen()
+                            }
+                            composable("squat_help") {
+                                currentTitle = stringResource(id = R.string.squat_title)
+                                SquatHelpScreen()
                             }
                         }
                         if (!isPortrait) {
