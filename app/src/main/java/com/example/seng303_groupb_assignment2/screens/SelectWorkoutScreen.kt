@@ -7,13 +7,8 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.net.Uri
-import android.os.Environment
-import android.util.Log
 import android.widget.Toast
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,8 +19,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -38,7 +33,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -58,8 +52,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -67,7 +59,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.max
 import androidx.navigation.NavController
 import com.example.seng303_groupb_assignment2.R
 import com.example.seng303_groupb_assignment2.entities.Exercise
@@ -79,13 +70,8 @@ import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
 import org.koin.androidx.compose.getViewModel
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.seng303_groupb_assignment2.entities.Measurement
 import androidx.core.content.FileProvider
 import com.google.gson.Gson
-import com.google.mlkit.vision.barcode.BarcodeScanner
-import com.google.mlkit.vision.barcode.BarcodeScanning
-import com.google.mlkit.vision.barcode.common.Barcode
-import com.google.mlkit.vision.common.InputImage
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import java.io.File
@@ -106,13 +92,21 @@ fun SelectWorkout(
 
     val modalViewModel: ExerciseModalViewModel = viewModel()
     var currentExerciseId: Long? by rememberSaveable { mutableStateOf(null) }
-    var manageExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
-    if (manageExerciseModalOpen) {
+    var editExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
+    if (editExerciseModalOpen) {
         ManageExerciseModal(
             exerciseModel = modalViewModel,
-            closeModal = { manageExerciseModalOpen = false },
+            closeModal = { editExerciseModalOpen = false },
             submitModal = { name, sets, m1, m2, restTime ->
                 if (currentExerciseId != null) {
+                    if (m1.type.isBlank()) {
+                        m1.type = context.getString(R.string.weight_measurement)
+                    }
+
+                    if (m2.type.isBlank()) {
+                        m2.type = context.getString(R.string.reps_measurement)
+                    }
+
                     val currentExercise = Exercise(
                         id = currentExerciseId!!,
                         name = name,
@@ -123,6 +117,27 @@ fun SelectWorkout(
                     )
                     exerciseViewModel.editExercise(currentExercise)
                     currentExerciseId = null
+                }
+            })
+    }
+
+    var currentWorkoutId: Long? by rememberSaveable { mutableStateOf(null) }
+    var addExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
+    if (addExerciseModalOpen) {
+        ManageExerciseModal(
+            exerciseModel = modalViewModel,
+            closeModal = { addExerciseModalOpen = false },
+            submitModal = { name, sets, m1, m2, restTime ->
+                if (currentWorkoutId != null) {
+                    val newExercise = Exercise(
+                        name = name,
+                        sets = sets,
+                        measurement1 = m1,
+                        measurement2 = m2,
+                        restTime = restTime
+                    )
+                    exerciseViewModel.addExercise(currentWorkoutId!!, newExercise)
+                    currentWorkoutId = null
                 }
             })
     }
@@ -146,10 +161,15 @@ fun SelectWorkout(
                         workoutViewModel.editWorkout(workout)
                     },
                     onDeleteWorkout = { workoutViewModel.deleteWorkout(workoutWithExercises.workout) },
+                    onAddExercise = {
+                        currentWorkoutId = workoutWithExercises.workout.id
+                        modalViewModel.clear()
+                        addExerciseModalOpen = true
+                    },
                     onEditExercise = { exercise ->
                         modalViewModel.setupFromExercise(exercise)
                         currentExerciseId = exercise.id
-                        manageExerciseModalOpen = true
+                        editExerciseModalOpen = true
                     },
                     onDeleteExercise = { exercise ->
                         exerciseViewModel.deleteExercise(exercise)
@@ -203,7 +223,12 @@ fun SelectWorkout(
                     onEditExercise = { exercise ->
                         modalViewModel.setupFromExercise(exercise)
                         currentExerciseId = exercise.id
-                        manageExerciseModalOpen = true
+                        editExerciseModalOpen = true
+                    },
+                    onAddExercise = {
+                        currentWorkoutId = workoutWithExercises.workout.id
+                        modalViewModel.clear()
+                        addExerciseModalOpen = true
                     },
                     onDeleteExercise = { exercise ->
                         exerciseViewModel.deleteExercise(exercise) },
@@ -254,6 +279,7 @@ fun WorkoutItem(
     onStartWorkout: () -> Unit,
     onEditWorkout: (Workout) -> Unit,
     onDeleteWorkout: () -> Unit,
+    onAddExercise: () -> Unit,
     onEditExercise: (Exercise) -> Unit,
     onDeleteExercise: (Exercise) -> Unit,
     onExportWorkout: () -> Unit,
@@ -405,11 +431,22 @@ fun WorkoutItem(
             ) {
                 if (expandedState) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = workoutWithExercises.workout.description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    )
+                    Row(modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(
+                            text = workoutWithExercises.workout.description,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        )
+                        IconButton(onClick = onAddExercise) {
+                            Icon(
+                                modifier = Modifier.size(24.dp),
+                                painter = painterResource(id = R.drawable.plus),
+                                contentDescription = stringResource(R.string.add)
+                            )
+                        }
+                    }
                     workoutWithExercises.exercises.forEach { exercise ->
                         ExerciseItem(
                             exercise = exercise,

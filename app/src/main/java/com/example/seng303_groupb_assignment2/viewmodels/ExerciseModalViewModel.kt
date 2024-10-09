@@ -126,4 +126,14 @@ class ExerciseModalViewModel(
             updateRestTime(exercise.restTime.toString())
         }
     }
+
+    fun clear() {
+        updateExerciseName("")
+        updateSets("")
+        updateMeasurementType1("")
+        updateMeasurementValues1(listOf())
+        updateMeasurementType2("")
+        updateMeasurementValues2(listOf())
+        updateRestTime("")
+    }
 }
