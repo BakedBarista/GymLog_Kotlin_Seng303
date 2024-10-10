@@ -22,11 +22,12 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
 import org.koin.androidx.compose.getViewModel
 import org.koin.androidx.compose.koinViewModel
+import java.io.File.separator
 
 
 class WorkoutViewModel(
     private val workoutDao: WorkoutDao,
-    private val exerciseLogDao: ExerciseLogDao,
+    private val exerciseLogDao: ExerciseLogDao
 ) : ViewModel() {
     val allWorkouts: LiveData<List<WorkoutWithExercises>> = workoutDao.getAllWorkoutsWithExercises().asLiveData()
 
@@ -61,26 +62,14 @@ class WorkoutViewModel(
                 val workoutDescription = workoutWithExercises.workout.description
                 val restTime = exercise.restTime
                 val exerciseName = exercise.name
-                val exerciseType = exercise.measurement1.type
-                val exerciseValues = exercise.measurement1.values
-                    .map { measurementConverter?.convertToImperial(it, exerciseType) }
-                    .joinToString(separator = ",") { it.toString() }
-
-                val exerciseType2 = exercise.measurement2.type
-                val exerciseValues2 = exercise.measurement2.values
-                    .map { measurementConverter?.convertToImperial(it, exerciseType2) }
-                    .joinToString(separator = ",") { it.toString() }
+                val exerciseMeasurement = exercise.measurement
 
                 listOf(
                     workoutName,
                     workoutDescription,
                     restTime.toString(),
                     exerciseName,
-                    exerciseType,
-                    exerciseValues,
-                    exerciseType2,
-                    exerciseValues2
-
+                    exerciseMeasurement.label
                 )
             }
 
@@ -109,25 +98,20 @@ class WorkoutViewModel(
                     logs.map { log : ExerciseLog ->
                         val exerciseName = exercise.name
                         val logTimestamp = log.timestamp
-                        val logSets = log.sets
-                        val logMeasurement1 = log.measurement1.type
-                        val logMeasurement1Vals = log.measurement1.values
-                            .map { measurementConverter?.convertToImperial(it, logMeasurement1) }
-                            .joinToString(separator = ",")
-
-                        val logMeasurement2 = log.measurement2.type
-                        val logMeasurement2Vals = log.measurement2.values
-                            .map { measurementConverter?.convertToImperial(it, logMeasurement2) }
-                            .joinToString(separator = ",")
+                        val logSets = log.record.size
+                        val firstValues = log.record.joinToString ( separator = "," ) {
+                            val convertedValue = measurementConverter.convertToImperial(it.first, isMetric)
+                            convertedValue.toString()
+                        }
+                        val secondValues = log.record.joinToString ( separator = "," ) {
+                            val convertedValue = measurementConverter.convertToImperial(it.second, isMetric) }
 
                         listOf(
                             exerciseName,
                             logTimestamp.toString(),
                             logSets.toString(),
-                            logMeasurement1,
-                            logMeasurement1Vals,
-                            logMeasurement2,
-                            logMeasurement2Vals
+                            firstValues,
+                            secondValues
                         )
                     }
                 }
@@ -148,7 +132,4 @@ class WorkoutViewModel(
             }
         }
     }
-
-
-
 }

@@ -1,6 +1,7 @@
 package com.example.seng303_groupb_assignment2.screens
 
 import android.content.res.Configuration
+import android.text.Layout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -41,6 +42,7 @@ import com.example.seng303_groupb_assignment2.R
 import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.entities.ExerciseLog
 import com.example.seng303_groupb_assignment2.enums.ChartOption
+import com.example.seng303_groupb_assignment2.enums.Measurement
 import com.example.seng303_groupb_assignment2.enums.TimeRange
 import com.example.seng303_groupb_assignment2.enums.UnitType
 import com.example.seng303_groupb_assignment2.graphcomponents.CircleComponent
@@ -135,10 +137,9 @@ fun ViewProgress(
                 onSearchQueryChanged = { searchQuery = it },
                 onExerciseSelected = { exercise ->
                     selectedExercise = exercise
-                    selectedOption = when (exercise.measurement1.type) {
-                        "Reps" -> ChartOption.MaxWeight
-                        "Time" -> ChartOption.MaxDistance
-                        else -> null
+                    selectedOption = when (exercise.measurement) {
+                        Measurement.REPS_WEIGHT -> ChartOption.MaxWeight
+                        Measurement.DISTANCE_TIME -> ChartOption.MaxDistance
                     }
                     showDialog = false
                 },
@@ -171,16 +172,10 @@ fun ExerciseHeader(
 
     val relevantOptions = remember(selectedExercise) {
         when {
-            selectedExercise?.measurement1?.type == "Reps" && selectedExercise.measurement2.type == "Weight" -> {
+            selectedExercise?.measurement?.equals(Measurement.REPS_WEIGHT) == true -> {
                 listOf(ChartOption.MaxWeight, ChartOption.TotalWorkoutVolume)
             }
-            selectedExercise?.measurement1?.type == "Time" && selectedExercise.measurement2.type == "Distance" -> {
-                listOf(ChartOption.MaxDistance, ChartOption.TotalDistance)
-            }
-            selectedExercise?.measurement1?.type == "Time" && selectedExercise.measurement2.type == "Weight" -> {
-                listOf(ChartOption.MaxDistance, ChartOption.TotalDistance)
-            }
-            selectedExercise?.measurement1?.type == "Reps" && selectedExercise.measurement2.type == "Distance" -> {
+            selectedExercise?.measurement?.equals(Measurement.DISTANCE_TIME) == true -> {
                 listOf(ChartOption.MaxDistance, ChartOption.TotalDistance)
             }
             else -> emptyList()
@@ -423,44 +418,52 @@ fun ExerciseProgressGraph(
     LaunchedEffect(exerciseLogs, selectedOption) {
         val dataSeries = when (selectedOption) {
             ChartOption.MaxWeight -> {
-                exerciseLogs.map { log ->
+                exerciseLogs.mapNotNull { log ->
                     val epochDay = Instant.ofEpochMilli(log.timestamp)
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
                         .toEpochDay()
-                    epochDay.toDouble() to (log.measurement2.values.maxOrNull()
-                        ?.let { measurementConverter.convertToImperial(it, log.measurement2.type) }
-                        ?: 0f)
+                    val maxWeight = log.record.maxOfOrNull { it.second }?.takeIf { !it.isNaN() } ?: 0f
+                    if (maxWeight > 0f) epochDay.toDouble() to measurementConverter.convertToImperial(maxWeight, unitType.name) else null
                 }
             }
             ChartOption.TotalWorkoutVolume -> {
-                exerciseLogs.map { log ->
+                exerciseLogs.mapNotNull { log ->
                     val epochDay = Instant.ofEpochMilli(log.timestamp)
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
                         .toEpochDay()
-                    val totalVolume = log.measurement1.values.zip(log.measurement2.values)
-                        .sumOf { (reps, weight) -> reps * weight.toDouble() }
-                    epochDay.toDouble() to measurementConverter.convertToImperial(totalVolume.toFloat(), log.measurement2.type)
+                    val totalVolume = log.record.sumOf { (reps, weight) -> reps * weight.toDouble() }
+                    if (!totalVolume.isNaN() && totalVolume > 0) {
+                        epochDay.toDouble() to measurementConverter.convertToImperial(totalVolume.toFloat(), unitType.name)
+                    } else {
+                        null
+                    }
                 }
             }
             ChartOption.MaxDistance -> {
-                exerciseLogs.map { log ->
+                exerciseLogs.mapNotNull { log ->
                     val epochDay = Instant.ofEpochMilli(log.timestamp)
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
                         .toEpochDay()
-                    epochDay.toDouble() to (log.measurement2.values.maxOrNull()
-                        ?.let { measurementConverter.convertToImperial(it, log.measurement2.type) }
-                        ?: 0f) }
+                    val maxDistance = log.record.maxOfOrNull { it.first }?.takeIf { !it.isNaN() } ?: 0f
+                    if (maxDistance > 0f) epochDay.toDouble() to measurementConverter.convertToImperial(maxDistance, unitType.name) else null
+                }
             }
             ChartOption.TotalDistance -> {
-                exerciseLogs.map { log ->
+                exerciseLogs.mapNotNull { log ->
                     val epochDay = Instant.ofEpochMilli(log.timestamp)
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
                         .toEpochDay()
-                    epochDay.toDouble() to measurementConverter.convertToImperial(log.measurement2.values.sum(), log.measurement2.type) }
+                    val totalDistance = log.record.sumOf { it.first.toDouble() }
+                    if (!totalDistance.isNaN() && totalDistance > 0) {
+                        epochDay.toDouble() to measurementConverter.convertToImperial(totalDistance.toFloat(), unitType.name)
+                    } else {
+                        null
+                    }
+                }
             }
 
             null -> {
