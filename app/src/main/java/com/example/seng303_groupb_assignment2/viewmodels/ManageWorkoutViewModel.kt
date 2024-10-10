@@ -72,21 +72,18 @@ class ManageWorkoutViewModel(
         exercises.removeAt(index)
     }
 
-    fun updateExercise(index: Int, name: String,
-                       restTime: Int?, measurement: Measurement) {
-        val exercise = exercises[index]
-        exercise.name = name
-        if (restTime != null) {
-            exercise.restTime = restTime
-        }
-        exercise.measurement = measurement
-    }
-
     fun validName(): Boolean {
         return name.isNotBlank()
     }
 
     fun moveExercise(start: Int, end: Int) {
         exercises.add(end, exercises.removeAt(start))
+    }
+
+    fun clear() {
+        name = ""
+        description = ""
+        schedule = mutableStateListOf()
+        exercises = mutableStateListOf()
     }
 }

@@ -78,7 +78,6 @@ fun AddWorkout(
     var searchQuery by rememberSaveable { mutableStateOf("") }
     val exercises by exerciseViewModel.getExercisesByNameOrEmpty(searchQuery).observeAsState(emptyList())
 
-
     if (manageExerciseModalOpen) {
         ManageExerciseModal(
             closeModal = { manageExerciseModalOpen = false },
@@ -414,7 +413,7 @@ private fun CancelAndSaveRow (
         )
 
         Button(
-            onClick = { cancel() },
+            onClick = { cancel(); manageViewModel.clear() },
             colors = buttonColors,
             shape = RectangleShape
         ) {
@@ -446,7 +445,7 @@ private fun CancelAndSaveRow (
                         )
                     }
 
-
+                    manageViewModel.clear()
                     navController.navigate("SelectWorkout")
                 }
             },
