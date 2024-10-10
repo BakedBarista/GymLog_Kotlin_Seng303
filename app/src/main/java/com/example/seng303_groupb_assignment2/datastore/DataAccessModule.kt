@@ -1,5 +1,6 @@
 package com.example.seng303_groupb_assignment2.datastore
 
+import androidx.lifecycle.SavedStateHandle
 import com.example.seng303_groupb_assignment2.daos.ExerciseDao
 import com.example.seng303_groupb_assignment2.daos.ExerciseLogDao
 import com.example.seng303_groupb_assignment2.daos.WorkoutDao
@@ -20,8 +21,7 @@ val dataAccessModule = module {
     single { get<AppDatabase>().exerciseLogDao() }
 
     viewModel { ExerciseViewModel(get<ExerciseDao>(), get<WorkoutDao>(),  get<ExerciseLogDao>()) }
-    viewModel { ExerciseViewModel(get<ExerciseDao>(), get<WorkoutDao>(), get<ExerciseLogDao>()) }
     viewModel { WorkoutViewModel(get<WorkoutDao>(), get<ExerciseLogDao>()) }
-    viewModel { RunWorkoutViewModel(get<WorkoutDao>(), get<ExerciseLogDao>())}
+    viewModel { (handle: SavedStateHandle) -> RunWorkoutViewModel(get<WorkoutDao>(), get<ExerciseLogDao>(), handle)}
     viewModel { PreferenceViewModel(get<PreferencePersistentStorage<UserPreferences>>()) }
 }

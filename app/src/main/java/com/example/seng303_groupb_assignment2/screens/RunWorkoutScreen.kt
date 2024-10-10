@@ -35,6 +35,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
@@ -89,9 +90,9 @@ fun RunWorkout(
     val unit2Text = currentExercise?.measurement?.unit2
     val restTime = currentExercise?.restTime ?: 0
 
-    var isTimerRunning by rememberSaveable { mutableStateOf(false) }
-    var currentTime by rememberSaveable { mutableLongStateOf(restTime * 1000L) }
-    var restartTimer by rememberSaveable { mutableStateOf(false) }
+//    var isTimerRunning = viewModel.isTimerRunning
+//    var currentTime = viewModel.currentTime
+//    var restartTimer = viewModel.restartTimer
     val sets = viewModel.getSetsForCurrentExercise()
 
     val isPreviousEnabled = currentExerciseIndex > 0
@@ -99,9 +100,9 @@ fun RunWorkout(
 
     fun onSaveSet(unit1: Float, unit2: Float) {
         viewModel.addSetToCurrentExercise(unit1, unit2)
-        currentTime = restTime * 1000L
-        restartTimer = true
-        isTimerRunning = true
+        viewModel.currentTime = restTime * 1000L
+        viewModel.restartTimer = true
+        viewModel.isTimerRunning = true
     }
 
     LazyColumn(
@@ -110,7 +111,7 @@ fun RunWorkout(
     ) {
         item {
             Header(viewModel, onSave = {
-                isTimerRunning = true
+                viewModel.isTimerRunning = true
             }, onSaveSet = ::onSaveSet)
         }
 
@@ -126,7 +127,7 @@ fun RunWorkout(
             ) {
                 IconButton(onClick = {
                     viewModel.previousExercise()
-                    isTimerRunning = false
+                    viewModel.isTimerRunning = false
                 },
                     enabled = isPreviousEnabled
                 ) {
@@ -137,20 +138,21 @@ fun RunWorkout(
                 }
                 Timer(
                     totalTime = restTime * 1000L,
-                    currentTime = currentTime,
-                    isTimerRunning = isTimerRunning,
-                    restartTimer = restartTimer,
-                    onRestartHandled = { restartTimer = false },
+                    currentTime = viewModel.currentTime,
+                    isTimerRunning = viewModel.isTimerRunning,
+                    restartTimer = viewModel.restartTimer,
+                    onRestartHandled = { viewModel.restartTimer = false },
                     handleColor = Color.Green,
                     inactiveBarColor = Color.DarkGray,
                     activeBarColor = Color(0xFF37B900),
                     modifier = Modifier.size(100.dp),
-                    timerSize = 100.dp
+                    timerSize = 100.dp,
+                    viewModel = viewModel
                 )
                 IconButton(
                     onClick = {
                         viewModel.nextExercise()
-                        isTimerRunning = false
+                        viewModel.isTimerRunning = false
                     },
                     enabled = isNextEnabled
                 ) {
@@ -177,9 +179,11 @@ fun RunWorkout(
         item {
             Button(
                 onClick = {
-                    viewModel.saveLogs()
-                    viewModel.clearWorkoutData()
-                    navController.navigate("SelectWorkout")
+                    viewModel.saveLogs {
+                        // Clear workout data after logs are saved
+                        viewModel.clearWorkoutData()
+                        navController.navigate("SelectWorkout")
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -193,7 +197,6 @@ fun RunWorkout(
     }
 }
 
-// Gotten from https://medium.com/@fahadhabib01/craft-a-captivating-animated-countdown-timer-with-jetpack-compose-0e2f16d64664
 @Composable
 private fun Header(
     viewModel: RunWorkoutViewModel,
@@ -359,43 +362,50 @@ private fun Header(
     }
 }
 
-// Updated Timer composable to remove Start/Stop button
+// Gotten from https://medium.com/@fahadhabib01/craft-a-captivating-animated-countdown-timer-with-jetpack-compose-0e2f16d64664
 @Composable
 fun Timer(
     totalTime: Long,
     currentTime: Long,
     isTimerRunning: Boolean,
-    restartTimer: Boolean,  // Add a flag to handle timer reset
-    onRestartHandled: () -> Unit,  // Callback to signal when restart is handled
+    restartTimer: Boolean,
+    onRestartHandled: () -> Unit,
     handleColor: Color,
     activeBarColor: Color,
     inactiveBarColor: Color,
     modifier: Modifier = Modifier,
     strokeWidth: Dp = 5.dp,
-    timerSize: Dp = 120.dp  // Adjustable timer size, default to 120.dp
+    timerSize: Dp = 120.dp,
+    viewModel: RunWorkoutViewModel,
 ) {
     var size by remember { mutableStateOf(IntSize.Zero) }
-    var value by remember { mutableFloatStateOf(1f) }  // Start with 1f (100% of the total time)
+    var value by remember { mutableFloatStateOf(1f) }
     var internalCurrentTime by remember { mutableLongStateOf(currentTime) }
+    var lastUpdateTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
 
-    // Reset timer logic when restart is triggered
-    LaunchedEffect(key1 = restartTimer) {
+    LaunchedEffect(isTimerRunning, restartTimer, totalTime) {
         if (restartTimer) {
-            internalCurrentTime = totalTime  // Reset the internal time
-            value = 1f  // Reset the circle to full
-            onRestartHandled()  // Notify that restart has been handled
+            internalCurrentTime = totalTime
+            value = 1f
+            viewModel.currentTime = internalCurrentTime
+            onRestartHandled()
+        } else {
+            internalCurrentTime = viewModel.currentTime
         }
-    }
+        lastUpdateTime = System.currentTimeMillis()
+        while (internalCurrentTime > 0) {
+            val now = System.currentTimeMillis()
+            val delta = now - lastUpdateTime
+            lastUpdateTime = now
 
-    // Timer countdown logic
-    LaunchedEffect(key1 = isTimerRunning, key2 = internalCurrentTime) {
-        if (isTimerRunning) {
-            while (internalCurrentTime > 0) {
-                delay(100L)  // Update every 100 milliseconds
-                internalCurrentTime -= 100L
-                value = internalCurrentTime / totalTime.toFloat()
-            }
+            internalCurrentTime = (internalCurrentTime - delta).coerceAtLeast(0L)
+
+            value = internalCurrentTime / totalTime.toFloat()
+            viewModel.currentTime = internalCurrentTime
+
+            withFrameNanos { }
         }
+        viewModel.isTimerRunning = false
     }
 
     Column(
