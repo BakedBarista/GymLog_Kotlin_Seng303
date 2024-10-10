@@ -29,6 +29,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -65,8 +66,10 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.seng303_groupb_assignment2.R
 import com.example.seng303_groupb_assignment2.entities.Exercise
+import com.example.seng303_groupb_assignment2.viewmodels.PreferenceViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.RunWorkoutViewModel
 import kotlinx.coroutines.delay
+import org.koin.androidx.compose.koinViewModel
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -89,6 +92,7 @@ fun RunWorkout(
     val currentExercise = exercises?.getOrNull(currentExerciseIndex)
     val unit1Text = currentExercise?.measurement?.unit1
     val unit2Text = currentExercise?.measurement?.unit2
+    val unitMeasurement = currentExercise?.measurement?.measurement
     val restTime = currentExercise?.restTime ?: 0
 
     var isTimerRunning by rememberSaveable {
@@ -183,6 +187,7 @@ fun RunWorkout(
                 label2 = unit2Text ?: "Weight",
                 unit1 = set.first,
                 unit2 = set.second,
+                measurement = unitMeasurement,
                 onDelete = {
                     viewModel.removeSetFromCurrentExercise(index)
                 }
@@ -479,8 +484,18 @@ fun SetContainer(
     label2: String,
     unit1: Float,
     unit2: Float,
-    onDelete: () -> Unit
+    measurement: List<String>?,
+    onDelete: () -> Unit,
+    preferenceViewModel: PreferenceViewModel = koinViewModel()
 ) {
+    val preferences = preferenceViewModel.preferences.observeAsState(null).value
+    val metricUnits = preferences?.metricUnits ?: false
+
+    fun requiresUnit(label: String): Boolean {
+        return label == "Weight" || label == "Distance"
+    }
+
+    val measurementUnit = if (metricUnits) measurement?.get(0) else measurement?.get(1)
 
     Row(
         modifier = Modifier
@@ -489,12 +504,12 @@ fun SetContainer(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "$label2: $unit2 kg", // todo make this modular
+            text = if (requiresUnit(label2)) "$label2: $unit2 $measurementUnit" else "$label2: $unit2",
             fontSize = 18.sp,
             modifier = Modifier.weight(1f)
         )
         Text(
-            text = "$label1: $unit1",
+            text = if (requiresUnit(label1)) "$label1: $unit1 $measurementUnit" else "$label1: $unit1",
             fontSize = 18.sp,
             modifier = Modifier.weight(1f)
         )
