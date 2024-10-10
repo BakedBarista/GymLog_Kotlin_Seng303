@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">SENG303_GroupB_Assignment2</string>
+    <string name="app_name">GymLogs</string>
 
     <!-- buttons -->
     <string name="add">Add</string>
