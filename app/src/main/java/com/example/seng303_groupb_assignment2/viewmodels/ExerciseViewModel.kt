@@ -30,6 +30,26 @@ class ExerciseViewModel(
         }
     }
 
+    fun addExerciseToWorkout(workoutId: Long, exercise: Exercise) {
+        viewModelScope.launch {
+            val existingExercises = exerciseDao.getAllMatchingExercises(
+                name = exercise.name,
+                restTime = exercise.restTime ?: 0,
+                measurementLabel = exercise.measurement.label
+            )
+
+            val exerciseId = if (existingExercises.isNotEmpty()) {
+                existingExercises[0].id
+            } else {
+                exerciseDao.upsertExercise(exercise)
+            }
+
+            val crossRef = WorkoutExerciseCrossRef(workoutId = workoutId, exerciseId = exerciseId)
+
+            workoutDao.upsertWorkoutExerciseCrossRef(crossRef)
+        }
+    }
+
     fun getExercisesByName(name: String): LiveData<List<Exercise>> {
         return exerciseDao.getAllExercisesByName("%$name%").asLiveData()
     }

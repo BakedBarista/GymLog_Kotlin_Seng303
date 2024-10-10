@@ -116,8 +116,15 @@ fun SelectWorkout(
             closeModal = { addExerciseModalOpen = false
                          modalViewModel.clearSavedInfo()},
             submitModal = { name, restTime, measurement ->
-                manageWorkoutViewModel.addExercise(name, restTime, measurement)
-                modalViewModel.clearSavedInfo() },
+                val newExercise = Exercise(
+                    name = name,
+                    restTime = restTime,
+                    measurement = measurement
+                )
+                exerciseViewModel.addExerciseToWorkout(currentWorkoutId ?: 0L, newExercise)
+                addExerciseModalOpen = false
+                modalViewModel.clearSavedInfo()
+            },
             exercises = exercises,
             searchQueryChanged = { searchQuery = it },
             onExerciseSelected = { exercise ->
