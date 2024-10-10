@@ -1,5 +1,6 @@
 package com.example.seng303_groupb_assignment2.screens
 
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -90,9 +91,15 @@ fun RunWorkout(
     val unit2Text = currentExercise?.measurement?.unit2
     val restTime = currentExercise?.restTime ?: 0
 
-//    var isTimerRunning = viewModel.isTimerRunning
-//    var currentTime = viewModel.currentTime
-//    var restartTimer = viewModel.restartTimer
+    var isTimerRunning by rememberSaveable {
+        mutableStateOf(false)
+    }
+    var currentTime by rememberSaveable {
+        mutableLongStateOf(restTime * 1000L)
+    }
+    var restartTimer by rememberSaveable {
+        mutableStateOf(false)
+    }
     val sets = viewModel.getSetsForCurrentExercise()
 
     val isPreviousEnabled = currentExerciseIndex > 0
@@ -100,9 +107,9 @@ fun RunWorkout(
 
     fun onSaveSet(unit1: Float, unit2: Float) {
         viewModel.addSetToCurrentExercise(unit1, unit2)
-        viewModel.currentTime = restTime * 1000L
-        viewModel.restartTimer = true
-        viewModel.isTimerRunning = true
+        currentTime = restTime * 1000L
+        restartTimer = true
+        isTimerRunning = true
     }
 
     LazyColumn(
@@ -138,16 +145,15 @@ fun RunWorkout(
                 }
                 Timer(
                     totalTime = restTime * 1000L,
-                    currentTime = viewModel.currentTime,
-                    isTimerRunning = viewModel.isTimerRunning,
-                    restartTimer = viewModel.restartTimer,
-                    onRestartHandled = { viewModel.restartTimer = false },
+                    currentTime = currentTime,
+                    isTimerRunning = isTimerRunning,
+                    restartTimer = restartTimer,
+                    onRestartHandled = { restartTimer = false },
                     handleColor = Color.Green,
                     inactiveBarColor = Color.DarkGray,
                     activeBarColor = Color(0xFF37B900),
                     modifier = Modifier.size(100.dp),
-                    timerSize = 100.dp,
-                    viewModel = viewModel
+                    timerSize = 100.dp
                 )
                 IconButton(
                     onClick = {
@@ -332,8 +338,11 @@ private fun Header(
             )
 
             Button(onClick = {
+                Log.d("Status before", "currentTime: " + viewModel.currentTime + " restartTimer: " + viewModel.restartTimer + " isTimerRunning: " + viewModel.isTimerRunning)
                 onSaveSet(unit1Value, unit2Value)
+                Log.d("Status mid", "currentTime: " + viewModel.currentTime + " restartTimer: " + viewModel.restartTimer + " isTimerRunning: " + viewModel.isTimerRunning)
                 onSave()
+                Log.d("Status", "currentTime: " + viewModel.currentTime + " restartTimer: " + viewModel.restartTimer + " isTimerRunning: " + viewModel.isTimerRunning)
             },
                 colors = buttonColors,
                 shape = RectangleShape,
@@ -376,24 +385,24 @@ fun Timer(
     modifier: Modifier = Modifier,
     strokeWidth: Dp = 5.dp,
     timerSize: Dp = 120.dp,
-    viewModel: RunWorkoutViewModel,
 ) {
     var size by remember { mutableStateOf(IntSize.Zero) }
-    var value by remember { mutableFloatStateOf(1f) }
-    var internalCurrentTime by remember { mutableLongStateOf(currentTime) }
-    var lastUpdateTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    var value by rememberSaveable { mutableFloatStateOf(1f) }
+    var internalCurrentTime by rememberSaveable { mutableLongStateOf(currentTime) }
+    var lastUpdateTime by rememberSaveable { mutableLongStateOf(System.currentTimeMillis()) }
 
     LaunchedEffect(isTimerRunning, restartTimer, totalTime) {
+        // when true we set the internal current time to the total time (rest time * 1000)
+        // value is just for the display
+        // update the view model with the current time
+        // on restart handled set the viewmodel.restartTimer to false
         if (restartTimer) {
             internalCurrentTime = totalTime
             value = 1f
-            viewModel.currentTime = internalCurrentTime
             onRestartHandled()
-        } else {
-            internalCurrentTime = viewModel.currentTime
         }
         lastUpdateTime = System.currentTimeMillis()
-        while (internalCurrentTime > 0) {
+        while (internalCurrentTime > 0 && isTimerRunning) {
             val now = System.currentTimeMillis()
             val delta = now - lastUpdateTime
             lastUpdateTime = now
@@ -401,23 +410,20 @@ fun Timer(
             internalCurrentTime = (internalCurrentTime - delta).coerceAtLeast(0L)
 
             value = internalCurrentTime / totalTime.toFloat()
-            viewModel.currentTime = internalCurrentTime
 
             withFrameNanos { }
         }
-        viewModel.isTimerRunning = false
     }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.onSizeChanged { size = it }
     ) {
-        // The circular timer
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier.size(timerSize)  // Adjust the size of the timer here
+            modifier = Modifier.size(timerSize)
         ) {
-            Canvas(modifier = Modifier.size(timerSize)) {  // Use the same size for the canvas
+            Canvas(modifier = Modifier.size(timerSize)) {
                 drawArc(
                     color = inactiveBarColor,
                     startAngle = -215f,
