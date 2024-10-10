@@ -1,6 +1,6 @@
 package com.example.seng303_groupb_assignment2.services
 
-import android.util.Log
+import com.example.seng303_groupb_assignment2.entities.ExerciseLog
 
 class MeasurementConverter(
     private val isMetric : Boolean
@@ -23,6 +23,48 @@ class MeasurementConverter(
             "Weight" -> convertWeightToKg(value)
             "Distance" -> convertDistanceToKm(value)
             else -> value
+        }
+    }
+
+    fun convertSetToImperial(value: List<Pair<Float, Float>>, type: String): List<Pair<Float, Float>> {
+        return when (type) {
+            "Weight" -> convertSetWeightsToLbs(value)
+            "Distance" -> convertSetDistancesToMi(value)
+            else -> value
+        }
+    }
+
+    fun convertSetToMetric(value: List<Pair<Float, Float>>, type: String): List<Pair<Float, Float>> {
+        return when (type) {
+            "Weight" -> convertSetWeightsToKg(value)
+            "Distance" -> convertSetDistancesToKm(value)
+            else -> value
+        }
+    }
+
+    private fun convertSetWeightsToKg(value: List<Pair<Float, Float>>): List<Pair<Float, Float>> {
+        return value.map { pair ->
+            Pair( pair.first, convertWeightToKg(pair.second)) // Convert only the weight (first)
+        }
+    }
+
+    private fun convertSetDistancesToKm(value: List<Pair<Float, Float>>): List<Pair<Float, Float>> {
+        return value.map { pair ->
+            Pair(convertDistanceToKm(pair.first), pair.second)
+        }
+    }
+
+    // Convert a list of weight pairs to pounds
+    private fun convertSetWeightsToLbs(value: List<Pair<Float, Float>>): List<Pair<Float, Float>> {
+        return value.map { pair ->
+            Pair(convertWeightToLb(pair.first), pair.second)
+        }
+    }
+
+    // Convert a list of distance pairs to miles
+    private fun convertSetDistancesToMi(value: List<Pair<Float, Float>>): List<Pair<Float, Float>> {
+        return value.map { pair ->
+            Pair(pair.first, convertDistanceToMi(pair.second))
         }
     }
 

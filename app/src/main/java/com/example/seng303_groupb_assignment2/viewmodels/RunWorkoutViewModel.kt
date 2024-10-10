@@ -4,31 +4,39 @@ import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
-import com.example.seng303_groupb_assignment2.daos.ExerciseDao
 import com.example.seng303_groupb_assignment2.daos.ExerciseLogDao
 import com.example.seng303_groupb_assignment2.daos.WorkoutDao
+import com.example.seng303_groupb_assignment2.datastore.PreferencePersistentStorage
 import com.example.seng303_groupb_assignment2.entities.ExerciseLog
 import com.example.seng303_groupb_assignment2.entities.WorkoutWithExercises
-import kotlinx.coroutines.delay
+import com.example.seng303_groupb_assignment2.models.UserPreferences
+import com.example.seng303_groupb_assignment2.services.MeasurementConverter
 import kotlinx.coroutines.launch
 
 class RunWorkoutViewModel(
     private val workoutDao: WorkoutDao,
     private val exerciseLogDao: ExerciseLogDao,
-    private val savedStateHandle: SavedStateHandle
+    private val savedStateHandle: SavedStateHandle,
+    private val preferenceStorage: PreferencePersistentStorage<UserPreferences>
 ) : ViewModel() {
 
     private val KEY_CURRENT_TIME = "current_time"
     private val KEY_IS_TIMER_RUNNING = "is_timer_running"
     private val KEY_RESTART_TIMER = "restart_timer"
+
+    val preferences = preferenceStorage.get().asLiveData()
+    private var isMetric = preferences.value?.metricUnits ?: true
+
+    private lateinit var measurementConverter: MeasurementConverter
+
 
     var currentTime: Long
         get() = savedStateHandle.get<Long>(KEY_CURRENT_TIME) ?: 0L
@@ -53,6 +61,15 @@ class RunWorkoutViewModel(
     val workoutWithExercises: LiveData<WorkoutWithExercises?> = _workoutWithExercises
 
     private var exerciseSets = mutableMapOf<Int, SnapshotStateList<Pair<Float, Float>>>()
+
+    init {
+        preferences.observeForever { userPreferences ->
+            userPreferences?.let {
+                isMetric = it.metricUnits
+                measurementConverter = MeasurementConverter(isMetric)
+            }
+        }
+    }
 
     fun clearWorkoutData() {
         currentExerciseIndex = 0
@@ -80,10 +97,18 @@ class RunWorkoutViewModel(
         viewModelScope.launch {
             exerciseSets.forEach { (exerciseIndex, sets) ->
                 val exercise = workoutWithExercises.value?.exercises?.get(exerciseIndex)
+                Log.d("Prefs", isMetric.toString())
                 if (exercise != null && sets.isNotEmpty()) {
+                    val measurementType = if (exercise.measurement.unit1 == "Distance") {
+                        "Distance"
+                    } else {
+                        "Weight"
+                    }
+                    Log.d("Prefs", isMetric.toString())
+                    val convertedSets = measurementConverter.convertSetToMetric(sets, measurementType).toMutableList()
                     val exerciseLog = ExerciseLog(
                         exerciseId = exercise.id,
-                        record = sets.toMutableList(),
+                        record = convertedSets,
                         timestamp = System.currentTimeMillis()
                     )
                     exerciseLogDao.upsertExerciseLog(exerciseLog)
@@ -92,6 +117,7 @@ class RunWorkoutViewModel(
             onComplete()
         }
     }
+
 
     fun loadWorkoutWithExercises(workoutId: Long) {
         viewModelScope.launch {
@@ -113,5 +139,3 @@ class RunWorkoutViewModel(
         }
     }
 }
-
-

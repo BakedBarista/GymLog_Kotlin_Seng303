@@ -105,14 +105,30 @@ class WorkoutViewModel(
                             "Weight"
                         }
                         val firstValues = log.record.joinToString(separator = ",") {
-                            val convertedValue =
-                                measurementConverter.convertToImperial(it.first, measurementType)
-                            convertedValue.toString()
+                            // if it is weight we dont want to convert first pair
+                            if (measurementType == "Weight") {
+                                it.first.toString()
+                            } else {
+                                val convertedValue =
+                                    measurementConverter.convertToImperial(
+                                        it.first,
+                                        measurementType
+                                    )
+                                convertedValue.toString()
+                            }
                         }
                         val secondValues = log.record.joinToString(separator = ",") {
-                            val convertedValue =
-                                measurementConverter.convertToImperial(it.second, measurementType)
-                            convertedValue.toString()
+                            //ifit is distance we dont want to convert second pair
+                            if (measurementType ==  "Distance") {
+                                it.second.toString()
+                            } else {
+                                val convertedValue =
+                                    measurementConverter.convertToImperial(
+                                        it.second,
+                                        measurementType
+                                    )
+                                convertedValue.toString()
+                            }
                         }
                         listOf(
                             exerciseName,
