@@ -95,17 +95,25 @@ class WorkoutViewModel(
             val deferredLogs = exercises.map { exercise ->
                 async {
                     val logs = exerciseLogDao.getExerciseLogsByExerciseId(exercise.id).first()
-                    logs.map { log : ExerciseLog ->
+                    logs.map { log: ExerciseLog ->
                         val exerciseName = exercise.name
                         val logTimestamp = log.timestamp
                         val logSets = log.record.size
-                        val firstValues = log.record.joinToString ( separator = "," ) {
-                            val convertedValue = measurementConverter.convertToImperial(it.first, isMetric)
+                        val measurementType = if (exercise.measurement.unit1 == "Distance") {
+                            "Distance"
+                        } else {
+                            "Weight"
+                        }
+                        val firstValues = log.record.joinToString(separator = ",") {
+                            val convertedValue =
+                                measurementConverter.convertToImperial(it.first, measurementType)
                             convertedValue.toString()
                         }
-                        val secondValues = log.record.joinToString ( separator = "," ) {
-                            val convertedValue = measurementConverter.convertToImperial(it.second, isMetric) }
-
+                        val secondValues = log.record.joinToString(separator = ",") {
+                            val convertedValue =
+                                measurementConverter.convertToImperial(it.second, measurementType)
+                            convertedValue.toString()
+                        }
                         listOf(
                             exerciseName,
                             logTimestamp.toString(),

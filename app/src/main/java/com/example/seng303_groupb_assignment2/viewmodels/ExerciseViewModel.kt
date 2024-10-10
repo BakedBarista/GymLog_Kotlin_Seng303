@@ -57,9 +57,7 @@ class ExerciseViewModel(
     // TODO DELETE THIS WHEN WE NO LONGER NEED SAMPLE DATA
     fun createSampleExerciseAndLogs() {
         viewModelScope.launch {
-            Log.d("DBINIT", "INSERTING WORKOUT")
             try {
-                Log.d("DBINIT", "INSERTING WORKOUT")
                 val workoutCount = workoutDao.getWorkoutCount()
                 val workoutOne : Workout
                 val workoutOneId : Long
@@ -69,11 +67,9 @@ class ExerciseViewModel(
                         description = "Test workout",
                         schedule = listOf(Days.MONDAY, Days.WEDNESDAY, Days.FRIDAY)
                     )
-                    Log.d("DBINIT", "INSERT WORKOUT")
                     workoutOneId = workoutDao.upsertWorkout(workoutOne)
                     val count = exerciseDao.getExerciseCount()
                     if (count == 0) {
-                        Log.d("DBINIT", "INSERT EXERCISE")
                         val benchPress = Exercise(
                             name = "Bench Press",
                             restTime = 90,

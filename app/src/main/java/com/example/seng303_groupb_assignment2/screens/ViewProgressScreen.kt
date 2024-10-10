@@ -148,7 +148,12 @@ fun ViewProgress(
         }
 
         if (selectedExercise != null && filteredExerciseLogs.isNotEmpty() && selectedOption != null) {
-            ExerciseProgressGraph(filteredExerciseLogs, selectedOption, unitType)
+            val measurementType = if (selectedExercise!!.measurement.unit1 == "Distance") {
+                "Distance"
+            } else {
+                "Weight"
+            }
+            ExerciseProgressGraph(filteredExerciseLogs, selectedOption, unitType, measurementType)
         } else if (selectedExercise != null) {
             Text(
                 text = stringResource(R.string.no_logs_in_timeframe),
@@ -406,6 +411,7 @@ fun ExerciseProgressGraph(
     exerciseLogs: List<ExerciseLog>,
     selectedOption: ChartOption?,
     unitType: UnitType,
+    measurementType: String,
     preferenceViewModel: PreferenceViewModel = koinViewModel()
 ) {
     val preferences = preferenceViewModel.preferences.observeAsState(null).value
@@ -424,7 +430,7 @@ fun ExerciseProgressGraph(
                         .toLocalDate()
                         .toEpochDay()
                     val maxWeight = log.record.maxOfOrNull { it.second }?.takeIf { !it.isNaN() } ?: 0f
-                    if (maxWeight > 0f) epochDay.toDouble() to measurementConverter.convertToImperial(maxWeight, unitType.name) else null
+                    if (maxWeight > 0f) epochDay.toDouble() to measurementConverter.convertToImperial(maxWeight, measurementType) else null
                 }
             }
             ChartOption.TotalWorkoutVolume -> {
@@ -435,7 +441,7 @@ fun ExerciseProgressGraph(
                         .toEpochDay()
                     val totalVolume = log.record.sumOf { (reps, weight) -> reps * weight.toDouble() }
                     if (!totalVolume.isNaN() && totalVolume > 0) {
-                        epochDay.toDouble() to measurementConverter.convertToImperial(totalVolume.toFloat(), unitType.name)
+                        epochDay.toDouble() to measurementConverter.convertToImperial(totalVolume.toFloat(), measurementType)
                     } else {
                         null
                     }
@@ -448,7 +454,7 @@ fun ExerciseProgressGraph(
                         .toLocalDate()
                         .toEpochDay()
                     val maxDistance = log.record.maxOfOrNull { it.first }?.takeIf { !it.isNaN() } ?: 0f
-                    if (maxDistance > 0f) epochDay.toDouble() to measurementConverter.convertToImperial(maxDistance, unitType.name) else null
+                    if (maxDistance > 0f) epochDay.toDouble() to measurementConverter.convertToImperial(maxDistance, measurementType) else null
                 }
             }
             ChartOption.TotalDistance -> {
@@ -459,7 +465,7 @@ fun ExerciseProgressGraph(
                         .toEpochDay()
                     val totalDistance = log.record.sumOf { it.first.toDouble() }
                     if (!totalDistance.isNaN() && totalDistance > 0) {
-                        epochDay.toDouble() to measurementConverter.convertToImperial(totalDistance.toFloat(), unitType.name)
+                        epochDay.toDouble() to measurementConverter.convertToImperial(totalDistance.toFloat(), measurementType)
                     } else {
                         null
                     }

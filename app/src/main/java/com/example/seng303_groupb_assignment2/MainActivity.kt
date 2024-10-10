@@ -99,9 +99,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             val preferences = preferenceViewModel.preferences.observeAsState()
             val isDarkMode = preferences.value?.darkMode ?: false
-            Log.d("DEFINITELY PREFS", preferences.value?.metricUnits.toString())
-            Log.d("DEFINITELY PREFS", preferences.value?.darkMode.toString())
-            Log.d("DEFINITELY PREFS", preferences.value?.soundOn.toString())
 
             SENG303_GroupB_Assignment2Theme(darkTheme = isDarkMode) {
                 val navController = rememberNavController()

@@ -189,8 +189,7 @@ fun SelectWorkout(
                             },
                             onFailure = {
                                 Toast.makeText(context, context.getString(R.string.workout_exported_failure_toast), Toast.LENGTH_LONG).show()
-                            },
-                            isMetric = isMetric
+                            }
                         )
                     },
                     onExportWorkoutLog = {
@@ -258,8 +257,7 @@ fun SelectWorkout(
                             },
                             onFailure = {
                                 Toast.makeText(context, context.getString(R.string.workout_exported_failure_toast), Toast.LENGTH_LONG).show()
-                            },
-                            isMetric = isMetric
+                            }
                         )
                     },
                     onExportWorkoutLog = {

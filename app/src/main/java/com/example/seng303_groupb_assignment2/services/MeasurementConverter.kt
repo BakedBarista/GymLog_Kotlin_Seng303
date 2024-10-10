@@ -28,40 +28,32 @@ class MeasurementConverter(
 
     private fun convertWeightToLb(valueInKg: Float): Float {
         return if (isMetric) {
-            Log.d("Unit conversion", valueInKg.toString())
             valueInKg
         } else {
-            Log.d("Unit conversion", (valueInKg * kgToLbConversionFactor).toString())
             valueInKg * kgToLbConversionFactor
         }
     }
 
     private fun convertWeightToKg(value: Float): Float {
         return if (isMetric) {
-            Log.d("Unit conversion", value.toString())
             value
         } else {
-            Log.d("Unit conversion", (value / kgToLbConversionFactor).toString())
             value / kgToLbConversionFactor
         }
     }
 
     private fun convertDistanceToMi(valueInKm: Float): Float {
         return if (isMetric) {
-            Log.d("Unit conversion", valueInKm.toString())
             valueInKm
         } else {
-            Log.d("Unit conversion", (valueInKm * kmToMilesConversionFactor).toString())
             valueInKm * kmToMilesConversionFactor
         }
     }
 
     private fun convertDistanceToKm(valueInMiles: Float): Float {
         return if (isMetric) {
-            Log.d("UNit conversion", (valueInMiles / kmToMilesConversionFactor).toString())
             valueInMiles
         } else {
-            Log.d("Unit conversion", (valueInMiles / kmToMilesConversionFactor).toString())
             valueInMiles / kmToMilesConversionFactor
         }
     }
