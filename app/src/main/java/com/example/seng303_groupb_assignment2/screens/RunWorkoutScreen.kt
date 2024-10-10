@@ -112,6 +112,12 @@ fun RunWorkout(
         isTimerRunning = true
     }
 
+    fun stopTimer() {
+        currentTime = restTime * 1000L
+        restartTimer = true
+        isTimerRunning = false
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -134,7 +140,7 @@ fun RunWorkout(
             ) {
                 IconButton(onClick = {
                     viewModel.previousExercise()
-                    viewModel.isTimerRunning = false
+                    stopTimer()
                 },
                     enabled = isPreviousEnabled
                 ) {
@@ -153,12 +159,13 @@ fun RunWorkout(
                     inactiveBarColor = Color.DarkGray,
                     activeBarColor = Color(0xFF37B900),
                     modifier = Modifier.size(100.dp),
-                    timerSize = 100.dp
+                    timerSize = 100.dp,
+                    currentExerciseIndex = currentExerciseIndex
                 )
                 IconButton(
                     onClick = {
                         viewModel.nextExercise()
-                        viewModel.isTimerRunning = false
+                        stopTimer()
                     },
                     enabled = isNextEnabled
                 ) {
@@ -385,13 +392,14 @@ fun Timer(
     modifier: Modifier = Modifier,
     strokeWidth: Dp = 5.dp,
     timerSize: Dp = 120.dp,
+    currentExerciseIndex: Int
 ) {
     var size by remember { mutableStateOf(IntSize.Zero) }
     var value by rememberSaveable { mutableFloatStateOf(1f) }
     var internalCurrentTime by rememberSaveable { mutableLongStateOf(currentTime) }
     var lastUpdateTime by rememberSaveable { mutableLongStateOf(System.currentTimeMillis()) }
 
-    LaunchedEffect(isTimerRunning, restartTimer, totalTime) {
+    LaunchedEffect(isTimerRunning, restartTimer, totalTime, currentExerciseIndex) {
         // when true we set the internal current time to the total time (rest time * 1000)
         // value is just for the display
         // update the view model with the current time
