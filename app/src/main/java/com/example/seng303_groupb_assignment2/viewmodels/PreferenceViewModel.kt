@@ -9,7 +9,7 @@ import com.example.seng303_groupb_assignment2.models.UserPreferences
 import kotlinx.coroutines.launch
 
 class PreferenceViewModel(
-    private val preferenceStorage: PreferencePersistentStorage<UserPreferences>
+    val preferenceStorage: PreferencePersistentStorage<UserPreferences>
 ) : ViewModel() {
 
     val preferences = preferenceStorage.get().asLiveData()

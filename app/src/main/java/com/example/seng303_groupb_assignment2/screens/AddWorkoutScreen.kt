@@ -68,6 +68,7 @@ import com.example.seng303_groupb_assignment2.enums.Measurement
 import com.example.seng303_groupb_assignment2.notifications.NotificationManager
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.ManageWorkoutViewModel
+import com.example.seng303_groupb_assignment2.viewmodels.PreferenceViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
 import kotlin.math.roundToInt
 
@@ -77,6 +78,7 @@ fun AddWorkout(
     manageViewModel: ManageWorkoutViewModel,
     workoutViewModel: WorkoutViewModel,
     exerciseViewModel: ExerciseViewModel,
+    preferenceViewModel: PreferenceViewModel
 ) {
     var manageExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
     if (manageExerciseModalOpen) {
@@ -136,7 +138,8 @@ fun AddWorkout(
                     manageViewModel = manageViewModel,
                     workoutViewModel = workoutViewModel,
                     exerciseViewModel = exerciseViewModel,
-                    navController = navController
+                    navController = navController,
+                    preferenceViewModel = preferenceViewModel
                 )
             }
         }
@@ -181,7 +184,8 @@ fun AddWorkout(
                     manageViewModel = manageViewModel,
                     workoutViewModel = workoutViewModel,
                     exerciseViewModel = exerciseViewModel,
-                    navController = navController
+                    navController = navController,
+                    preferenceViewModel = preferenceViewModel
                 )
             }
         }
@@ -388,7 +392,9 @@ private fun CancelAndSaveRow (
     manageViewModel: ManageWorkoutViewModel,
     workoutViewModel: WorkoutViewModel,
     exerciseViewModel: ExerciseViewModel,
-    navController: NavController
+    navController: NavController,
+    preferenceViewModel: PreferenceViewModel
+
 ) {
     val context = LocalContext.current
 
@@ -428,7 +434,7 @@ private fun CancelAndSaveRow (
                     }
 
                     if (manageViewModel.schedule.isNotEmpty()) {
-                        val notificationHandler = NotificationManager(context)
+                        val notificationHandler = NotificationManager(context, preferenceViewModel.preferenceStorage)
                         val nextDayFormatted = getNextDay(manageViewModel.schedule)
                         notificationHandler.sendNewWorkoutNotification(
                             nextDayFormatted,

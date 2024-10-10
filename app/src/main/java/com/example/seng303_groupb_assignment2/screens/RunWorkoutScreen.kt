@@ -1,5 +1,6 @@
 package com.example.seng303_groupb_assignment2.screens
 
+import android.media.MediaPlayer
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,8 +27,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -48,6 +51,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
@@ -63,6 +67,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.seng303_groupb_assignment2.R
 import com.example.seng303_groupb_assignment2.entities.Exercise
+import com.example.seng303_groupb_assignment2.viewmodels.PreferenceViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.RunWorkoutViewModel
 import kotlinx.coroutines.delay
 import kotlin.math.PI
@@ -72,7 +77,8 @@ import kotlin.math.sin
 @Composable
 fun RunWorkout(
     viewModel: RunWorkoutViewModel,
-    navController: NavController
+    navController: NavController,
+    preferenceViewModel: PreferenceViewModel
 ) {
     val buttonColors = ButtonDefaults.buttonColors(
         containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -145,7 +151,8 @@ fun RunWorkout(
                     inactiveBarColor = Color.DarkGray,
                     activeBarColor = Color(0xFF37B900),
                     modifier = Modifier.size(100.dp),
-                    timerSize = 100.dp
+                    timerSize = 100.dp,
+                    preferenceViewModel = preferenceViewModel
                 )
                 IconButton(
                     onClick = {
@@ -359,31 +366,39 @@ private fun Header(
     }
 }
 
-// Updated Timer composable to remove Start/Stop button
 @Composable
 fun Timer(
     totalTime: Long,
     currentTime: Long,
     isTimerRunning: Boolean,
-    restartTimer: Boolean,  // Add a flag to handle timer reset
-    onRestartHandled: () -> Unit,  // Callback to signal when restart is handled
+    restartTimer: Boolean,
+    onRestartHandled: () -> Unit,
     handleColor: Color,
     activeBarColor: Color,
     inactiveBarColor: Color,
     modifier: Modifier = Modifier,
     strokeWidth: Dp = 5.dp,
-    timerSize: Dp = 120.dp  // Adjustable timer size, default to 120.dp
+    timerSize: Dp = 120.dp,
+    preferenceViewModel: PreferenceViewModel // Add preferenceViewModel to access sound preference
 ) {
     var size by remember { mutableStateOf(IntSize.Zero) }
-    var value by remember { mutableFloatStateOf(1f) }  // Start with 1f (100% of the total time)
+    var value by remember { mutableFloatStateOf(1f) }
     var internalCurrentTime by remember { mutableLongStateOf(currentTime) }
+    val context = LocalContext.current
 
-    // Reset timer logic when restart is triggered
+    // Observe preferences for sound
+    val preferences by preferenceViewModel.preferences.observeAsState()
+    val isSoundOn = preferences?.soundOn ?: true  // Default to true if preferences are not loaded
+
+    val mediaPlayer = remember {
+        MediaPlayer.create(context, R.raw.timer_finish)
+    }
+
     LaunchedEffect(key1 = restartTimer) {
         if (restartTimer) {
-            internalCurrentTime = totalTime  // Reset the internal time
-            value = 1f  // Reset the circle to full
-            onRestartHandled()  // Notify that restart has been handled
+            internalCurrentTime = totalTime
+            value = 1f
+            onRestartHandled()
         }
     }
 
@@ -391,9 +406,17 @@ fun Timer(
     LaunchedEffect(key1 = isTimerRunning, key2 = internalCurrentTime) {
         if (isTimerRunning) {
             while (internalCurrentTime > 0) {
-                delay(100L)  // Update every 100 milliseconds
+                delay(100L)
                 internalCurrentTime -= 100L
                 value = internalCurrentTime / totalTime.toFloat()
+            }
+            if (internalCurrentTime <= 0) {
+                if (isSoundOn) {
+                    mediaPlayer.start()  // Play sound if sound is on
+                    android.util.Log.d("Timer", "Sound played at the end of timer.")
+                } else {
+                    android.util.Log.d("Timer", "Sound muted (sound is off in preferences).")
+                }
             }
         }
     }
@@ -402,7 +425,6 @@ fun Timer(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.onSizeChanged { size = it }
     ) {
-        // The circular timer
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier.size(timerSize)  // Adjust the size of the timer here
@@ -445,6 +467,13 @@ fun Timer(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface  // Set text color to black
             )
+        }
+    }
+
+    // Cleanup MediaPlayer when the composable leaves the composition
+    DisposableEffect(Unit) {
+        onDispose {
+            mediaPlayer.release()
         }
     }
 }

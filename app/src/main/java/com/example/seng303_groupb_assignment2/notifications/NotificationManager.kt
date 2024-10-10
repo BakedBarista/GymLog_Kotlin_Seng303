@@ -8,10 +8,18 @@ import android.content.Intent
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.seng303_groupb_assignment2.R
+import com.example.seng303_groupb_assignment2.datastore.PreferencePersistentStorage
+import com.example.seng303_groupb_assignment2.models.UserPreferences
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.Calendar
 import kotlin.random.Random
 
-class NotificationManager(private val context: Context) {
+class NotificationManager(
+    private val context: Context,
+    private val preferenceStorage: PreferencePersistentStorage<UserPreferences>
+) {
     private val notificationManager = context.getSystemService(NotificationManager::class.java)
     private val notificationChannelID = "schedule_channel_id"
 
@@ -30,15 +38,26 @@ class NotificationManager(private val context: Context) {
     }
 
     private fun sendNotification(title: String, content: String) {
-        val notification = NotificationCompat.Builder(context, notificationChannelID)
-            .setContentTitle(title)
-            .setContentText(content)
-            .setSmallIcon(R.drawable.run)
-            .setPriority(NotificationManager.IMPORTANCE_HIGH)
-            .setAutoCancel(true)
-            .build()
+        CoroutineScope(Dispatchers.IO).launch {
+            preferenceStorage.get().collect { preferences ->
+                val notificationBuilder = NotificationCompat.Builder(context, notificationChannelID)
+                    .setContentTitle(title)
+                    .setContentText(content)
+                    .setSmallIcon(R.drawable.run)
+                    .setAutoCancel(true)
 
-        notificationManager.notify(Random.nextInt(), notification)
+                if (preferences.soundOn) {
+                    Log.d("Preferences", "Sound on")
+                    notificationBuilder.setDefaults(NotificationCompat.DEFAULT_SOUND)
+                } else {
+                    Log.d("Preferences", "Sound off")
+
+                    notificationBuilder.setSound(null) // Disable sound
+                }
+
+                notificationManager.notify(Random.nextInt(), notificationBuilder.build())
+            }
+        }
     }
 
     fun setupDailyNotifications() {

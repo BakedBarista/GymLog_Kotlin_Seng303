@@ -82,7 +82,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         intent?.let {
             if (it.getBooleanExtra("notify", false)) {
-                val notificationHandler = NotificationManager(this)
+                val notificationHandler = NotificationManager(this, preferenceViewModel.preferenceStorage)
                 workoutViewModel.allWorkouts.observe(this) { workouts ->
                     val currentDay: Days = Days.getCurrentDay();
                     workouts.forEach { workoutWithExercises ->
@@ -134,7 +134,7 @@ class MainActivity : ComponentActivity() {
                         ) {
                             composable("Home") {
                                 currentTitle = stringResource(id = R.string.home)
-                                Home(navController = navController)
+                                Home(navController = navController, preferenceViewModel = preferenceViewModel)
                             }
                             composable("Run") {
                                 val workoutId = navController.previousBackStackEntry?.savedStateHandle?.get<Long>("workoutId")
@@ -145,7 +145,7 @@ class MainActivity : ComponentActivity() {
                                 val workoutWithExercises by runWorkoutViewModel.workoutWithExercises.observeAsState()
 
                                 workoutWithExercises?.let {
-                                    RunWorkout(viewModel = runWorkoutViewModel, navController = navController)
+                                    RunWorkout(viewModel = runWorkoutViewModel, navController = navController, preferenceViewModel = preferenceViewModel)
                                 } ?: run {
                                     Text("Loading...")
                                 }
@@ -162,7 +162,8 @@ class MainActivity : ComponentActivity() {
                                     navController = navController,
                                     manageViewModel = manageWorkoutViewModel,
                                     exerciseViewModel = exerciseViewModel,
-                                    workoutViewModel = workoutViewModel
+                                    workoutViewModel = workoutViewModel,
+                                    preferenceViewModel = preferenceViewModel
                                 )
                             }
                             composable("Progress") {
