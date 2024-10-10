@@ -95,7 +95,7 @@ fun ViewProgress(
     var showDialog by rememberSaveable { mutableStateOf(false) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var selectedOption by rememberSaveable { mutableStateOf<ChartOption?>(null) }
-    var selectedTimeRange by rememberSaveable { mutableStateOf(TimeRange.ALL) }
+    var selectedTimeRange by rememberSaveable { mutableStateOf(TimeRange.LAST_MONTH) }
 
     val exercises by viewModel.getExercisesByName(searchQuery).observeAsState(emptyList())
     val exerciseLogs by viewModel.getExerciseLogsByExercise(selectedExercise?.id ?: 0L)

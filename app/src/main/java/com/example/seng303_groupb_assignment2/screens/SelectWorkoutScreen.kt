@@ -71,6 +71,7 @@ import org.koin.androidx.compose.getViewModel
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.core.content.FileProvider
+import com.example.seng303_groupb_assignment2.enums.ChartOption
 import com.example.seng303_groupb_assignment2.enums.Measurement
 import com.google.gson.Gson
 import com.google.zxing.BarcodeFormat
@@ -79,6 +80,8 @@ import java.io.File
 import java.io.FileOutputStream
 import com.example.seng303_groupb_assignment2.enums.UnitType
 import com.example.seng303_groupb_assignment2.models.UserPreferences
+import com.example.seng303_groupb_assignment2.utils.exerciseSaver
+import com.example.seng303_groupb_assignment2.viewmodels.ManageWorkoutViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.PreferenceViewModel
 
 
@@ -87,8 +90,10 @@ fun SelectWorkout(
     navController: NavController,
     workoutViewModel: WorkoutViewModel = getViewModel(),
     exerciseViewModel: ExerciseViewModel = getViewModel(),
-    preferenceViewModel: PreferenceViewModel = getViewModel()
-) {
+    preferenceViewModel: PreferenceViewModel = getViewModel(),
+    manageWorkoutViewModel: ManageWorkoutViewModel = getViewModel(),
+
+    ) {
     val userPreferences by preferenceViewModel.preferences.observeAsState(UserPreferences())
     val isMetric = userPreferences.metricUnits
     val workouts by workoutViewModel.allWorkouts.observeAsState(initial = emptyList())
@@ -100,42 +105,49 @@ fun SelectWorkout(
     val modalViewModel: ExerciseModalViewModel = viewModel()
     var currentExerciseId: Long? by rememberSaveable { mutableStateOf(null) }
     var editExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
+
+    // auto complete
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    val exercises by exerciseViewModel.getExercisesByName(searchQuery).observeAsState(emptyList())
+    var selectedExercise by rememberSaveable(stateSaver = exerciseSaver) { mutableStateOf<Exercise?>(null) }
+    var showDialog by rememberSaveable { mutableStateOf(false) }
+    var selectedOption by rememberSaveable { mutableStateOf<ChartOption?>(null) }
     if (editExerciseModalOpen) {
         ManageExerciseModal(
-            exerciseModel = modalViewModel,
             closeModal = { editExerciseModalOpen = false },
-            submitModal = { name, restTime, measurement ->
-                if (currentExerciseId != null) {
-                    val currentExercise = Exercise(
-                        id = currentExerciseId!!,
-                        name = name,
-                        restTime = restTime,
-                        measurement = measurement
-                    )
-                    exerciseViewModel.editExercise(currentExercise)
-                    currentExerciseId = null
+            submitModal = { name, restTime, measurement -> manageWorkoutViewModel.addExercise(name, restTime, measurement) },
+            exercises = exercises,
+            searchQueryChanged = { searchQuery = it },
+            onExerciseSelected = { exercise ->
+                selectedExercise = exercise
+                selectedOption = when (exercise.measurement) {
+                    Measurement.REPS_WEIGHT -> ChartOption.MaxWeight
+                    Measurement.DISTANCE_TIME -> ChartOption.MaxDistance
                 }
-            })
+                showDialog = false
+            }
+        )
     }
 
     var currentWorkoutId: Long? by rememberSaveable { mutableStateOf(null) }
     var addExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
     if (addExerciseModalOpen) {
         ManageExerciseModal(
-            exerciseModel = modalViewModel,
             closeModal = { addExerciseModalOpen = false },
-            submitModal = { name, restTime, measurement ->
-                if (currentWorkoutId != null) {
-                    val newExercise = Exercise(
-                        name = name,
-                        restTime = restTime,
-                        measurement = measurement
-                    )
-                    exerciseViewModel.addExercise(currentWorkoutId!!, newExercise)
-                    currentWorkoutId = null
+            submitModal = { name, restTime, measurement -> manageWorkoutViewModel.addExercise(name, restTime, measurement) },
+            exercises = exercises,
+            searchQueryChanged = { searchQuery = it },
+            onExerciseSelected = { exercise ->
+                selectedExercise = exercise
+                selectedOption = when (exercise.measurement) {
+                    Measurement.REPS_WEIGHT -> ChartOption.MaxWeight
+                    Measurement.DISTANCE_TIME -> ChartOption.MaxDistance
                 }
-            })
+                showDialog = false
+            }
+        )
     }
+
 
     if (isPortrait) {
         // Vertical scroll in portrait mode

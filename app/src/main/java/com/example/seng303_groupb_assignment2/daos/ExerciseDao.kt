@@ -6,6 +6,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
 import com.example.seng303_groupb_assignment2.entities.Exercise
+import com.example.seng303_groupb_assignment2.enums.Measurement
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -26,4 +27,8 @@ interface ExerciseDao {
 
     @Query("SELECT * FROM Exercise WHERE name LIKE :name")
     fun getAllExercisesByName(name: String): Flow<List<Exercise>>
+
+    @Query("SELECT * FROM Exercise WHERE name = :name AND restTime = :restTime AND measurement = :measurementLabel")
+    suspend fun getAllMatchingExercises(name: String, restTime: Int, measurementLabel: String): List<Exercise>
+
 }

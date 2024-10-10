@@ -76,6 +76,7 @@ class MainActivity : ComponentActivity() {
     private val workoutViewModel: WorkoutViewModel by koinViewModel()
     private val runWorkoutViewModel: RunWorkoutViewModel by koinViewModel()
     private val preferenceViewModel: PreferenceViewModel by koinViewModel()
+    private val manageWorkoutViewModel: ManageWorkoutViewModel by koinViewModel()
     private var startDestination = "Home"
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -158,7 +159,6 @@ class MainActivity : ComponentActivity() {
                             }
                             composable("Add") {
                                 currentTitle = stringResource(id = R.string.workout_builder_title)
-                                val manageWorkoutViewModel: ManageWorkoutViewModel = viewModel()
                                 AddWorkout(
                                     navController = navController,
                                     manageViewModel = manageWorkoutViewModel,
