@@ -2,6 +2,7 @@ package com.example.seng303_groupb_assignment2.viewmodels
 
 import android.util.Log
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
@@ -15,8 +16,6 @@ import com.example.seng303_groupb_assignment2.entities.Workout
 import com.example.seng303_groupb_assignment2.enums.Days
 import com.example.seng303_groupb_assignment2.enums.Measurement
 import kotlinx.coroutines.launch
-import java.time.LocalDate
-import java.time.ZoneId
 import kotlin.random.Random
 
 class ExerciseViewModel(
@@ -24,7 +23,6 @@ class ExerciseViewModel(
     private val workoutDao: WorkoutDao,
     private val exerciseLogDao: ExerciseLogDao
 ) : ViewModel() {
-    val allExercises: LiveData<List<Exercise>> = exerciseDao.getAllExercises().asLiveData()
 
     fun deleteExercise(exercise: Exercise) {
         viewModelScope.launch {
@@ -32,14 +30,36 @@ class ExerciseViewModel(
         }
     }
 
-    fun editExercise(exercise: Exercise) {
+    fun addExerciseToWorkout(workoutId: Long, exercise: Exercise) {
         viewModelScope.launch {
-            exerciseDao.upsertExercise(exercise)
+            val existingExercises = exerciseDao.getAllMatchingExercises(
+                name = exercise.name,
+                restTime = exercise.restTime ?: 0,
+                measurementLabel = exercise.measurement.label
+            )
+
+            val exerciseId = if (existingExercises.isNotEmpty()) {
+                existingExercises[0].id
+            } else {
+                exerciseDao.upsertExercise(exercise)
+            }
+
+            val crossRef = WorkoutExerciseCrossRef(workoutId = workoutId, exerciseId = exerciseId)
+
+            workoutDao.upsertWorkoutExerciseCrossRef(crossRef)
         }
     }
 
     fun getExercisesByName(name: String): LiveData<List<Exercise>> {
         return exerciseDao.getAllExercisesByName("%$name%").asLiveData()
+    }
+
+    fun getExercisesByNameOrEmpty(name: String): LiveData<List<Exercise>> {
+        return if (name.isEmpty()) {
+            MutableLiveData(emptyList())
+        } else {
+            exerciseDao.getAllExercisesByName("%$name%").asLiveData()
+        }
     }
 
     fun getExerciseLogsByExercise(exerciseId: Long): LiveData<List<ExerciseLog>> {
@@ -48,32 +68,37 @@ class ExerciseViewModel(
 
     fun addExercise(workoutId: Long, exercise: Exercise) {
         viewModelScope.launch {
-            val exerciseId = exerciseDao.upsertExercise(exercise)
-            val crossRef = WorkoutExerciseCrossRef(workoutId = workoutId, exerciseId = exerciseId)
-            workoutDao.upsertWorkoutExerciseCrossRef(crossRef)
+            Log.d("UPSErt", "log")
+            val exerciseId: Long = if (exercise.id == 0L) {
+                exerciseDao.upsertExercise(exercise)
+            } else {
+                exercise.id
+            }
+            Log.d("id", exerciseId.toString())
+            if (exerciseId != -1L) {
+                val crossRef = WorkoutExerciseCrossRef(workoutId = workoutId, exerciseId = exerciseId)
+                workoutDao.upsertWorkoutExerciseCrossRef(crossRef)
+            } else {
+                Log.e("AddExerciseError", "Failed to upsert exercise. Invalid ID returned.")
+            }
         }
     }
 
-    // TODO DELETE THIS WHEN WE NO LONGER NEED SAMPLE DATA
     fun createSampleExerciseAndLogs() {
         viewModelScope.launch {
-            Log.d("DBINIT", "INSERTING WORKOUT")
             try {
-                Log.d("DBINIT", "INSERTING WORKOUT")
                 val workoutCount = workoutDao.getWorkoutCount()
                 val workoutOne : Workout
                 val workoutOneId : Long
                 if (workoutCount == 0) {
                     workoutOne = Workout(
-                        name = "WorkoutOne",
-                        description = "Test workout",
+                        name = "My First Exercise",
+                        description = "Bench press and a run",
                         schedule = listOf(Days.MONDAY, Days.WEDNESDAY, Days.FRIDAY)
                     )
-                    Log.d("DBINIT", "INSERT WORKOUT")
                     workoutOneId = workoutDao.upsertWorkout(workoutOne)
                     val count = exerciseDao.getExerciseCount()
                     if (count == 0) {
-                        Log.d("DBINIT", "INSERT EXERCISE")
                         val benchPress = Exercise(
                             name = "Bench Press",
                             restTime = 90,
@@ -86,30 +111,13 @@ class ExerciseViewModel(
                             measurement = Measurement.DISTANCE_TIME
                         )
 
-                        val noLogs = Exercise(
-                            name = "No logs",
-                            restTime = 0,
-                            measurement = Measurement.DISTANCE_TIME
-                        )
-
                         val exerciseId = exerciseDao.upsertExercise(benchPress)
                         val exerciseIdTwo = exerciseDao.upsertExercise(run)
-                        val exerciseIdThree = exerciseDao.upsertExercise(noLogs)
 
                         val workoutWithExercise =
                             WorkoutExerciseCrossRef(workoutOneId, exerciseId)
 
                         workoutDao.upsertWorkoutExerciseCrossRef(workoutWithExercise)
-
-                        for (i in 0 until 100) {
-                            exerciseDao.upsertExercise(
-                                Exercise(
-                                    name = "Exercise $i",
-                                    restTime = 60,
-                                    measurement = Measurement.REPS_WEIGHT
-                                )
-                            )
-                        }
 
                         val logsBench = mutableListOf<ExerciseLog>()
                         val logsRun = mutableListOf<ExerciseLog>()
@@ -127,7 +135,6 @@ class ExerciseViewModel(
 
                         for (i in 0 until 20) {
                             val timestamp = System.currentTimeMillis() - (i * 24 * 60 * 60 * 1000L)
-                            val randomDistance = List(1) { Random.nextFloat() * 10 + 10 }
 
                             val log = ExerciseLog(
                                 exerciseId = exerciseIdTwo,

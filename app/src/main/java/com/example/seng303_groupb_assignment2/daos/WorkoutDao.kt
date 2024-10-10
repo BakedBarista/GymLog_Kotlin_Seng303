@@ -35,4 +35,7 @@ interface WorkoutDao {
 
     @Query("SELECT COUNT(*) FROM Workout")
     suspend fun getWorkoutCount(): Int
+
+    @Query("DELETE FROM WorkoutExerciseCrossRef WHERE workoutId = :workoutId AND exerciseId = :exerciseId")
+    suspend fun deleteWorkoutExerciseCrossRef(workoutId: Long, exerciseId: Long)
 }

@@ -1,6 +1,7 @@
 package com.example.seng303_groupb_assignment2.screens
 
 import android.content.res.Configuration
+import android.text.Layout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,8 +46,11 @@ import com.example.seng303_groupb_assignment2.enums.Measurement
 import com.example.seng303_groupb_assignment2.enums.TimeRange
 import com.example.seng303_groupb_assignment2.enums.UnitType
 import com.example.seng303_groupb_assignment2.graphcomponents.CircleComponent
+import com.example.seng303_groupb_assignment2.models.UserPreferences
+import com.example.seng303_groupb_assignment2.services.MeasurementConverter
 import com.example.seng303_groupb_assignment2.utils.exerciseSaver
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
+import com.example.seng303_groupb_assignment2.viewmodels.PreferenceViewModel
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
@@ -70,6 +74,7 @@ import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
 import com.patrykandpatrick.vico.core.common.component.Component
 import com.patrykandpatrick.vico.core.common.data.ExtraStore
 import org.koin.androidx.compose.getViewModel
+import org.koin.androidx.compose.koinViewModel
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -79,15 +84,18 @@ import kotlin.math.ceil
 @Composable
 fun ViewProgress(
     navController: NavController,
-    viewModel: ExerciseViewModel = getViewModel()
+    viewModel: ExerciseViewModel = getViewModel(),
+    preferenceViewModel: PreferenceViewModel = getViewModel()
 ) {
     // TODO Remove this when we don't need sample data anymore
     viewModel.createSampleExerciseAndLogs()
+    val userPreferences by preferenceViewModel.preferences.observeAsState(UserPreferences())
+    val unitType = if (userPreferences.metricUnits) UnitType.METRIC else UnitType.IMPERIAL
     var selectedExercise by rememberSaveable(stateSaver = exerciseSaver) { mutableStateOf<Exercise?>(null) }
     var showDialog by rememberSaveable { mutableStateOf(false) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var selectedOption by rememberSaveable { mutableStateOf<ChartOption?>(null) }
-    var selectedTimeRange by rememberSaveable { mutableStateOf(TimeRange.ALL) }
+    var selectedTimeRange by rememberSaveable { mutableStateOf(TimeRange.LAST_MONTH) }
 
     val exercises by viewModel.getExercisesByName(searchQuery).observeAsState(emptyList())
     val exerciseLogs by viewModel.getExerciseLogsByExercise(selectedExercise?.id ?: 0L)
@@ -140,7 +148,12 @@ fun ViewProgress(
         }
 
         if (selectedExercise != null && filteredExerciseLogs.isNotEmpty() && selectedOption != null) {
-            ExerciseProgressGraph(filteredExerciseLogs, selectedOption, UnitType.METRIC /* TODO change this hardcoding to work off preferences */)
+            val measurementType = if (selectedExercise!!.measurement.unit1 == "Distance") {
+                "Distance"
+            } else {
+                "Weight"
+            }
+            ExerciseProgressGraph(filteredExerciseLogs, selectedOption, unitType, measurementType)
         } else if (selectedExercise != null) {
             Text(
                 text = stringResource(R.string.no_logs_in_timeframe),
@@ -394,7 +407,16 @@ fun ExerciseSelectionDialog(
 }
 
 @Composable
-fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: ChartOption?, unitType: UnitType) {
+fun ExerciseProgressGraph(
+    exerciseLogs: List<ExerciseLog>,
+    selectedOption: ChartOption?,
+    unitType: UnitType,
+    measurementType: String,
+    preferenceViewModel: PreferenceViewModel = koinViewModel()
+) {
+    val preferences = preferenceViewModel.preferences.observeAsState(null).value
+    val metricUnits = preferences?.metricUnits ?: false
+    val measurementConverter = MeasurementConverter(metricUnits)
     val modelProducer = remember { CartesianChartModelProducer() }
 
     val xToDateMapKey = ExtraStore.Key<Map<Float, Long>>()
@@ -408,7 +430,7 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
                         .toLocalDate()
                         .toEpochDay()
                     val maxWeight = log.record.maxOfOrNull { it.second }?.takeIf { !it.isNaN() } ?: 0f
-                    if (maxWeight > 0f) epochDay.toDouble() to maxWeight else null
+                    if (maxWeight > 0f) epochDay.toDouble() to measurementConverter.convertToImperial(maxWeight, measurementType) else null
                 }
             }
             ChartOption.TotalWorkoutVolume -> {
@@ -419,7 +441,7 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
                         .toEpochDay()
                     val totalVolume = log.record.sumOf { (reps, weight) -> reps * weight.toDouble() }
                     if (!totalVolume.isNaN() && totalVolume > 0) {
-                        epochDay.toDouble() to totalVolume.toFloat()
+                        epochDay.toDouble() to measurementConverter.convertToImperial(totalVolume.toFloat(), measurementType)
                     } else {
                         null
                     }
@@ -432,7 +454,7 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
                         .toLocalDate()
                         .toEpochDay()
                     val maxDistance = log.record.maxOfOrNull { it.first }?.takeIf { !it.isNaN() } ?: 0f
-                    if (maxDistance > 0f) epochDay.toDouble() to maxDistance else null
+                    if (maxDistance > 0f) epochDay.toDouble() to measurementConverter.convertToImperial(maxDistance, measurementType) else null
                 }
             }
             ChartOption.TotalDistance -> {
@@ -443,7 +465,7 @@ fun ExerciseProgressGraph(exerciseLogs: List<ExerciseLog>, selectedOption: Chart
                         .toEpochDay()
                     val totalDistance = log.record.sumOf { it.first.toDouble() }
                     if (!totalDistance.isNaN() && totalDistance > 0) {
-                        epochDay.toDouble() to totalDistance.toFloat()
+                        epochDay.toDouble() to measurementConverter.convertToImperial(totalDistance.toFloat(), measurementType)
                     } else {
                         null
                     }
