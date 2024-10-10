@@ -16,8 +16,6 @@ import com.example.seng303_groupb_assignment2.entities.Workout
 import com.example.seng303_groupb_assignment2.enums.Days
 import com.example.seng303_groupb_assignment2.enums.Measurement
 import kotlinx.coroutines.launch
-import java.time.LocalDate
-import java.time.ZoneId
 import kotlin.random.Random
 
 class ExerciseViewModel(
@@ -25,17 +23,10 @@ class ExerciseViewModel(
     private val workoutDao: WorkoutDao,
     private val exerciseLogDao: ExerciseLogDao
 ) : ViewModel() {
-    val allExercises: LiveData<List<Exercise>> = exerciseDao.getAllExercises().asLiveData()
 
     fun deleteExercise(exercise: Exercise) {
         viewModelScope.launch {
             exerciseDao.deleteExercise(exercise)
-        }
-    }
-
-    fun editExercise(exercise: Exercise) {
-        viewModelScope.launch {
-            exerciseDao.upsertExercise(exercise)
         }
     }
 

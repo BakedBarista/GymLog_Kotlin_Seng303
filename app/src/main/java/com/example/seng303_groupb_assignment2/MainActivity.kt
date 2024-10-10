@@ -155,7 +155,7 @@ class MainActivity : ComponentActivity() {
 
                             composable("SelectWorkout") {
                                 currentTitle = stringResource(id = R.string.workout)
-                                SelectWorkout(navController = navController)
+                                SelectWorkout(navController = navController, manageWorkoutViewModel = manageWorkoutViewModel)
                             }
                             composable("Add") {
                                 currentTitle = stringResource(id = R.string.workout_builder_title)

@@ -50,6 +50,12 @@ class WorkoutViewModel(
         }
     }
 
+    fun removeExerciseFromWorkout(workoutId: Long, exerciseId: Long) {
+        viewModelScope.launch {
+            workoutDao.deleteWorkoutExerciseCrossRef(workoutId, exerciseId)
+        }
+    }
+
     // Export workout to CSV
     fun exportWorkout(context: Context, workoutWithExercises: WorkoutWithExercises, onSuccess: (String) -> Unit, onFailure: () -> Unit, isMetric: Boolean) {
         viewModelScope.launch {

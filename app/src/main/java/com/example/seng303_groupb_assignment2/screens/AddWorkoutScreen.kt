@@ -296,7 +296,6 @@ private fun DisplayExerciseList (
                     startIndex = index,
                     viewModel = viewModel,
                     exercise = exercise,
-                    edit = { name, restTime, measurement -> viewModel.updateExercise(index, name, restTime, measurement) },
                     delete = { viewModel.deleteExercise(index) }
                 )
             }
@@ -310,7 +309,6 @@ private fun DisplayExerciseCard(
     viewModel: ManageWorkoutViewModel,
     exerciseViewModel: ExerciseViewModel = getViewModel(),
     exercise: Exercise,
-    edit: (String, Int?, Measurement) -> Unit,
     delete: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -365,19 +363,6 @@ private fun DisplayExerciseCard(
                     Icon(
                         painter = painterResource(id = R.drawable.delete),
                         contentDescription = context.getString(R.string.delete)
-                    )
-                }
-                IconButton(onClick = {
-                    manageExerciseModalOpen = true
-                    exerciseModel.updateExerciseName(exercise.name)
-                    if (exercise.restTime != null) {
-                        exerciseModel.updateRestTime(exercise.restTime.toString())
-                    }
-                    exerciseModel.updateMeasurement(exercise.measurement)
-                }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.edit),
-                        contentDescription = context.getString(R.string.edit)
                     )
                 }
                 Spacer(modifier = Modifier.width(25.dp))

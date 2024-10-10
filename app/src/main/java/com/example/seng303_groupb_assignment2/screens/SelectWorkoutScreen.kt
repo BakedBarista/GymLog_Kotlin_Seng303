@@ -91,7 +91,7 @@ fun SelectWorkout(
     workoutViewModel: WorkoutViewModel = getViewModel(),
     exerciseViewModel: ExerciseViewModel = getViewModel(),
     preferenceViewModel: PreferenceViewModel = getViewModel(),
-    manageWorkoutViewModel: ManageWorkoutViewModel = getViewModel(),
+    manageWorkoutViewModel: ManageWorkoutViewModel
 
     ) {
     val userPreferences by preferenceViewModel.preferences.observeAsState(UserPreferences())
@@ -100,49 +100,31 @@ fun SelectWorkout(
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
     val context = LocalContext.current
-    var qrCodeBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
     val modalViewModel: ExerciseModalViewModel = viewModel()
-    var currentExerciseId: Long? by rememberSaveable { mutableStateOf(null) }
-    var editExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
+    var currentWorkoutId: Long? by rememberSaveable { mutableStateOf(null) }
+    var addExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
 
     // auto complete
     var searchQuery by rememberSaveable { mutableStateOf("") }
     val exercises by exerciseViewModel.getExercisesByName(searchQuery).observeAsState(emptyList())
-    var selectedExercise by rememberSaveable(stateSaver = exerciseSaver) { mutableStateOf<Exercise?>(null) }
     var showDialog by rememberSaveable { mutableStateOf(false) }
-    var selectedOption by rememberSaveable { mutableStateOf<ChartOption?>(null) }
-    if (editExerciseModalOpen) {
-        ManageExerciseModal(
-            closeModal = { editExerciseModalOpen = false },
-            submitModal = { name, restTime, measurement -> manageWorkoutViewModel.addExercise(name, restTime, measurement) },
-            exercises = exercises,
-            searchQueryChanged = { searchQuery = it },
-            onExerciseSelected = { exercise ->
-                selectedExercise = exercise
-                selectedOption = when (exercise.measurement) {
-                    Measurement.REPS_WEIGHT -> ChartOption.MaxWeight
-                    Measurement.DISTANCE_TIME -> ChartOption.MaxDistance
-                }
-                showDialog = false
-            }
-        )
-    }
 
-    var currentWorkoutId: Long? by rememberSaveable { mutableStateOf(null) }
-    var addExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
+
     if (addExerciseModalOpen) {
         ManageExerciseModal(
-            closeModal = { addExerciseModalOpen = false },
-            submitModal = { name, restTime, measurement -> manageWorkoutViewModel.addExercise(name, restTime, measurement) },
+            closeModal = { addExerciseModalOpen = false
+                         modalViewModel.clearSavedInfo()},
+            submitModal = { name, restTime, measurement ->
+                manageWorkoutViewModel.addExercise(name, restTime, measurement)
+                modalViewModel.clearSavedInfo() },
             exercises = exercises,
             searchQueryChanged = { searchQuery = it },
             onExerciseSelected = { exercise ->
-                selectedExercise = exercise
-                selectedOption = when (exercise.measurement) {
-                    Measurement.REPS_WEIGHT -> ChartOption.MaxWeight
-                    Measurement.DISTANCE_TIME -> ChartOption.MaxDistance
-                }
+                modalViewModel.updateExerciseName(exercise.name)
+                modalViewModel.updateRestTime(exercise.restTime?.toString() ?: "")
+                modalViewModel.updateMeasurement(exercise.measurement)
+                searchQuery = ""
                 showDialog = false
             }
         )
@@ -180,15 +162,8 @@ fun SelectWorkout(
                         modalViewModel.updateRestTime("")
                         addExerciseModalOpen = true
                     },
-                    onEditExercise = { exercise ->
-                        modalViewModel.updateExerciseName(exercise.name)
-                        modalViewModel.updateRestTime(exercise.restTime.toString())
-                        modalViewModel.updateMeasurement(exercise.measurement)
-                        currentExerciseId = exercise.id
-                        editExerciseModalOpen = true
-                    },
                     onDeleteExercise = { exercise ->
-                        exerciseViewModel.deleteExercise(exercise)
+                        workoutViewModel.removeExerciseFromWorkout(workoutWithExercises.workout.id, exercise.id)
                     },
                     onExportWorkout = {
                         exportWorkout(
@@ -241,13 +216,6 @@ fun SelectWorkout(
                         workoutViewModel.editWorkout(workout)
                     },
                     onDeleteWorkout = { workoutViewModel.deleteWorkout(workoutWithExercises.workout) },
-                    onEditExercise = { exercise ->
-                        modalViewModel.updateExerciseName(exercise.name)
-                        modalViewModel.updateRestTime(exercise.restTime.toString())
-                        modalViewModel.updateMeasurement(exercise.measurement)
-                        currentExerciseId = exercise.id
-                        editExerciseModalOpen = true
-                    },
                     onAddExercise = {
                         currentWorkoutId = workoutWithExercises.workout.id
                         modalViewModel.updateExerciseName("")
@@ -305,7 +273,6 @@ fun WorkoutItem(
     onEditWorkout: (Workout) -> Unit,
     onDeleteWorkout: () -> Unit,
     onAddExercise: () -> Unit,
-    onEditExercise: (Exercise) -> Unit,
     onDeleteExercise: (Exercise) -> Unit,
     onExportWorkout: () -> Unit,
     onExportWorkoutLog: () -> Unit
@@ -475,7 +442,6 @@ fun WorkoutItem(
                     workoutWithExercises.exercises.forEach { exercise ->
                         ExerciseItem(
                             exercise = exercise,
-                            onEditExercise = { onEditExercise(exercise) },
                             onDeleteExercise = { onDeleteExercise(exercise) }
                         )
                     }
@@ -611,7 +577,6 @@ fun EditWorkoutDialog(
 @Composable
 fun ExerciseItem(
     exercise: Exercise,
-    onEditExercise: () -> Unit,
     onDeleteExercise: () -> Unit
 ) {
     Row(
@@ -635,12 +600,6 @@ fun ExerciseItem(
             overflow = TextOverflow.Ellipsis
         )
         Row {
-            IconButton(onClick = onEditExercise) {
-                Icon(
-                    painter = painterResource(id = R.drawable.edit),
-                    contentDescription = stringResource(R.string.edit_exercise)
-                )
-            }
             IconButton(onClick = onDeleteExercise) {
                 Icon(
                     painter = painterResource(id = R.drawable.delete),
