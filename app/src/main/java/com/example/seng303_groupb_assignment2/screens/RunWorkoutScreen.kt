@@ -13,18 +13,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -33,7 +30,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,8 +39,6 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -61,17 +55,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.seng303_groupb_assignment2.R
-import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.viewmodels.PreferenceViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.RunWorkoutViewModel
-import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 import kotlin.math.PI
 import kotlin.math.cos
@@ -92,7 +83,6 @@ fun RunWorkout(
     val exercises = workoutWithExercises?.exercises
     val currentExerciseIndex = viewModel.currentExerciseIndex
 
-    // Retrieve current exercise and rest time
     val currentExercise = exercises?.getOrNull(currentExerciseIndex)
     val unit1Text = currentExercise?.measurement?.unit1
     val unit2Text = currentExercise?.measurement?.unit2
@@ -108,6 +98,11 @@ fun RunWorkout(
     var restartTimer by rememberSaveable {
         mutableStateOf(false)
     }
+
+    LaunchedEffect(currentExerciseIndex) {
+        currentTime = restTime * 1000L
+    }
+
     val sets = viewModel.getSetsForCurrentExercise()
 
     val isPreviousEnabled = currentExerciseIndex > 0
@@ -159,7 +154,7 @@ fun RunWorkout(
                 }
                 Timer(
                     totalTime = restTime * 1000L,
-                    currentTime = currentTime,
+                    initialTime = currentTime,
                     isTimerRunning = isTimerRunning,
                     restartTimer = restartTimer,
                     onRestartHandled = { restartTimer = false },
@@ -168,8 +163,7 @@ fun RunWorkout(
                     activeBarColor = Color(0xFF37B900),
                     modifier = Modifier.size(100.dp),
                     timerSize = 100.dp,
-                    preferenceViewModel = preferenceViewModel
-                    timerSize = 100.dp,
+                    preferenceViewModel = preferenceViewModel,
                     currentExerciseIndex = currentExerciseIndex
                 )
                 IconButton(
@@ -204,7 +198,6 @@ fun RunWorkout(
             Button(
                 onClick = {
                     viewModel.saveLogs {
-                        // Clear workout data after logs are saved
                         viewModel.clearWorkoutData()
                         navController.navigate("SelectWorkout")
                     }
@@ -225,7 +218,7 @@ fun RunWorkout(
 private fun Header(
     viewModel: RunWorkoutViewModel,
     onSave: () -> Unit,
-    onSaveSet: (Float, Float) -> Unit// Callback for when Save is clicked
+    onSaveSet: (Float, Float) -> Unit
 ) {
     val workoutWithExercises = viewModel.workoutWithExercises.value
     val exercises = workoutWithExercises?.exercises
@@ -393,7 +386,7 @@ private fun Header(
 @Composable
 fun Timer(
     totalTime: Long,
-    currentTime: Long,
+    initialTime: Long,
     isTimerRunning: Boolean,
     restartTimer: Boolean,
     onRestartHandled: () -> Unit,
@@ -402,50 +395,58 @@ fun Timer(
     inactiveBarColor: Color,
     modifier: Modifier = Modifier,
     strokeWidth: Dp = 5.dp,
-    preferenceViewModel: PreferenceViewModel // Add preferenceViewModel to access sound preference
+    preferenceViewModel: PreferenceViewModel,
     timerSize: Dp = 120.dp,
     currentExerciseIndex: Int
 ) {
     var size by remember { mutableStateOf(IntSize.Zero) }
-    var value by remember { mutableFloatStateOf(1f) }  // Start with 1f (100% of the total time)
-    var internalCurrentTime by remember { mutableLongStateOf(currentTime) }
-    var lastUpdateTime by rememberSaveable { mutableLongStateOf(System.currentTimeMillis()) }
+    var value by rememberSaveable(currentExerciseIndex) { mutableFloatStateOf(1f) }
+    var internalCurrentTime by rememberSaveable(currentExerciseIndex) { mutableLongStateOf(initialTime) }
+    var lastFrameTimeNanos by rememberSaveable(currentExerciseIndex) { mutableLongStateOf(0L) }
+
     val context = LocalContext.current
     val preferences by preferenceViewModel.preferences.observeAsState()
-    val isSoundOn = preferences?.soundOn ?: true  // Default to true if preferences are not loaded
+    val isSoundOn = preferences?.soundOn ?: true
 
     val mediaPlayer = remember {
         MediaPlayer.create(context, R.raw.timer_finish)
     }
 
-    LaunchedEffect(isTimerRunning, restartTimer, totalTime, currentExerciseIndex, internalCurrentTime) {
-        // when true we set the internal current time to the total time (rest time * 1000)
-        // value is just for the display
-        // update the view model with the current time
-        // on restart handled set the viewmodel.restartTimer to false
+    var soundPlayed by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(isTimerRunning, restartTimer, currentExerciseIndex) {
         if (restartTimer) {
-            internalCurrentTime = totalTime  // Reset the internal time
-            value = 1f  // Reset the circle to full
-            onRestartHandled()  // Notify that restart has been handled
+            internalCurrentTime = totalTime
+            value = 1f
+            lastFrameTimeNanos = 0L
+            soundPlayed = false
+            onRestartHandled()
         }
-        lastUpdateTime = System.currentTimeMillis()
-        while (internalCurrentTime > 0 && isTimerRunning) {
-            val now = System.currentTimeMillis()
-            val delta = now - lastUpdateTime
-            lastUpdateTime = now
 
-            internalCurrentTime = (internalCurrentTime - delta).coerceAtLeast(0L)
+        if (isTimerRunning) {
+            lastFrameTimeNanos = 0L
 
-            value = internalCurrentTime / totalTime.toFloat()
+            while (internalCurrentTime > 0 && isTimerRunning) {
+                withFrameNanos { frameTimeNanos ->
+                    if (lastFrameTimeNanos > 0L) {
+                        val deltaNanos = frameTimeNanos - lastFrameTimeNanos
+                        val deltaMillis = deltaNanos / 1_000_000L
 
-            withFrameNanos { }
-        }
-        if (internalCurrentTime <= 0) {
-            if (isSoundOn) {
-                mediaPlayer.start()  // Play sound if sound is on
-                android.util.Log.d("Timer", "Sound played at the end of timer.")
-            } else {
-                android.util.Log.d("Timer", "Sound muted (sound is off in preferences).")
+                        internalCurrentTime = (internalCurrentTime - deltaMillis).coerceAtLeast(0L)
+                        value = internalCurrentTime / totalTime.toFloat()
+                    }
+                    lastFrameTimeNanos = frameTimeNanos
+                }
+            }
+
+            if (internalCurrentTime <= 0 && !soundPlayed) {
+                soundPlayed = true
+                if (isSoundOn) {
+                    mediaPlayer.start()
+                    Log.d("Timer", "Sound played at the end of timer.")
+                } else {
+                    Log.d("Timer", "Sound muted (sound is off in preferences).")
+                }
             }
         }
     }
@@ -470,7 +471,7 @@ fun Timer(
                 drawArc(
                     color = activeBarColor,
                     startAngle = -215f,
-                    sweepAngle = 250f * value,  // Draw the active arc based on the value
+                    sweepAngle = 250f * value,
                     useCenter = false,
                     size = Size(size.width.toFloat(), size.height.toFloat()),
                     style = Stroke(strokeWidth.toPx(), cap = StrokeCap.Round)
@@ -491,21 +492,23 @@ fun Timer(
             }
 
             Text(
-                text = (internalCurrentTime / 1000L).toString(),  // Display time in seconds
+                text = (internalCurrentTime / 1000L).toString(),
                 fontSize = 44.sp,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface  // Set text color to black
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
 
-    // Cleanup MediaPlayer when the composable leaves the composition
     DisposableEffect(Unit) {
         onDispose {
             mediaPlayer.release()
         }
     }
 }
+
+
+
 
 @Composable
 fun SetContainer(
