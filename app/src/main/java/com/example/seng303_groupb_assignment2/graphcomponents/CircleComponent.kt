@@ -6,8 +6,6 @@ import androidx.compose.ui.graphics.toArgb
 import com.patrykandpatrick.vico.core.common.DrawingContext
 import com.patrykandpatrick.vico.core.common.component.Component
 
-// I need an entire class just to display points when tapping on the graph
-
 class CircleComponent(private val colour: Color, private val radius: Float) : Component {
     private val paint = Paint().apply {
         this.color = colour.toArgb()

@@ -71,16 +71,13 @@ import org.koin.androidx.compose.getViewModel
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.core.content.FileProvider
-import com.example.seng303_groupb_assignment2.enums.ChartOption
 import com.example.seng303_groupb_assignment2.enums.Measurement
 import com.google.gson.Gson
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import java.io.File
 import java.io.FileOutputStream
-import com.example.seng303_groupb_assignment2.enums.UnitType
 import com.example.seng303_groupb_assignment2.models.UserPreferences
-import com.example.seng303_groupb_assignment2.utils.exerciseSaver
 import com.example.seng303_groupb_assignment2.viewmodels.ManageWorkoutViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.PreferenceViewModel
 
@@ -177,7 +174,6 @@ fun SelectWorkout(
                             context = context,
                             workoutWithExercises = workoutWithExercises,
                             onSuccess = { uri ->
-                                // Open the QR code file
                                 openFile(context, uri)
                                 Toast.makeText(context, context.getString(R.string.qr_exported_toast), Toast.LENGTH_LONG).show()
                             },
@@ -238,7 +234,6 @@ fun SelectWorkout(
                             context = context,
                             workoutWithExercises = workoutWithExercises,
                             onSuccess = { uri ->
-                                // Open the QR code file
                                 openFile(context, uri)
                                 Toast.makeText(context, context.getString(R.string.qr_exported_toast), Toast.LENGTH_LONG).show()
                             },
@@ -300,8 +295,6 @@ fun WorkoutItem(
     }
 
     val expandedState = if (isPortrait) expanded else true
-
-    // This is really nasty. I am using this to calculate how much I need to offset the exercise column by
     val headerHeightPx = remember { mutableFloatStateOf(0f) }
     val density = LocalDensity.current
 
@@ -329,7 +322,6 @@ fun WorkoutItem(
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.surfaceVariant)
                     .onGloballyPositioned { coordinates ->
-                        // Getting the header height in pixels
                         headerHeightPx.floatValue = coordinates.size.height.toFloat()
                     }
             ) {
@@ -512,7 +504,6 @@ fun ScheduleInformation(schedule: List<Days>) {
     }
 }
 
-// Have not styled this at all as the information present here will depend on what has been done in other tasks
 @Composable
 fun EditWorkoutDialog(
     workout: Workout,
@@ -648,13 +639,9 @@ fun exportWorkout(
     onSuccess: (Uri) -> Unit,
     onFailure: () -> Unit
 ) {
-    // Convert workout to JSON
     val workoutJson = convertWorkoutToJson(workoutWithExercises)
-
-    // Generate QR Code
     val qrCodeBitmap = generateQRCode(workoutJson)
 
-    // Save QR Code to file
     if (qrCodeBitmap != null) {
         try {
             val uri = saveBitmapToFile(context, qrCodeBitmap)

@@ -52,7 +52,7 @@ class NotificationManager(
                 } else {
                     Log.d("Preferences", "Sound off")
 
-                    notificationBuilder.setSound(null) // Disable sound
+                    notificationBuilder.setSound(null)
                 }
 
                 notificationManager.notify(Random.nextInt(), notificationBuilder.build())
@@ -61,7 +61,6 @@ class NotificationManager(
     }
 
     fun setupDailyNotifications() {
-        // makes sure that there is no repeating alarm in the background
         turnOffNotifications()
         turnOnNotifications()
         Log.i("NotificationManager", "Setup alarm")

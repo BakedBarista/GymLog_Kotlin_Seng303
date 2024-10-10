@@ -12,18 +12,12 @@ import com.example.seng303_groupb_assignment2.services.FileExportService
 import kotlinx.coroutines.launch
 import android.util.Log
 import com.example.seng303_groupb_assignment2.daos.ExerciseLogDao
-import com.example.seng303_groupb_assignment2.datastore.PreferencePersistentStorage
 import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.entities.ExerciseLog
-import com.example.seng303_groupb_assignment2.models.UserPreferences
 import com.example.seng303_groupb_assignment2.services.MeasurementConverter
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
-import org.koin.androidx.compose.getViewModel
-import org.koin.androidx.compose.koinViewModel
-import java.io.File.separator
-
 
 class WorkoutViewModel(
     private val workoutDao: WorkoutDao,
