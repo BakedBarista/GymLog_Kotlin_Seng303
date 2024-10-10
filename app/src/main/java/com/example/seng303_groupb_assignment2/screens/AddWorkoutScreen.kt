@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
@@ -37,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -63,12 +65,18 @@ import androidx.navigation.NavController
 import com.example.seng303_groupb_assignment2.R
 import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.entities.Workout
+import com.example.seng303_groupb_assignment2.enums.ChartOption
 import com.example.seng303_groupb_assignment2.enums.Days
 import com.example.seng303_groupb_assignment2.enums.Measurement
 import com.example.seng303_groupb_assignment2.notifications.NotificationManager
+import com.example.seng303_groupb_assignment2.services.MeasurementConverter
+import com.example.seng303_groupb_assignment2.utils.exerciseSaver
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.ManageWorkoutViewModel
+import com.example.seng303_groupb_assignment2.viewmodels.PreferenceViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
+import org.koin.androidx.compose.getViewModel
+import org.koin.androidx.compose.koinViewModel
 import kotlin.math.roundToInt
 
 @Composable
@@ -79,10 +87,21 @@ fun AddWorkout(
     exerciseViewModel: ExerciseViewModel,
 ) {
     var manageExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
+    // auto complete
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    val exercises by exerciseViewModel.getExercisesByNameOrEmpty(searchQuery).observeAsState(emptyList())
+
+
     if (manageExerciseModalOpen) {
         ManageExerciseModal(
             closeModal = { manageExerciseModalOpen = false },
-            submitModal = { name, restTime, measurement -> manageViewModel.addExercise(name, restTime, measurement) }
+            submitModal = { name, restTime, measurement -> manageViewModel.addExercise(name, restTime, measurement) },
+            exercises = exercises,
+            searchQueryChanged = { searchQuery = it },
+            onExerciseSelected = { exercise ->
+                manageViewModel.addExercise(exercise.name, exercise.restTime, exercise.measurement)
+                manageExerciseModalOpen = false
+            }
         )
     }
 
@@ -277,7 +296,6 @@ private fun DisplayExerciseList (
                     startIndex = index,
                     viewModel = viewModel,
                     exercise = exercise,
-                    edit = { name, restTime, measurement -> viewModel.updateExercise(index, name, restTime, measurement) },
                     delete = { viewModel.deleteExercise(index) }
                 )
             }
@@ -289,8 +307,8 @@ private fun DisplayExerciseList (
 private fun DisplayExerciseCard(
     startIndex: Int,
     viewModel: ManageWorkoutViewModel,
+    exerciseViewModel: ExerciseViewModel = getViewModel(),
     exercise: Exercise,
-    edit: (String, Int?, Measurement) -> Unit,
     delete: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -299,11 +317,27 @@ private fun DisplayExerciseCard(
     val itemHeight = 100
     val spacing = 10
 
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    val exercises by exerciseViewModel.getExercisesByNameOrEmpty(searchQuery).observeAsState(emptyList())
+    var showDialog by rememberSaveable { mutableStateOf(false) }
+    var selectedOption by rememberSaveable { mutableStateOf<ChartOption?>(null) }
+
     if (manageExerciseModalOpen) {
         ManageExerciseModal(
             closeModal = { manageExerciseModalOpen = false },
-            submitModal = edit,
-            exerciseModel = exerciseModel
+            submitModal = { name, restTime, measurement -> viewModel.addExercise(name, restTime, measurement) },
+            exercises = exercises,
+            searchQueryChanged = { searchQuery = it },
+            onExerciseSelected = { exercise ->
+                exerciseModel.updateExerciseName(exercise.name)
+                exerciseModel.updateRestTime(exercise.restTime?.toString() ?: "")
+                selectedOption = when (exercise.measurement) {
+                    Measurement.REPS_WEIGHT -> ChartOption.MaxWeight
+                    Measurement.DISTANCE_TIME -> ChartOption.MaxDistance
+                }
+                searchQuery = ""
+                showDialog = false
+            }
         )
     }
 
@@ -329,19 +363,6 @@ private fun DisplayExerciseCard(
                     Icon(
                         painter = painterResource(id = R.drawable.delete),
                         contentDescription = context.getString(R.string.delete)
-                    )
-                }
-                IconButton(onClick = {
-                    manageExerciseModalOpen = true
-                    exerciseModel.updateExerciseName(exercise.name)
-                    if (exercise.restTime != null) {
-                        exerciseModel.updateRestTime(exercise.restTime.toString())
-                    }
-                    exerciseModel.updateMeasurement(exercise.measurement)
-                }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.edit),
-                        contentDescription = context.getString(R.string.edit)
                     )
                 }
                 Spacer(modifier = Modifier.width(25.dp))
@@ -436,6 +457,7 @@ private fun CancelAndSaveRow (
                         )
                     }
 
+
                     navController.navigate("SelectWorkout")
                 }
             },
@@ -448,100 +470,18 @@ private fun CancelAndSaveRow (
 }
 
 @Composable
-fun MeasurementSelection(
-    options: List<String>,
-    updateOption: (String) -> Unit,
-    sets: String,
-    values: List<String>,
-    updateValue: (Int, String) -> Unit
-) {
-    val context = LocalContext.current
-
-    var open by rememberSaveable { mutableStateOf(false) }
-    var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
-
-    LaunchedEffect(Unit) {
-        updateOption(options[selectedIndex])
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.Gray, shape = MaterialTheme.shapes.small)
-            .clickable { open = true }
-            .padding(16.dp)
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = options[selectedIndex],
-                modifier = Modifier.weight(1f),
-            )
-            Icon(
-                painter = painterResource(id = R.drawable.dropdown),
-                contentDescription =  context.getString(R.string.leaderboard),
-            )
-        }
-
-        DropdownMenu(
-            expanded = open,
-            onDismissRequest = { open = false }
-        ) {
-            options.forEachIndexed { index, option ->
-                DropdownMenuItem(
-                    text = { Text(option) },
-                    onClick = {
-                        selectedIndex = index
-                        open = false
-                        updateOption(option)
-                    }
-                )
-            }
-        }
-    }
-
-    if (sets.isNotBlank()) {
-        LazyColumn(
-            modifier = Modifier
-                .padding(8.dp)
-                .heightIn(max = 100.dp)
-        ) {
-            items(sets.toInt()) { index ->
-                val displayText = context.getString(
-                    R.string.measurement_text, index + 1, options[selectedIndex]
-                )
-
-                TextField(
-                    value = values[index],
-                    onValueChange = { it: String -> updateValue(index, it) },
-                    isError = values[index].toFloatOrNull() == null,
-                    label = { Text(displayText) },
-                    modifier = Modifier
-                        .fillMaxWidth(0.95f)
-                        .padding(vertical = 3.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
 fun ManageExerciseModal(
     exerciseModel: ExerciseModalViewModel = viewModel(),
     closeModal: () -> Unit,
-    submitModal: (String, Int?, Measurement) -> Unit
+    submitModal: (String, Int?, Measurement) -> Unit,
+    exercises: List<Exercise>,
+    searchQueryChanged: (String) -> Unit,
+    onExerciseSelected: (Exercise) -> Unit
 ) {
     val measurements = Measurement.entries.toTypedArray()
     val context = LocalContext.current
     var open by rememberSaveable { mutableStateOf(false) }
-    var selectedMeasurement by rememberSaveable {
-        mutableStateOf(Measurement.REPS_WEIGHT)
-    }
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
-
 
     Dialog(onDismissRequest = {
         closeModal()
@@ -555,22 +495,51 @@ fun ManageExerciseModal(
             contentAlignment = Alignment.Center
         ) {
             LazyColumn(horizontalAlignment = Alignment.CenterHorizontally) {
+                // Modal title
                 item {
-                    Text(text = context.getString(R.string.exercises_modal_title),
+                    Text(
+                        text = context.getString(R.string.exercises_modal_title),
                         style = MaterialTheme.typography.bodyLarge,
-                        color = Color.Black)
+                        color = Color.Black
+                    )
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
+                // Exercise Name TextField
                 item {
                     TextField(
                         value = exerciseModel.exerciseName,
-                        onValueChange = { exerciseModel.updateExerciseName(it) },
+                        onValueChange = {
+                            exerciseModel.updateExerciseName(it)
+                            searchQueryChanged(it) },
                         label = { Text(context.getString(R.string.exercise_name_label)) },
                         isError = !exerciseModel.validExerciseName(),
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(4.dp))
+                }
+                item {
+                    if (exerciseModel.exerciseName.isNotEmpty() && exercises.isNotEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 200.dp)
+                        ) {
+                            LazyColumn {
+                                items(exercises) { exercise ->
+                                    Text(
+                                        text = exercise.name,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                onExerciseSelected(exercise)
+                                            }
+                                            .padding(8.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
 
                 item {
@@ -584,8 +553,9 @@ fun ManageExerciseModal(
                     Spacer(modifier = Modifier.height(4.dp))
                 }
 
+                // Measurement Dropdown
                 item {
-                    Box (
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(MaterialTheme.colorScheme.inverseOnSurface, shape = MaterialTheme.shapes.small)
@@ -606,25 +576,25 @@ fun ManageExerciseModal(
                                 contentDescription = "Measurements"
                             )
                         }
-                            DropdownMenu(
-                                expanded = open,
-                                onDismissRequest = { open = false }
-                            ) {
-                                measurements.forEachIndexed { index, measurement ->
-                                    DropdownMenuItem(
-                                        text = { Text(measurement.label) },
-                                        onClick = {
-                                            selectedIndex = index
-                                            open = false
-                                            exerciseModel.updateMeasurement(measurement)
-                                        }
-                                    )
-                                }
+                        DropdownMenu(
+                            expanded = open,
+                            onDismissRequest = { open = false }
+                        ) {
+                            measurements.forEachIndexed { index, measurement ->
+                                DropdownMenuItem(
+                                    text = { Text(measurement.label) },
+                                    onClick = {
+                                        selectedIndex = index
+                                        open = false
+                                        exerciseModel.updateMeasurement(measurement)
+                                    }
+                                )
                             }
                         }
                     }
+                }
 
-
+                // Submit and Cancel Buttons
                 item {
                     val buttonColors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -632,43 +602,46 @@ fun ManageExerciseModal(
                     )
                     Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth(0.9f)) {
                         Button(
-                            modifier = Modifier.padding(paddingValues = PaddingValues(horizontal = 8.dp)),
+                            modifier = Modifier.padding(horizontal = 8.dp),
                             colors = buttonColors,
                             shape = RectangleShape,
                             onClick = {
                                 closeModal()
                                 exerciseModel.clearSavedInfo()
                             }
-                        ) { Text(context.getString(R.string.cancel), style = MaterialTheme.typography.bodyLarge) }
+                        ) {
+                            Text(context.getString(R.string.cancel), style = MaterialTheme.typography.bodyLarge)
+                        }
                         Button(
                             colors = buttonColors,
                             shape = RectangleShape,
-                            onClick =
-                            {
+                            onClick = {
                                 if (exerciseModel.validRestTime() && exerciseModel.validExerciseName()) {
-                                    var restTime: Int? = null;
+                                    var restTime: Int? = null
                                     if (exerciseModel.restTime.isNotBlank()) {
                                         restTime = exerciseModel.restTime.toInt()
                                     }
 
-                                submitModal(
-                                    exerciseModel.exerciseName,
-                                    restTime,
-                                    exerciseModel.measurement
-                                )
+                                    submitModal(
+                                        exerciseModel.exerciseName,
+                                        restTime,
+                                        exerciseModel.measurement
+                                    )
 
-                                closeModal()
-                                exerciseModel.clearSavedInfo()
+                                    closeModal()
+                                    exerciseModel.clearSavedInfo()
+                                }
                             }
-                        }) {
-                        Text(context.getString(R.string.add), style = MaterialTheme.typography.bodyLarge)
+                        ) {
+                            Text(context.getString(R.string.add), style = MaterialTheme.typography.bodyLarge)
+                        }
                     }
-                }
                 }
             }
         }
     }
 }
+
 
 @Composable
 private fun EditableScheduleInformation(

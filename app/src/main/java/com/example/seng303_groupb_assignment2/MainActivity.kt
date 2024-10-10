@@ -4,6 +4,7 @@ import ExerciseModalViewModel
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -75,6 +76,7 @@ class MainActivity : ComponentActivity() {
     private val workoutViewModel: WorkoutViewModel by koinViewModel()
     private val runWorkoutViewModel: RunWorkoutViewModel by koinViewModel()
     private val preferenceViewModel: PreferenceViewModel by koinViewModel()
+    private val manageWorkoutViewModel: ManageWorkoutViewModel by koinViewModel()
     private var startDestination = "Home"
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -153,11 +155,10 @@ class MainActivity : ComponentActivity() {
 
                             composable("SelectWorkout") {
                                 currentTitle = stringResource(id = R.string.workout)
-                                SelectWorkout(navController = navController)
+                                SelectWorkout(navController = navController, manageWorkoutViewModel = manageWorkoutViewModel)
                             }
                             composable("Add") {
                                 currentTitle = stringResource(id = R.string.workout_builder_title)
-                                val manageWorkoutViewModel: ManageWorkoutViewModel = viewModel()
                                 AddWorkout(
                                     navController = navController,
                                     manageViewModel = manageWorkoutViewModel,

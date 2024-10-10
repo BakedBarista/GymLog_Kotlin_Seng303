@@ -1,5 +1,6 @@
 package com.example.seng303_groupb_assignment2.screens
 
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,6 +29,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -35,6 +37,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
@@ -63,8 +66,10 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.seng303_groupb_assignment2.R
 import com.example.seng303_groupb_assignment2.entities.Exercise
+import com.example.seng303_groupb_assignment2.viewmodels.PreferenceViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.RunWorkoutViewModel
 import kotlinx.coroutines.delay
+import org.koin.androidx.compose.koinViewModel
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -87,11 +92,18 @@ fun RunWorkout(
     val currentExercise = exercises?.getOrNull(currentExerciseIndex)
     val unit1Text = currentExercise?.measurement?.unit1
     val unit2Text = currentExercise?.measurement?.unit2
+    val unitMeasurement = currentExercise?.measurement?.measurement
     val restTime = currentExercise?.restTime ?: 0
 
-    var isTimerRunning by rememberSaveable { mutableStateOf(false) }
-    var currentTime by rememberSaveable { mutableLongStateOf(restTime * 1000L) }
-    var restartTimer by rememberSaveable { mutableStateOf(false) }
+    var isTimerRunning by rememberSaveable {
+        mutableStateOf(false)
+    }
+    var currentTime by rememberSaveable {
+        mutableLongStateOf(restTime * 1000L)
+    }
+    var restartTimer by rememberSaveable {
+        mutableStateOf(false)
+    }
     val sets = viewModel.getSetsForCurrentExercise()
 
     val isPreviousEnabled = currentExerciseIndex > 0
@@ -104,13 +116,19 @@ fun RunWorkout(
         isTimerRunning = true
     }
 
+    fun stopTimer() {
+        currentTime = restTime * 1000L
+        restartTimer = true
+        isTimerRunning = false
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
             Header(viewModel, onSave = {
-                isTimerRunning = true
+                viewModel.isTimerRunning = true
             }, onSaveSet = ::onSaveSet)
         }
 
@@ -126,7 +144,7 @@ fun RunWorkout(
             ) {
                 IconButton(onClick = {
                     viewModel.previousExercise()
-                    isTimerRunning = false
+                    stopTimer()
                 },
                     enabled = isPreviousEnabled
                 ) {
@@ -145,12 +163,13 @@ fun RunWorkout(
                     inactiveBarColor = Color.DarkGray,
                     activeBarColor = Color(0xFF37B900),
                     modifier = Modifier.size(100.dp),
-                    timerSize = 100.dp
+                    timerSize = 100.dp,
+                    currentExerciseIndex = currentExerciseIndex
                 )
                 IconButton(
                     onClick = {
                         viewModel.nextExercise()
-                        isTimerRunning = false
+                        stopTimer()
                     },
                     enabled = isNextEnabled
                 ) {
@@ -168,6 +187,7 @@ fun RunWorkout(
                 label2 = unit2Text ?: "Weight",
                 unit1 = set.first,
                 unit2 = set.second,
+                measurement = unitMeasurement,
                 onDelete = {
                     viewModel.removeSetFromCurrentExercise(index)
                 }
@@ -177,9 +197,11 @@ fun RunWorkout(
         item {
             Button(
                 onClick = {
-                    viewModel.saveLogs()
-                    viewModel.clearWorkoutData()
-                    navController.navigate("SelectWorkout")
+                    viewModel.saveLogs {
+                        // Clear workout data after logs are saved
+                        viewModel.clearWorkoutData()
+                        navController.navigate("SelectWorkout")
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -193,7 +215,6 @@ fun RunWorkout(
     }
 }
 
-// Gotten from https://medium.com/@fahadhabib01/craft-a-captivating-animated-countdown-timer-with-jetpack-compose-0e2f16d64664
 @Composable
 private fun Header(
     viewModel: RunWorkoutViewModel,
@@ -329,8 +350,11 @@ private fun Header(
             )
 
             Button(onClick = {
+                Log.d("Status before", "currentTime: " + viewModel.currentTime + " restartTimer: " + viewModel.restartTimer + " isTimerRunning: " + viewModel.isTimerRunning)
                 onSaveSet(unit1Value, unit2Value)
+                Log.d("Status mid", "currentTime: " + viewModel.currentTime + " restartTimer: " + viewModel.restartTimer + " isTimerRunning: " + viewModel.isTimerRunning)
                 onSave()
+                Log.d("Status", "currentTime: " + viewModel.currentTime + " restartTimer: " + viewModel.restartTimer + " isTimerRunning: " + viewModel.isTimerRunning)
             },
                 colors = buttonColors,
                 shape = RectangleShape,
@@ -359,42 +383,48 @@ private fun Header(
     }
 }
 
-// Updated Timer composable to remove Start/Stop button
+// Gotten from https://medium.com/@fahadhabib01/craft-a-captivating-animated-countdown-timer-with-jetpack-compose-0e2f16d64664
 @Composable
 fun Timer(
     totalTime: Long,
     currentTime: Long,
     isTimerRunning: Boolean,
-    restartTimer: Boolean,  // Add a flag to handle timer reset
-    onRestartHandled: () -> Unit,  // Callback to signal when restart is handled
+    restartTimer: Boolean,
+    onRestartHandled: () -> Unit,
     handleColor: Color,
     activeBarColor: Color,
     inactiveBarColor: Color,
     modifier: Modifier = Modifier,
     strokeWidth: Dp = 5.dp,
-    timerSize: Dp = 120.dp  // Adjustable timer size, default to 120.dp
+    timerSize: Dp = 120.dp,
+    currentExerciseIndex: Int
 ) {
     var size by remember { mutableStateOf(IntSize.Zero) }
-    var value by remember { mutableFloatStateOf(1f) }  // Start with 1f (100% of the total time)
-    var internalCurrentTime by remember { mutableLongStateOf(currentTime) }
+    var value by rememberSaveable { mutableFloatStateOf(1f) }
+    var internalCurrentTime by rememberSaveable { mutableLongStateOf(currentTime) }
+    var lastUpdateTime by rememberSaveable { mutableLongStateOf(System.currentTimeMillis()) }
 
-    // Reset timer logic when restart is triggered
-    LaunchedEffect(key1 = restartTimer) {
+    LaunchedEffect(isTimerRunning, restartTimer, totalTime, currentExerciseIndex) {
+        // when true we set the internal current time to the total time (rest time * 1000)
+        // value is just for the display
+        // update the view model with the current time
+        // on restart handled set the viewmodel.restartTimer to false
         if (restartTimer) {
-            internalCurrentTime = totalTime  // Reset the internal time
-            value = 1f  // Reset the circle to full
-            onRestartHandled()  // Notify that restart has been handled
+            internalCurrentTime = totalTime
+            value = 1f
+            onRestartHandled()
         }
-    }
+        lastUpdateTime = System.currentTimeMillis()
+        while (internalCurrentTime > 0 && isTimerRunning) {
+            val now = System.currentTimeMillis()
+            val delta = now - lastUpdateTime
+            lastUpdateTime = now
 
-    // Timer countdown logic
-    LaunchedEffect(key1 = isTimerRunning, key2 = internalCurrentTime) {
-        if (isTimerRunning) {
-            while (internalCurrentTime > 0) {
-                delay(100L)  // Update every 100 milliseconds
-                internalCurrentTime -= 100L
-                value = internalCurrentTime / totalTime.toFloat()
-            }
+            internalCurrentTime = (internalCurrentTime - delta).coerceAtLeast(0L)
+
+            value = internalCurrentTime / totalTime.toFloat()
+
+            withFrameNanos { }
         }
     }
 
@@ -402,12 +432,11 @@ fun Timer(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.onSizeChanged { size = it }
     ) {
-        // The circular timer
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier.size(timerSize)  // Adjust the size of the timer here
+            modifier = Modifier.size(timerSize)
         ) {
-            Canvas(modifier = Modifier.size(timerSize)) {  // Use the same size for the canvas
+            Canvas(modifier = Modifier.size(timerSize)) {
                 drawArc(
                     color = inactiveBarColor,
                     startAngle = -215f,
@@ -455,8 +484,18 @@ fun SetContainer(
     label2: String,
     unit1: Float,
     unit2: Float,
-    onDelete: () -> Unit
+    measurement: List<String>?,
+    onDelete: () -> Unit,
+    preferenceViewModel: PreferenceViewModel = koinViewModel()
 ) {
+    val preferences = preferenceViewModel.preferences.observeAsState(null).value
+    val metricUnits = preferences?.metricUnits ?: false
+
+    fun requiresUnit(label: String): Boolean {
+        return label == "Weight" || label == "Distance"
+    }
+
+    val measurementUnit = if (metricUnits) measurement?.get(0) else measurement?.get(1)
 
     Row(
         modifier = Modifier
@@ -465,12 +504,12 @@ fun SetContainer(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "$label2: $unit2 kg", // todo make this modular
+            text = if (requiresUnit(label2)) "$label2: $unit2 $measurementUnit" else "$label2: $unit2",
             fontSize = 18.sp,
             modifier = Modifier.weight(1f)
         )
         Text(
-            text = "$label1: $unit1",
+            text = if (requiresUnit(label1)) "$label1: $unit1 $measurementUnit" else "$label1: $unit1",
             fontSize = 18.sp,
             modifier = Modifier.weight(1f)
         )

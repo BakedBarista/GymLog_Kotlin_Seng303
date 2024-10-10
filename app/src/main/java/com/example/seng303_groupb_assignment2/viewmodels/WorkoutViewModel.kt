@@ -12,11 +12,16 @@ import com.example.seng303_groupb_assignment2.services.FileExportService
 import kotlinx.coroutines.launch
 import android.util.Log
 import com.example.seng303_groupb_assignment2.daos.ExerciseLogDao
+import com.example.seng303_groupb_assignment2.datastore.PreferencePersistentStorage
 import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.entities.ExerciseLog
+import com.example.seng303_groupb_assignment2.models.UserPreferences
+import com.example.seng303_groupb_assignment2.services.MeasurementConverter
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
+import org.koin.androidx.compose.getViewModel
+import org.koin.androidx.compose.koinViewModel
 import java.io.File.separator
 
 
@@ -45,9 +50,17 @@ class WorkoutViewModel(
         }
     }
 
-    // Export workout to CSV
-    fun exportWorkout(context: Context, workoutWithExercises: WorkoutWithExercises, onSuccess: (String) -> Unit, onFailure: () -> Unit) {
+    fun removeExerciseFromWorkout(workoutId: Long, exerciseId: Long) {
         viewModelScope.launch {
+            workoutDao.deleteWorkoutExerciseCrossRef(workoutId, exerciseId)
+        }
+    }
+
+    // Export workout to CSV
+    fun exportWorkout(context: Context, workoutWithExercises: WorkoutWithExercises, onSuccess: (String) -> Unit, onFailure: () -> Unit, isMetric: Boolean) {
+        viewModelScope.launch {
+            val measurementConverter = MeasurementConverter(isMetric)
+
             val fileExportService = FileExportService(context)
             val headers = listOf("Workout Name", "Description", "Rest Time", "Exercise Name")
             val rows = workoutWithExercises.exercises.map { exercise ->
@@ -67,6 +80,7 @@ class WorkoutViewModel(
             }
 
             val csvData = fileExportService.prepareCsvData(headers, rows)
+            Log.d("Data", csvData)
             val filePath = fileExportService.exportToCsv("${workoutWithExercises.workout.name}.csv", csvData)
 
             if (filePath != null) {
@@ -77,8 +91,9 @@ class WorkoutViewModel(
         }
     }
 
-    fun exportWorkoutLog(context: Context, workoutWithExercises: WorkoutWithExercises, onSuccess: (String) -> Unit, onFailure: () -> Unit) {
+    fun exportWorkoutLog(context: Context, workoutWithExercises: WorkoutWithExercises, onSuccess: (String) -> Unit, onFailure: () -> Unit, isMetric: Boolean) {
         viewModelScope.launch {
+            val measurementConverter = MeasurementConverter(isMetric)
             val exercises: List<Exercise> = workoutWithExercises.exercises
             val headers = listOf("Exercise Name", "Timestamp", "Sets")
             val allExerciseLogRows = mutableListOf<List<String>>()
@@ -86,13 +101,41 @@ class WorkoutViewModel(
             val deferredLogs = exercises.map { exercise ->
                 async {
                     val logs = exerciseLogDao.getExerciseLogsByExerciseId(exercise.id).first()
-                    logs.map { log : ExerciseLog ->
+                    logs.map { log: ExerciseLog ->
                         val exerciseName = exercise.name
                         val logTimestamp = log.timestamp
                         val logSets = log.record.size
-                        val firstValues = log.record.joinToString ( separator = "," ) { it.first.toString() }
-                        val secondValues = log.record.joinToString ( separator = "," ) { it.second.toString() }
-
+                        val measurementType = if (exercise.measurement.unit1 == "Distance") {
+                            "Distance"
+                        } else {
+                            "Weight"
+                        }
+                        val firstValues = log.record.joinToString(separator = ",") {
+                            // if it is weight we dont want to convert first pair
+                            if (measurementType == "Weight") {
+                                it.first.toString()
+                            } else {
+                                val convertedValue =
+                                    measurementConverter.convertToImperial(
+                                        it.first,
+                                        measurementType
+                                    )
+                                convertedValue.toString()
+                            }
+                        }
+                        val secondValues = log.record.joinToString(separator = ",") {
+                            //ifit is distance we dont want to convert second pair
+                            if (measurementType ==  "Distance") {
+                                it.second.toString()
+                            } else {
+                                val convertedValue =
+                                    measurementConverter.convertToImperial(
+                                        it.second,
+                                        measurementType
+                                    )
+                                convertedValue.toString()
+                            }
+                        }
                         listOf(
                             exerciseName,
                             logTimestamp.toString(),

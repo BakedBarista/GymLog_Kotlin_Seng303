@@ -1,15 +1,22 @@
 package com.example.seng303_groupb_assignment2.viewmodels
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.seng303_groupb_assignment2.daos.ExerciseDao
+import com.example.seng303_groupb_assignment2.daos.ExerciseLogDao
 import com.example.seng303_groupb_assignment2.entities.Exercise
 import com.example.seng303_groupb_assignment2.enums.Days
 import com.example.seng303_groupb_assignment2.enums.Measurement
+import kotlinx.coroutines.launch
 
-class ManageWorkoutViewModel(): ViewModel() {
+class ManageWorkoutViewModel(
+    private val exerciseDao: ExerciseDao,
+    ): ViewModel() {
     var name by mutableStateOf("")
         private set
 
@@ -37,19 +44,29 @@ class ManageWorkoutViewModel(): ViewModel() {
             schedule.add(day)
         }
     }
-
+    // take the name and search for an exercise that matches all fields EXACTLY if it does then upsert otherwise add new
     fun addExercise(
         name: String,
         restTime: Int?,
         measurement: Measurement
     ) {
-        val exercise = Exercise(
-            name = name,
-            restTime = restTime,
-            measurement = measurement
-        )
-
-        exercises.add(exercise)
+        viewModelScope.launch {
+            val tempExercise =
+                exerciseDao.getAllMatchingExercises(name, restTime ?: 0, measurement.label)
+            if (tempExercise.isEmpty()) {
+                val exercise = Exercise(
+                    name = name,
+                    restTime = restTime,
+                    measurement = measurement
+                )
+                exercises.add(exercise)
+            } else {
+                Log.d("ADD existing", "Existing found")
+                Log.d("EX", exercises.toString())
+                exercises.add(tempExercise[0])
+                Log.d("EX2", exercises.toString())
+            }
+        }
     }
 
     fun deleteExercise(index: Int) {
