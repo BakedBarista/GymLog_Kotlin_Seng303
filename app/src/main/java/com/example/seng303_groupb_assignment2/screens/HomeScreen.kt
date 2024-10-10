@@ -18,6 +18,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.seng303_groupb_assignment2.notifications.NotificationManager
+import com.example.seng303_groupb_assignment2.viewmodels.PreferenceViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 
@@ -25,11 +26,12 @@ import com.google.accompanist.permissions.rememberMultiplePermissionsState
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun Home(
-    navController: NavController
+    navController: NavController,
+    preferenceViewModel: PreferenceViewModel
 ) {
     val context = LocalContext.current
     val permissionState = rememberMultiplePermissionsState(permissions = listOf(Manifest.permission.CAMERA, Manifest.permission.POST_NOTIFICATIONS))
-    val notificationHandler = NotificationManager(context)
+    val notificationHandler = NotificationManager(context, preferenceViewModel.preferenceStorage)
 
     LaunchedEffect(true) {
         permissionState.launchMultiplePermissionRequest()

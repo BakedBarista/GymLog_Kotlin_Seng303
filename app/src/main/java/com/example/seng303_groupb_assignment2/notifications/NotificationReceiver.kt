@@ -6,7 +6,6 @@ import android.content.Intent
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.example.seng303_groupb_assignment2.MainActivity
-import org.koin.androidx.compose.getKoin
 
 class NotificationReceiver: BroadcastReceiver() {
     @RequiresApi(Build.VERSION_CODES.S)

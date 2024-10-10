@@ -125,14 +125,12 @@ class RunWorkoutViewModel(
         }
     }
 
-    // Navigate to the next exercise
     fun nextExercise() {
         if (currentExerciseIndex < (workoutWithExercises.value?.exercises?.size ?: 0) - 1) {
             currentExerciseIndex++
         }
     }
 
-    // Navigate to the previous exercise
     fun previousExercise() {
         if (currentExerciseIndex > 0) {
             currentExerciseIndex--

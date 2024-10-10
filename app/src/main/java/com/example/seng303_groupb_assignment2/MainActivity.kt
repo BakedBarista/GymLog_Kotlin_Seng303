@@ -1,10 +1,8 @@
 package com.example.seng303_groupb_assignment2
 
-import ExerciseModalViewModel
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -44,7 +42,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -84,7 +81,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         intent?.let {
             if (it.getBooleanExtra("notify", false)) {
-                val notificationHandler = NotificationManager(this)
+                val notificationHandler = NotificationManager(this, preferenceViewModel.preferenceStorage)
                 workoutViewModel.allWorkouts.observe(this) { workouts ->
                     val currentDay: Days = Days.getCurrentDay();
                     workouts.forEach { workoutWithExercises ->
@@ -136,7 +133,7 @@ class MainActivity : ComponentActivity() {
                         ) {
                             composable("Home") {
                                 currentTitle = stringResource(id = R.string.home)
-                                Home(navController = navController)
+                                Home(navController = navController, preferenceViewModel = preferenceViewModel)
                             }
                             composable("Run") {
                                 val workoutId = navController.previousBackStackEntry?.savedStateHandle?.get<Long>("workoutId")
@@ -147,7 +144,7 @@ class MainActivity : ComponentActivity() {
                                 val workoutWithExercises by runWorkoutViewModel.workoutWithExercises.observeAsState()
 
                                 workoutWithExercises?.let {
-                                    RunWorkout(viewModel = runWorkoutViewModel, navController = navController)
+                                    RunWorkout(viewModel = runWorkoutViewModel, navController = navController, preferenceViewModel = preferenceViewModel)
                                 } ?: run {
                                     Text("Loading...")
                                 }
@@ -163,7 +160,8 @@ class MainActivity : ComponentActivity() {
                                     navController = navController,
                                     manageViewModel = manageWorkoutViewModel,
                                     exerciseViewModel = exerciseViewModel,
-                                    workoutViewModel = workoutViewModel
+                                    workoutViewModel = workoutViewModel,
+                                    preferenceViewModel = preferenceViewModel
                                 )
                             }
                             composable("Progress") {

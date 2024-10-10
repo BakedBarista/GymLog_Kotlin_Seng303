@@ -117,7 +117,10 @@ class ExerciseViewModel(
                         val workoutWithExercise =
                             WorkoutExerciseCrossRef(workoutOneId, exerciseId)
 
+                        val workoutWithExercise2 = WorkoutExerciseCrossRef(workoutOneId, exerciseIdTwo)
+
                         workoutDao.upsertWorkoutExerciseCrossRef(workoutWithExercise)
+                        workoutDao.upsertWorkoutExerciseCrossRef(workoutWithExercise2)
 
                         val logsBench = mutableListOf<ExerciseLog>()
                         val logsRun = mutableListOf<ExerciseLog>()

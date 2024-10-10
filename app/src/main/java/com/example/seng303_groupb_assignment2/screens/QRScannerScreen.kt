@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.navigation.NavController
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 
@@ -88,7 +87,6 @@ fun QRScannerScreen(onQRCodeScanned: (String) -> Unit) {
                                             }
                                         }
                                         .addOnFailureListener {
-                                            // Handle failure
                                         }
                                         .addOnCompleteListener {
                                             imageProxy.close()
@@ -105,10 +103,9 @@ fun QRScannerScreen(onQRCodeScanned: (String) -> Unit) {
             modifier = Modifier.fillMaxSize()
         )
 
-        // QR code scanning box overlay
         Box(
             modifier = Modifier
-                .size(200.dp) // Size of the overlay
+                .size(200.dp)
                 .align(Alignment.Center)
                 .border(2.dp, Color.White, RoundedCornerShape(8.dp))
         )

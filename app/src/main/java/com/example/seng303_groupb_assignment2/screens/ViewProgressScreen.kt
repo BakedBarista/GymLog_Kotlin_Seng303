@@ -1,7 +1,6 @@
 package com.example.seng303_groupb_assignment2.screens
 
 import android.content.res.Configuration
-import android.text.Layout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement

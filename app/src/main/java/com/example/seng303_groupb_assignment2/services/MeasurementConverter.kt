@@ -1,12 +1,9 @@
 package com.example.seng303_groupb_assignment2.services
 
-import com.example.seng303_groupb_assignment2.entities.ExerciseLog
-
 class MeasurementConverter(
     private val isMetric : Boolean
 ) {
 
-    // Conversion constants
     private val kgToLbConversionFactor = 2.20462f
     private val kmToMilesConversionFactor = 0.621371f
 
@@ -54,14 +51,12 @@ class MeasurementConverter(
         }
     }
 
-    // Convert a list of weight pairs to pounds
     private fun convertSetWeightsToLbs(value: List<Pair<Float, Float>>): List<Pair<Float, Float>> {
         return value.map { pair ->
             Pair(convertWeightToLb(pair.first), pair.second)
         }
     }
 
-    // Convert a list of distance pairs to miles
     private fun convertSetDistancesToMi(value: List<Pair<Float, Float>>): List<Pair<Float, Float>> {
         return value.map { pair ->
             Pair(pair.first, convertDistanceToMi(pair.second))

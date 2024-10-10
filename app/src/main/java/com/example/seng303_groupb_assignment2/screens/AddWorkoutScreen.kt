@@ -1,16 +1,13 @@
 package com.example.seng303_groupb_assignment2.screens
 
 import ExerciseModalViewModel
-import androidx.compose.runtime.LaunchedEffect
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -24,8 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -49,17 +44,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.seng303_groupb_assignment2.R
@@ -69,14 +59,11 @@ import com.example.seng303_groupb_assignment2.enums.ChartOption
 import com.example.seng303_groupb_assignment2.enums.Days
 import com.example.seng303_groupb_assignment2.enums.Measurement
 import com.example.seng303_groupb_assignment2.notifications.NotificationManager
-import com.example.seng303_groupb_assignment2.services.MeasurementConverter
-import com.example.seng303_groupb_assignment2.utils.exerciseSaver
 import com.example.seng303_groupb_assignment2.viewmodels.ExerciseViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.ManageWorkoutViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.PreferenceViewModel
 import com.example.seng303_groupb_assignment2.viewmodels.WorkoutViewModel
 import org.koin.androidx.compose.getViewModel
-import org.koin.androidx.compose.koinViewModel
 import kotlin.math.roundToInt
 
 @Composable
@@ -85,9 +72,9 @@ fun AddWorkout(
     manageViewModel: ManageWorkoutViewModel,
     workoutViewModel: WorkoutViewModel,
     exerciseViewModel: ExerciseViewModel,
+    preferenceViewModel: PreferenceViewModel
 ) {
     var manageExerciseModalOpen by rememberSaveable { mutableStateOf(false) }
-    // auto complete
     var searchQuery by rememberSaveable { mutableStateOf("") }
     val exercises by exerciseViewModel.getExercisesByNameOrEmpty(searchQuery).observeAsState(emptyList())
 
@@ -155,7 +142,8 @@ fun AddWorkout(
                     manageViewModel = manageViewModel,
                     workoutViewModel = workoutViewModel,
                     exerciseViewModel = exerciseViewModel,
-                    navController = navController
+                    navController = navController,
+                    preferenceViewModel = preferenceViewModel
                 )
             }
         }
@@ -200,7 +188,8 @@ fun AddWorkout(
                     manageViewModel = manageViewModel,
                     workoutViewModel = workoutViewModel,
                     exerciseViewModel = exerciseViewModel,
-                    navController = navController
+                    navController = navController,
+                    preferenceViewModel = preferenceViewModel
                 )
             }
         }
@@ -409,7 +398,9 @@ private fun CancelAndSaveRow (
     manageViewModel: ManageWorkoutViewModel,
     workoutViewModel: WorkoutViewModel,
     exerciseViewModel: ExerciseViewModel,
-    navController: NavController
+    navController: NavController,
+    preferenceViewModel: PreferenceViewModel
+
 ) {
     val context = LocalContext.current
 
@@ -422,7 +413,6 @@ private fun CancelAndSaveRow (
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer
         )
 
-        // cancel
         Button(
             onClick = { cancel() },
             colors = buttonColors,
@@ -433,7 +423,6 @@ private fun CancelAndSaveRow (
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // save
         Button(
             onClick = {
                 if (manageViewModel.validName()) {
@@ -449,7 +438,7 @@ private fun CancelAndSaveRow (
                     }
 
                     if (manageViewModel.schedule.isNotEmpty()) {
-                        val notificationHandler = NotificationManager(context)
+                        val notificationHandler = NotificationManager(context, preferenceViewModel.preferenceStorage)
                         val nextDayFormatted = getNextDay(manageViewModel.schedule)
                         notificationHandler.sendNewWorkoutNotification(
                             nextDayFormatted,
@@ -495,7 +484,6 @@ fun ManageExerciseModal(
             contentAlignment = Alignment.Center
         ) {
             LazyColumn(horizontalAlignment = Alignment.CenterHorizontally) {
-                // Modal title
                 item {
                     Text(
                         text = context.getString(R.string.exercises_modal_title),
@@ -505,7 +493,6 @@ fun ManageExerciseModal(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                // Exercise Name TextField
                 item {
                     TextField(
                         value = exerciseModel.exerciseName,
@@ -553,7 +540,6 @@ fun ManageExerciseModal(
                     Spacer(modifier = Modifier.height(4.dp))
                 }
 
-                // Measurement Dropdown
                 item {
                     Box(
                         modifier = Modifier
@@ -594,7 +580,6 @@ fun ManageExerciseModal(
                     }
                 }
 
-                // Submit and Cancel Buttons
                 item {
                     val buttonColors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
