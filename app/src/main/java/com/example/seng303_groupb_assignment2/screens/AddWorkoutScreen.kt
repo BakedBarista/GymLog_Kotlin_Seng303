@@ -434,6 +434,7 @@ private fun CancelAndSaveRow (
                         manageViewModel.exercises.forEach {
                             exerciseViewModel.addExercise(workoutId, it)
                         }
+                        manageViewModel.clear()
                     }
 
                     if (manageViewModel.schedule.isNotEmpty()) {
@@ -445,7 +446,6 @@ private fun CancelAndSaveRow (
                         )
                     }
 
-                    manageViewModel.clear()
                     navController.navigate("SelectWorkout")
                 }
             },
